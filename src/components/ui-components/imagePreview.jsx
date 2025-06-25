@@ -5,7 +5,7 @@ import { X, Plus } from "lucide-react";
 
 export default function ImagePreview({ images = [], onDelete, onAdd, onImageClick }) {
   if (!Array.isArray(images)) return null;
-
+// Kiểm tra nếu images là mảng
   const totalItems = images.length + 1;
   const gridCols =
     totalItems <= 1 ? "grid-cols-1" :
