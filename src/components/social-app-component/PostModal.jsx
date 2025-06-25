@@ -470,7 +470,6 @@ export default function PostModal({
                     }`}
                   />
                 </button>
-                <p className="text-xs">{likeCount} lượt thích</p>
               </div>
               <button>
                 <MessageCircle className="h-5 w-5" />
@@ -479,6 +478,8 @@ export default function PostModal({
                 <SendHorizonal className="h-5 w-5" />
               </button>
             </div>
+                            <p className="text-xs">{likeCount} lượt thích</p>
+
 
             {/* Comments */}
             <div className="flex-1 p-4 space-y-2 overflow-y-auto">

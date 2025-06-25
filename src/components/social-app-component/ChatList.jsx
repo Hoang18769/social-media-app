@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from "react";
 import api from "@/utils/axios";
 import useAppStore from "@/store/ZustandStore";
 import { useAuth } from "@/hooks/useAuth";
-
 export default function ChatList({ onSelectChat, selectedChatId }) {
   const pathname = usePathname();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -22,7 +21,6 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
     refreshChatList, // ✅ New refresh method
     error: storeError 
   } = useAppStore();
-  
   const [expanded, setExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState(null);
@@ -43,7 +41,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
       storeError
     });
   }, [chatList.length, isAuthenticated, authLoading, isLoadingChats, fetchAttempted, storeError]);
-
+console.log(chatList)
   // ✅ MAIN FETCH LOGIC - Trigger when user becomes authenticated
   useEffect(() => {
     const shouldFetch = 
@@ -102,7 +100,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
     
     try {
       await markChatAsRead(chatId);
-      onSelectChat(chatId, chat.target);
+      onSelectChat(chatId, chat.target,chat);
     } catch (error) {
       console.error("❌ Error selecting chat:", error);
     }
@@ -169,7 +167,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
 
   const filteredChats = searchResults ?? chatList;
 
-  // Create unique chats for collapsed view
+  // ✅ Create unique chats for collapsed view with online status
   const uniqueChats = [
     ...new Map(
       chatList.map(chat => [
@@ -178,6 +176,11 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
       ])
     ).values(),
   ];
+
+  // ✅ Count online users
+  const onlineCount = uniqueChats.filter(chat => 
+    chat.target?.onlineStatus?.isOnline
+  ).length;
 
   // ✅ Show loading state when fetching
   if (isLoadingChats) {
@@ -232,7 +235,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
     );
   }
 
-  // Collapsed state
+  // ✅ Enhanced collapsed state with online status
   if (!expanded && !isChatsPage) {
     return (
       <div
@@ -249,13 +252,28 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
                 size="sm"
                 className="border-2 border-background w-8 h-8 md:w-10 md:h-10"
               />
-              {chat.target?.online && (
-                <span className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 rounded-full border border-background" />
+              {/* ✅ Enhanced online indicator */}
+              {chat.target?.onlineStatus?.isOnline && (
+                <div className="absolute bottom-0 right-0">
+                  <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full border border-background">
+                    <div className="absolute inset-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full animate-pulse opacity-75" />
+                  </div>
+                </div>
               )}
             </div>
           ))}
         </div>
         <div className="flex items-center gap-1 md:gap-2 ml-2">
+          {/* ✅ Show online count */}
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            {onlineCount > 0 && (
+              <>
+                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                <span className="hidden sm:inline">{onlineCount} online</span>
+                <span className="sm:hidden">{onlineCount}</span>
+              </>
+            )}
+          </div>
           <span className="text-xs md:text-sm text-muted-foreground hidden md:inline">
             {chatList.length > 3 ? `+${chatList.length - 3} more` : `${chatList.length} chats`}
           </span>
@@ -273,7 +291,16 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
     <div className="w-full md:max-w-md mx-auto bg-background flex flex-col border rounded-lg overflow-hidden h-full shadow-sm">
       {!isChatsPage && (
         <div className="flex items-center justify-between p-2 md:p-3 border-b">
-          <h3 className="font-medium text-xs md:text-sm">Messages</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-xs md:text-sm">Messages</h3>
+            {/* ✅ Online count in header */}
+            {onlineCount > 0 && (
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                <span>{onlineCount} online</span>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefresh}
@@ -316,10 +343,10 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
           [...filteredChats]
             .reverse()
             .map((chat) => (
-              <div key={chat.chatId || chat.id}>
+              <div key={chat.chatId}>
                 <ChatItem
                   chat={chat}
-                  selected={selectedChatId === (chat.chatId || chat.id)}
+                  selected={selectedChatId === (chat.chatId)}
                   onClick={() => handleChatSelect(chat)}
                 />
               </div>

@@ -15,6 +15,7 @@ import { SocketProvider } from "@/context/socketContext";
 import useNotificationSocket from "@/hooks/useNotificationSocket";
 import useMessageNotification from "@/hooks/useMessageNotification";
 import { AuthProvider } from '@/hooks/useAuth'
+import useOnlineNotification from "@/hooks/useOnlineNotification";
 
 export default function MainLayout({ children }) {
   const { resolvedTheme } = useTheme();
@@ -26,7 +27,7 @@ export default function MainLayout({ children }) {
   const [token, setToken] = useState(null);
   const [activeChatId, setActiveChatId] = useState(null);
   const [activeTargetUser, setActiveTargetUser] = useState(null);
-
+  const [blockStatus, setBlockStatus] = useState(null);
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     const storedToken = localStorage.getItem("accessToken");
@@ -40,8 +41,7 @@ export default function MainLayout({ children }) {
   // ✅ Sử dụng hook message notification mới
     useMessageNotification(userId);
     useNotificationSocket(userId, token);
-
-  // ✅ Listen for new message events để có thể auto-open chat nếu cần
+    useOnlineNotification(userId);
 useEffect(() => {
   const handleNewMessage = (event) => {
     const messageData = event.detail;
@@ -101,9 +101,10 @@ useEffect(() => {
     pathname.startsWith("/chats");
 
   // Xử lý chat
-  const handleSelectChat = (chatId, user) => {
+  const handleSelectChat = (chatId, user, chat) => {
     setActiveChatId(chatId);
     setActiveTargetUser(user);
+    setBlockStatus(chat.blockStatus)
   };
 
   const handleBackToList = () => {

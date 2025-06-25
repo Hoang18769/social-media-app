@@ -34,7 +34,6 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const selectChat = useAppStore((state) => state.selectChat);
   const clearChatSelection = useAppStore((state) => state.clearChatSelection);
 
-  // Chỉ gọi useChat khi có chatId
   const { messages, loading } = useChat(currentChatId);
   const { sendMessage, isConnected } = useSendMessage({
     chatId: currentChatId,

@@ -14,7 +14,6 @@ export default function useMessageNotification(userId) {
   const [currentUserId, setCurrentUserId] = useState(null);
   const router = useRouter();
 
-  // Store actions
   const { fetchChatList, onMessageReceived, onChatCreated, selectChat } = useAppStore();
 
   useEffect(() => {

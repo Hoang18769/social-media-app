@@ -67,7 +67,99 @@ const useAppStore = create(
         throw error; // ✅ Re-throw for component to handle
       }
     },
+    // Thêm vào trong useAppStore create function, section CHAT STATE
+updateChatUserOnlineStatus: (userId, onlineStatusData) => {
+  set((state) => ({
+    chatList: state.chatList.map((chat) => {
+      if (chat.target && chat.target.id === userId) {
+        return {
+          ...chat,
+          target: {
+            ...chat.target,
+            isOnline: onlineStatusData.online,
+            lastOnline: onlineStatusData.lastOnline || null
+          }
+        };
+      }
+      return chat;
+    })
+  }));
+  console.log(`✅ Updated target online status for ${userId}`, onlineStatusData);
+},
 
+    // Helper để lấy online status của user từ chatList
+    getUserOnlineStatusFromChats: (userId) => {
+      const { chatList } = get();
+      
+      for (const chat of chatList) {
+        // Tìm trong participants
+        if (chat.participants && Array.isArray(chat.participants)) {
+          const participant = chat.participants.find(p => p.id === userId);
+          if (participant && participant.onlineStatus) {
+            return participant.onlineStatus;
+          }
+        }
+        
+        // Tìm trong target
+        if (chat.target && chat.target.id === userId && chat.target.onlineStatus) {
+          return chat.target.onlineStatus;
+        }
+      }
+      
+      return null;
+    },
+
+    // Bulk update online status cho nhiều users (khi khởi động app)
+    bulkUpdateOnlineStatus: (userStatusList) => {
+      if (!Array.isArray(userStatusList) || userStatusList.length === 0) {
+        return;
+      }
+
+      set(state => ({
+        chatList: state.chatList.map(chat => {
+          let updatedChat = { ...chat };
+
+          // Update participants
+          if (chat.participants && Array.isArray(chat.participants)) {
+            updatedChat.participants = chat.participants.map(participant => {
+              const statusUpdate = userStatusList.find(status => status.userId === participant.id);
+              if (statusUpdate) {
+                return {
+                  ...participant,
+                  onlineStatus: {
+                    isOnline: statusUpdate.isOnline,
+                    lastOnline: statusUpdate.lastOnline,
+                    updatedAt: statusUpdate.updatedAt || new Date().toISOString(),
+                    lastUpdated: new Date().toISOString()
+                  }
+                };
+              }
+              return participant;
+            });
+          }
+
+          // Update target
+          if (chat.target) {
+            const statusUpdate = userStatusList.find(status => status.userId === chat.target.id);
+            if (statusUpdate) {
+              updatedChat.target = {
+                ...chat.target,
+                onlineStatus: {
+                  isOnline: statusUpdate.isOnline,
+                  lastOnline: statusUpdate.lastOnline,
+                  updatedAt: statusUpdate.updatedAt || new Date().toISOString(),
+                  lastUpdated: new Date().toISOString()
+                }
+              };
+            }
+          }
+
+          return updatedChat;
+        })
+      }));
+
+      console.log(`✅ Bulk updated online status for ${userStatusList.length} users`);
+    },
     // ✅ FIXED: Better update logic
     updateChatListAfterMessage: (chatId, lastMessage) => {
       set((state) => ({

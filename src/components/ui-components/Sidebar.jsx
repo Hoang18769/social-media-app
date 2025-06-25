@@ -17,7 +17,7 @@ export default function SidebarNavigation() {
   const [username, setUsername] = useState(null);
 
   const menuItems = [
-    { id: "home", icon: Home, href: "/index" },
+    { id: "home", icon: Home, href: "/home" },
     { id: "search", icon: Search, href: "/search" },
     { id: "message", icon: MessageCircle, href: "/chats" },
     { id: "favorites", icon: Users, href: "/friends" },

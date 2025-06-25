@@ -49,14 +49,14 @@ const cookieUtils = {
     });
     
     // Verify cookie was set
-    setTimeout(() => {
-      const verification = cookieUtils.get(name);
-      console.log('🔍 Cookie verification:', { 
-        name, 
-        found: !!verification,
-        matches: verification === value
-      });
-    }, 10);
+    // setTimeout(() => {
+    //   const verification = cookieUtils.get(name);
+    //   console.log('🔍 Cookie verification:', { 
+    //     name, 
+    //     found: !!verification,
+    //     matches: verification === value
+    //   });
+    // }, 10);
   },
   
   remove: (name) => {

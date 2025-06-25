@@ -182,7 +182,7 @@ function AuthFormWithParams() {
             
             // Step 4: Redirect
             setTimeout(() => {
-              window.location.href = '/index'
+              window.location.href = '/home'
             }, 500)
             
           } else {
