@@ -6,27 +6,34 @@ import Avatar from "@/components/ui-components/Avatar";
 import api from "@/utils/axios";
 
 export default function PersonalInfoPage() {
-  const [user, setUser] = useState(null);           // state để hiển thị
-  const [originalUser, setOriginalUser] = useState(null); // giữ bản gốc để so sánh
+  const [user, setUser] = useState(null);           // Dữ liệu người dùng
+  const [originalUser, setOriginalUser] = useState(null); // Bản sao gốc
   const [avatarFile, setAvatarFile] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMessages, setSuccessMessages] = useState([]);
-  const token = localStorage.getItem("accessToken");
+  const [token, setToken] = useState(null);         // Token
 
   useEffect(() => {
+    const tokenFromLocalStorage = localStorage.getItem("accessToken");
+    setToken(tokenFromLocalStorage);
+
+    const username = localStorage.getItem("userName");
+
     const fetchProfile = async () => {
       try {
-        const username = localStorage.getItem("userName");
-        const res = await api.get(`/v1/users/${username}`);
+        const res = await api.get(`/v1/users/${username}`, {
+          headers: { Authorization: `Bearer ${tokenFromLocalStorage}` },
+        });
+
         if (res.data.code === 200) {
           setUser(res.data.body);
-          setOriginalUser(res.data.body); // giữ bản gốc
+          setOriginalUser(res.data.body);
         } else {
           setErrors((prev) => ({ ...prev, fetch: res.data.message }));
         }
-      } catch (error) {
+      } catch {
         setErrors((prev) => ({ ...prev, fetch: "Không tải được thông tin người dùng" }));
       } finally {
         setLoadingUser(false);
@@ -45,8 +52,8 @@ export default function PersonalInfoPage() {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setUser((prev) => ({ ...prev, profilePictureUrl: e.target.result }));
+      reader.onload = (e2) => {
+        setUser((prev) => ({ ...prev, profilePictureUrl: e2.target.result }));
         setAvatarFile(file);
       };
       reader.readAsDataURL(file);
@@ -62,14 +69,14 @@ export default function PersonalInfoPage() {
     const updates = [
       {
         label: "Name",
-        check:
-          user.givenName !== originalUser.givenName ||
-          user.familyName !== originalUser.familyName,
+        check: user.givenName !== originalUser.givenName || user.familyName !== originalUser.familyName,
         request: () =>
           api.patch(
-            `/v1/users/update-name?givenName=${encodeURIComponent(
-              user.givenName
-            )}&familyName=${encodeURIComponent(user.familyName)}`
+            `/v1/users/update-name?givenName=${encodeURIComponent(user.givenName)}&familyName=${encodeURIComponent(
+              user.familyName
+            )}`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
           ),
         errorKey: "name",
       },
@@ -77,36 +84,23 @@ export default function PersonalInfoPage() {
         label: "Username",
         check: user.username !== originalUser.username,
         request: () =>
-          api.patch(
-            `/v1/users/update-username?username=${encodeURIComponent(
-              user.username
-            )}`
-          ),
+          api.patch(`/v1/users/update-username?username=${encodeURIComponent(user.username)}`, {}, { headers: { Authorization: `Bearer ${token}` } }),
         errorKey: "username",
       },
       {
         label: "Birthday",
         check: user.birthdate !== originalUser.birthdate,
         request: () =>
-          api.patch(
-            `/v1/users/update-birthday?birthdate=${encodeURIComponent(
-              user.birthdate
-            )}`
-          ),
+          api.patch(`/v1/users/update-birthday?birthdate=${encodeURIComponent(user.birthdate)}`, {}, { headers: { Authorization: `Bearer ${token}` } }),
         errorKey: "birthday",
       },
       {
         label: "Bio",
         check: user.bio !== originalUser.bio,
         request: () =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/users/update-bio?bio=${encodeURIComponent(
-            user.bio
-          )}`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/users/update-bio?bio=${encodeURIComponent(user.bio)}`, {
             method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }).then((res) => {
             if (!res.ok) return res.json().then((err) => Promise.reject(err));
             return res.json();
@@ -120,7 +114,7 @@ export default function PersonalInfoPage() {
           const form = new FormData();
           form.append("file", avatarFile);
           return api.patch("/v1/users/update-profile-picture", form, {
-            headers: { "Content-Type": "multipart/form-data" },
+            headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
           });
         },
         errorKey: "avatar",
@@ -138,8 +132,7 @@ export default function PersonalInfoPage() {
         } catch (err) {
           setErrors((prev) => ({
             ...prev,
-            [item.errorKey]:
-              err?.response?.data?.message || `Failed to update ${item.label.toLowerCase()}`,
+            [item.errorKey]: err?.response?.data?.message || `Failed to update ${item.label.toLowerCase()}`,
           }));
         }
       }
@@ -147,7 +140,7 @@ export default function PersonalInfoPage() {
 
     setLoading(false);
     if (successCount > 0) {
-      setOriginalUser({ ...user }); // đồng bộ bản gốc để tránh call lại lần sau
+      setOriginalUser({ ...user }); // đồng bộ bản gốc
     }
   };
 
@@ -189,9 +182,7 @@ export default function PersonalInfoPage() {
             <Avatar src={user.profilePictureUrl} />
             <div>
               <div className="font-semibold text-lg">{user.username}</div>
-              <div className="text-[var(--muted-foreground)]">
-                {user.familyName} {user.givenName}
-              </div>
+              <div className="text-[var(--muted-foreground)]">{user.familyName} {user.givenName}</div>
             </div>
             <input
               type="file"
