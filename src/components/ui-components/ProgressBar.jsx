@@ -1,5 +1,4 @@
 "use client"
-
 import { usePathname } from "next/navigation"
 import { useEffect } from "react"
 import NProgress from "nprogress"
@@ -9,12 +8,31 @@ export default function ProgressBar() {
   const pathname = usePathname()
 
   useEffect(() => {
-    NProgress.start()
-    const timeout = setTimeout(() => {
-      NProgress.done()
-    }, 300) // giả lập tải 300ms
+    NProgress.configure({ 
+      showSpinner: false,
+      minimum: 0.3
+    })
 
-    return () => clearTimeout(timeout)
+    // Bắt click ngay lập tức
+    const handleClick = (e) => {
+      const link = e.target.closest('a')
+      if (!link) return
+      
+      const href = link.getAttribute('href')
+      if (href && href.startsWith('/') && href !== pathname) {
+        NProgress.start()
+      }
+    }
+
+    document.addEventListener('click', handleClick, true)
+    
+    return () => {
+      document.removeEventListener('click', handleClick, true)
+    }
+  }, [pathname])
+
+  useEffect(() => {
+    NProgress.done()
   }, [pathname])
 
   return null

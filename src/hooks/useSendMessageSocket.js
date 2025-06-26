@@ -1,76 +1,88 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { createStompClient } from "@/utils/socket";
+import { useEffect, useState, useCallback } from "react";
+import { getStompClient, sendMessage as stompSendMessage, isConnected as stompIsConnected } from "@/utils/socket";
 
 export default function useSendMessage({ chatId, receiverUsername }) {
-  const clientRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const client = createStompClient((frame) => {
-      console.log("✅ STOMP connected", frame);
-      setIsConnected(true);
-    });
-
-    // Gán client reference ngay lập tức
-    clientRef.current = client;
-    
-    // Activate client
-    client.activate();
-
-    return () => {
-      if (clientRef.current) {
-        clientRef.current.deactivate();
+    // Initialize connection when hook mounts
+    const initializeConnection = async () => {
+      try {
+        const client = await getStompClient();
+        setIsConnected(client.connected);
+        
+        // Set up connection status monitoring
+        const checkConnection = () => {
+          setIsConnected(stompIsConnected());
+        };
+        
+        // Check connection status periodically
+        const intervalId = setInterval(checkConnection, 1000);
+        
+        return () => {
+          clearInterval(intervalId);
+        };
+      } catch (error) {
+        console.error("❌ Failed to initialize STOMP connection:", error);
+        setIsConnected(false);
       }
+    };
+
+    initializeConnection();
+
+    // Cleanup is handled by the singleton itself
+    return () => {
       setIsConnected(false);
-      clientRef.current = null;
-      console.log("❌ STOMP client deactivated");
     };
   }, []);
 
   const sendMessage = useCallback(
-    (text) => {
-      const client = clientRef.current;
-
-      console.log("📡 Attempting to send...");
+    async (text) => {
+      console.log("📡 Attempting to send message...");
       console.log("✅ isConnected:", isConnected);
-      console.log("📦 client.connected:", client?.connected);
-      console.log("📦 typeof client?.publish:", typeof client?.publish);
 
-      // Kiểm tra client và connection status
-      if (!client || !client.connected) {
-        console.warn("⚠️ STOMP client not ready", {
-          hasClient: !!client,
-          isConnected: client?.connected,
-          stateConnected: isConnected,
-        });
-        return;
+      // Validate inputs
+      if (!text?.trim()) {
+        console.warn("⚠️ Empty message text");
+        return false;
+      }
+
+      if (!receiverUsername?.trim()) {
+        console.warn("⚠️ Missing receiver username");
+        return false;
       }
 
       const messageData = {
         chatId: chatId || null,
-        username: receiverUsername?.trim(),
+        username: receiverUsername.trim(),
         text: text.trim(),
       };
 
       try {
-        // Sử dụng publish() thay vì send()
-        client.publish({
-          destination: "/app/chat",
-          body: JSON.stringify(messageData),
-          headers: {
-            'content-type': 'application/json'
-          }
-        });
+        // Use the singleton's sendMessage method
+        const success = await stompSendMessage("/app/chat", messageData);
         
-        console.log("✅ Message sent:", messageData);
-      } catch (err) {
-        console.error("❌ Failed to send message:", err);
+        if (success) {
+          console.log("✅ Message sent successfully:", messageData);
+          return true;
+        } else {
+          console.error("❌ Failed to send message");
+          return false;
+        }
+      } catch (error) {
+        console.error("❌ Error sending message:", error);
+        return false;
       }
     },
     [chatId, receiverUsername, isConnected]
   );
 
-  return { sendMessage, isConnected };
+  return { 
+    sendMessage, 
+    isConnected,
+    // Additional utility functions
+    connectionStatus: isConnected ? 'connected' : 'disconnected'
+  };
 }

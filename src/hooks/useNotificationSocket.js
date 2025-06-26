@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { createStompClient } from "@/utils/socket";
+import { subscribe, unsubscribe, getStompClient } from "@/utils/socket";
 import toast from "react-hot-toast";
 import useAppStore from "@/store/ZustandStore";
 
 export default function useNotificationSocket(userId) {
   const subscriptionRef = useRef(null);
-  const clientRef = useRef(null);
+  const isSubscribedRef = useRef(false);
 
   // Store actions
   const {
@@ -91,7 +91,7 @@ export default function useNotificationSocket(userId) {
                 ...chatList
                   .filter((chat) => chat.id !== foundChat.id)
                   .sort(
-                    (a, b) => new Date(a.updatedAt) - new Date(b.updatedAt)
+                    (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
                   ),
               ];
 
@@ -137,19 +137,26 @@ export default function useNotificationSocket(userId) {
         // setTimeout(() => {
         //   fetchNotifications(true);
         // }, 300);
-        //  // delay nhẹ tránh spam call nếu nhận liên tục
+        // delay nhẹ tránh spam call nếu nhận liên tục
       }
     };
 
-    // === Setup socket client ===
-    const client = createStompClient((frame) => {
-      if (!isMounted) return;
-
-      console.log("🔌 Subscribing to /notifications/" + userId);
+    // === Setup socket subscription ===
+    const setupSubscription = async () => {
       try {
-        subscriptionRef.current = client.subscribeToChannel(
+        if (!isMounted) return;
+
+        console.log("🔌 Setting up subscription to /notifications/" + userId);
+
+        // Ensure client is connected
+        await getStompClient();
+
+        // Subscribe to notifications
+        const subscription = await subscribe(
           `/notifications/${userId}`,
           (message) => {
+            if (!isMounted) return;
+            
             try {
               const data = JSON.parse(message.body);
               console.log("📨 Notification received:", data);
@@ -159,41 +166,43 @@ export default function useNotificationSocket(userId) {
             }
           }
         );
+
+        if (subscription && isMounted) {
+          subscriptionRef.current = subscription;
+          isSubscribedRef.current = true;
+          console.log("✅ Successfully subscribed to notifications");
+        }
       } catch (err) {
-        console.error("❌ Lỗi khi subscribe:", err);
+        console.error("❌ Lỗi khi setup subscription:", err);
+        
+        // Retry after delay
+        if (isMounted) {
+          setTimeout(() => {
+            if (isMounted && !isSubscribedRef.current) {
+              setupSubscription();
+            }
+          }, 3000);
+        }
       }
-    });
+    };
 
-    clientRef.current = client;
-
-    try {
-      client.activate();
-    } catch (err) {
-      console.error("❌ Lỗi kích hoạt client:", err);
-    }
+    // Start setup
+    setupSubscription();
 
     return () => {
       isMounted = false;
 
-      if (subscriptionRef.current) {
+      if (isSubscribedRef.current) {
         try {
-          subscriptionRef.current.unsubscribe();
-          console.log("📤 Đã hủy đăng ký /notifications");
+          unsubscribe(`/notifications/${userId}`);
+          console.log("📤 Đã hủy đăng ký /notifications/" + userId);
         } catch (err) {
           console.warn("⚠️ Lỗi khi hủy đăng ký:", err);
         }
-        subscriptionRef.current = null;
+        isSubscribedRef.current = false;
       }
 
-      if (clientRef.current) {
-        try {
-          clientRef.current.deactivate();
-          console.log("🔌 Đã ngắt kết nối client");
-        } catch (err) {
-          console.warn("⚠️ Lỗi khi ngắt kết nối:", err);
-        }
-        clientRef.current = null;
-      }
+      subscriptionRef.current = null;
     };
   }, [
     userId,

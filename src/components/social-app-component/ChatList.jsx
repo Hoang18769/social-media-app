@@ -41,7 +41,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
       storeError
     });
   }, [chatList.length, isAuthenticated, authLoading, isLoadingChats, fetchAttempted, storeError]);
-console.log(chatList)
+// console.log(chatList)
   // ✅ MAIN FETCH LOGIC - Trigger when user becomes authenticated
   useEffect(() => {
     const shouldFetch = 

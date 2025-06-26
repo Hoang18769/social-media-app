@@ -8,7 +8,13 @@ export default function UserHeader({
   showOptions = true,
   className = "",
 }) {
-  const { familyName = "", givenName = "", profilePictureUrl, lastOnline } = user;
+  const {
+    familyName = "",
+    givenName = "",
+    profilePictureUrl,
+    lastOnline,
+    mutualFriendsCount = 0,
+  } = user;
 
   return (
     <div className={`flex items-center p-3 w-full ${className}`}>
@@ -25,17 +31,24 @@ export default function UserHeader({
         <h4 className="text-sm font-medium text-[var(--foreground)] truncate">
           {familyName} {givenName}
         </h4>
-        
+
         {showLastOnline && (
           <p className="text-xs text-[var(--muted-foreground)] truncate">
-            {lastOnline || "Online"}
+            {lastOnline}
           </p>
         )}
+
+        {/* Mutual friends */}
+        {mutualFriendsCount > 0 ? (
+          <p className="text-xs text-[var(--muted-foreground)] truncate">
+            {mutualFriendsCount} bạn chung
+          </p>
+        ):<p className="text-xs text-[var(--muted-foreground)] truncate">chưa có bạn chung</p>}
       </div>
 
       {/* Options Button */}
       {showOptions && (
-        <button 
+        <button
           className="p-1 rounded-full hover:bg-[var(--accent)] text-[var(--muted-foreground)]"
           aria-label="More options"
         >

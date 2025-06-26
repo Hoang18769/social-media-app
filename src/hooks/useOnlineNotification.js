@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { createStompClient } from "@/utils/socket";
-import useAppStore from "@/store/ZustandStore"; // Import store để update trạng thái
+import { useEffect, useRef, useState } from "react";
+import { subscribe, unsubscribe, isConnected } from "@/utils/socket";
+import useAppStore from "@/store/ZustandStore";
 
 export default function useOnlineNotification(userId) {
-  const clientRef = useRef(null);
   const subscriptionRef = useRef(null);
-  const intervalRef = useRef(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
+    
     let isMounted = true;
 
     // Xử lý status online
@@ -22,95 +22,65 @@ export default function useOnlineNotification(userId) {
       useAppStore.getState().updateChatUserOnlineStatus(data.userId, data);
     };
 
-    // === Setup STOMP client ===
-    const client = createStompClient();
-    clientRef.current = client;
-
-    client.debug = (str) => console.log("[STOMP DEBUG]", str);
-
-    client.onConnect = () => {
-      if (!isMounted) return;
-
+    // Setup subscription
+    const setupSubscription = async () => {
       try {
-        subscriptionRef.current = client.subscribe(
-          `/online/${userId}`,
-          (message) => {
-            try {
-              const data = JSON.parse(message.body);
-              handleOnlineStatus(data); // xử lý data
-            } catch (err) {
-              console.error(
-                "❌ Parse online status error:",
-                err,
-                message.body
-              );
-            }
+        const destination = `/online/${userId}`;
+        
+        console.log(`🔌 Setting up online subscription for ${destination}...`);
+        
+        // Subscribe to online status updates
+        const subscription = await subscribe(destination, (message) => {
+          if (!isMounted) return;
+          
+          try {
+            const data = JSON.parse(message.body);
+            handleOnlineStatus(data);
+          } catch (err) {
+            console.error(
+              "❌ Parse online status error:",
+              err,
+              message.body
+            );
           }
-        );
+        });
 
-        console.log(`✅ Subscribed to /online/${userId}`);
+        if (subscription && isMounted) {
+          subscriptionRef.current = subscription;
+          setIsSubscribed(true);
+          console.log(`✅ Successfully subscribed to ${destination}`);
+        }
       } catch (error) {
         console.error(`❌ Error subscribing to /online/${userId}:`, error);
+        setIsSubscribed(false);
       }
     };
-    client.onDisconnect = () =>
-      isMounted && console.warn(`🔌 Online client disconnected for ${userId}`);
-    client.onStompError = (frame) =>
-      isMounted && console.error("❌ Online STOMP error:", frame);
-    client.onWebSocketError = (error) =>
-      isMounted && console.error("❌ Online WebSocket error:", error);
 
-    try {
-      client.activate();
-    } catch (error) {
-      console.error(`❌ Error activating online client:`, error);
-    }
-
-    // === Reconnect every 15s if lost connection ===
-    intervalRef.current = setInterval(() => {
-      if (!client.connected) {
-        console.warn(`🔄 Reconnecting online client for ${userId}...`);
-        client
-          .deactivate()
-          .then(() => {
-            const newClient = createStompClient();
-            clientRef.current = newClient;
-
-            newClient.debug = client.debug;
-            newClient.onConnect = client.onConnect;
-            newClient.onDisconnect = client.onDisconnect;
-            newClient.onStompError = client.onStompError;
-            newClient.onWebSocketError = client.onWebSocketError;
-            newClient.activate();
-          })
-          .catch((error) => {
-            console.error(
-              `❌ Error during reconnection for ${userId}:`,
-              error
-            );
-          });
-      }
-    }, 15000);
+    setupSubscription();
 
     return () => {
       isMounted = false;
-
+      
       if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
+        const destination = `/online/${userId}`;
+        unsubscribe(destination);
         subscriptionRef.current = null;
-      }
-
-      if (clientRef.current) {
-        clientRef.current.deactivate();
-        clientRef.current = null;
-      }
-
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+        setIsSubscribed(false);
+        console.log(`🔌 Unsubscribed from ${destination}`);
       }
     };
   }, [userId]);
 
-  return null;
+  // Debug function để check trạng thái
+  const getConnectionStatus = () => ({
+    isConnected: isConnected(),
+    hasSubscription: isSubscribed,
+    userId,
+    subscriptionDestination: userId ? `/online/${userId}` : null,
+  });
+
+  return {
+    isSubscribed,
+    getConnectionStatus,
+  };
 }

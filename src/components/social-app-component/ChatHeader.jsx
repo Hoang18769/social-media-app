@@ -15,7 +15,6 @@ export default function ChatHeader({
   onBack,
   showBackButton,
 }) {
-  console.log("ChatHeader rendered with targetUser:", targetUser);
 
   let statusText = "Offline 🔴";
   if (targetUser?.isOnline) {

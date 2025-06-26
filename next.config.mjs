@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Image optimization configuration
+  reactStrictMode: false,
   images: {
     // Vercel-friendly domains
     domains: [
@@ -8,7 +9,9 @@ const nextConfig = {
       'picsum.photos', 
       'localhost',
       'images.unsplash.com', // Common image source
-      'via.placeholder.com'  // Placeholder images
+      'via.placeholder.com',  // Placeholder images
+      'pocpoc.online',
+      'api.pocpoc.online',
     ],
     remotePatterns: [
       {
@@ -17,10 +20,16 @@ const nextConfig = {
         port: '80',
         pathname: '/v1/files/**',
       },
+            {
+        protocol: 'https',
+        hostname: 'api.pocpoc.online',
+        pathname: '/v1/files/**',
+      },
     ],
     // Optimize for performance
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 3600,
+    
   },
 
   // Compiler optimizations
@@ -28,18 +37,12 @@ const nextConfig = {
     // Remove console.log in production
     removeConsole: process.env.NODE_ENV === 'production',
   },
-
   // Experimental features - more stable options
   experimental: {
-    nodeMiddleware: true,
     esmExternals: true,
-    // Enable app directory if you're using it
-    // appDir: true,
   },
 
-  // Output configuration for deployment
-  output: 'standalone', // Better for Docker/container deployments
-  
+  // Output configuration for deploymen  
   // Environment variables
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
