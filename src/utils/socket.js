@@ -287,7 +287,7 @@ class StompClientSingleton {
         await this.disconnect();
         setTimeout(() => {
           this.connect();
-        }, 1000);
+        }, 15000);
       } else {
         console.error("❌ Unable to get valid token. Clearing session...");
         clearSession();
@@ -330,7 +330,7 @@ class StompClientSingleton {
   }
 
   // Ensure valid token (same as original)
-  async ensureValidToken(timeout = 5000) {
+  async ensureValidToken(timeout = 15000) {
     const currentToken = getAuthToken();
     if (currentToken && isTokenValid()) {
       return currentToken;
@@ -368,7 +368,7 @@ class StompClientSingleton {
       }),
 
       (async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 15000));
         return await this.forceTokenRefresh();
       })()
     ]);
