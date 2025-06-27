@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Avatar from "../ui-components/Avatar"
 import Input from "../ui-components/Input"
-import api from "@/utils/axios"
+import api, { setAuthToken } from "@/utils/axios"
 import axios from "axios"
 
 export default function EditProfileModal({ profileData, onSave }) {
@@ -104,6 +104,9 @@ export default function EditProfileModal({ profileData, onSave }) {
     ]
 
     let successCount = 0
+    let usernameUpdated = false
+    let oldUsername = profileData.username // Store old username
+    let newUsername = formData.username // Store new username
 
     for (const item of updates) {
       if (item.check) {
@@ -112,6 +115,11 @@ export default function EditProfileModal({ profileData, onSave }) {
           console.log(`✅ Response for ${item.label}:`, res)
           setSuccessMessages((prev) => [...prev, `${item.label} updated successfully`])
           successCount++
+          
+          // Check if username was successfully updated
+          if (item.label === "Username") {
+            usernameUpdated = true
+          }
         } catch (err) {
           console.error(`❌ Error response for ${item.label}:`, err?.response || err)
           setErrors((prev) => ({
@@ -123,12 +131,43 @@ export default function EditProfileModal({ profileData, onSave }) {
       }
     }
 
+    // If username was successfully updated, sync localStorage and call setAuthToken
+    if (usernameUpdated && !errors.username) {
+      try {
+        // Update userName in localStorage
+        localStorage.setItem("userName", formData.username)
+        
+        // Get userId and accessToken from localStorage
+        const userId = localStorage.getItem("userId")
+        const accessToken = localStorage.getItem("accessToken")
+        
+        // Call setAuthToken (assuming this function is imported or available globally)
+        const syncSuccess = setAuthToken(accessToken, userId, formData.username)
+        if (syncSuccess) {
+          console.log("✅ Username synced successfully")
+          setSuccessMessages((prev) => [...prev, "Username synced successfully"])
+        } else {
+          console.warn("⚠️ Failed to sync username")
+        }        
+      } catch (syncError) {
+        console.error("❌ Error syncing username:", syncError)
+        // Optionally show a warning but don't fail the entire operation
+      }
+    }
+
     if (successCount > 0) {
-      onSave({
+      const updatedData = {
         ...formData,
         givenName: formData.firstname,
         familyName: formData.lastname,
         profilePictureUrl: formData.avatar,
+      }
+      
+      // Pass both updated data and username change info to onSave
+      onSave(updatedData, {
+        usernameChanged: usernameUpdated && !errors.username,
+        oldUsername: oldUsername,
+        newUsername: newUsername
       })
     }
 

@@ -16,13 +16,14 @@ export default function ProfileHeader({
   isOwnProfile = true, 
   activeTab = "posts",
   onTabChange,
-  onProfileUpdate 
+  onProfileUpdate,
+  onUsernameChange // New prop to handle username changes
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(false);
-  const [initialModalTab, setInitialModalTab] = useState("friends"); // Thêm state để xác định tab mở đầu
+  const [initialModalTab, setInitialModalTab] = useState("friends");
   
   const avatar = profileData.profilePictureUrl;
   const { username: routeUsername } = useParams();
@@ -51,8 +52,14 @@ export default function ProfileHeader({
     }
   };
 
-  const handleSaveProfile = (newData) => {
+  const handleSaveProfile = (newData, changeInfo) => {
     if (onProfileUpdate) onProfileUpdate(newData);
+    
+    // If username was changed, notify the parent component
+    if (changeInfo?.usernameChanged && onUsernameChange) {
+      onUsernameChange(changeInfo.oldUsername, changeInfo.newUsername);
+    }
+    
     setIsEditModalOpen(false);
   };
 
@@ -162,10 +169,9 @@ export default function ProfileHeader({
   };
 
   const handleGetListFriend = async () => {
-    // Nếu không có bạn bè thì không cần gọi API
     if (profileData.friendCount === 0) {
       setFriendsList([]);
-      setInitialModalTab("friends"); // Set tab mặc định là friends
+      setInitialModalTab("friends");
       setIsFriendsModalOpen(true);
       return;
     }
@@ -175,10 +181,9 @@ export default function ProfileHeader({
       const res = await api.get(`/v1/friends/${username}`);
       
       if (res.data.code === 200) {
-        // Lấy danh sách bạn bè từ res.data.body
         const friends = res.data.body || [];
         setFriendsList(friends);
-        setInitialModalTab("friends"); // Set tab mặc định là friends
+        setInitialModalTab("friends");
         setIsFriendsModalOpen(true);
       } else {
         toast.error("Không thể tải danh sách bạn bè");
@@ -191,25 +196,22 @@ export default function ProfileHeader({
     }
   };
 
-  // Handler riêng cho nút "Bạn chung"
   const handleGetMutualFriends = async () => {
-    // Nếu không có bạn chung thì vẫn mở modal nhưng sẽ hiển thị empty state
     if (profileData.mutualFriendCount === 0) {
-      setFriendsList([]); // Clear danh sách bạn bè cũ
-      setInitialModalTab("mutual"); // Set tab mặc định là mutual
+      setFriendsList([]);
+      setInitialModalTab("mutual");
       setIsFriendsModalOpen(true);
       return;
     }
 
     setIsLoadingFriends(true);
     try {
-      // Lấy danh sách bạn bè trước (nếu chưa có)
       const friendsRes = await api.get(`/v1/friends/${username}`);
       
       if (friendsRes.data.code === 200) {
         const friends = friendsRes.data.body || [];
         setFriendsList(friends);
-        setInitialModalTab("mutual"); // Set tab mặc định là mutual
+        setInitialModalTab("mutual");
         setIsFriendsModalOpen(true);
       } else {
         toast.error("Không thể tải danh sách bạn bè");
@@ -282,7 +284,7 @@ export default function ProfileHeader({
 
   return (
     <div className="w-full">
-      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-4 sm:p-6">
         <Avatar
           src={avatar}
           alt="Avatar"
@@ -338,7 +340,7 @@ export default function ProfileHeader({
               {isLoadingFriends && <span className="ml-1">...</span>}
             </button>
             <button 
-              onClick={handleGetMutualFriends} // Sử dụng handler riêng cho bạn chung
+              onClick={handleGetMutualFriends}
               disabled={isLoadingFriends}
               className="hover:text-blue-600 transition-colors disabled:opacity-50"
             >
@@ -353,7 +355,6 @@ export default function ProfileHeader({
         </div>
       </div>
 
-      {/* Tab Navigation */}
       <div className="flex justify-around text-sm border-t mt-4 pt-2">
         <button
           className={`flex items-center gap-1 ${
@@ -380,12 +381,10 @@ export default function ProfileHeader({
         </button>
       </div>
 
-      {/* Modal chỉnh sửa profile */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
         <EditProfileModal profileData={profileData} onSave={handleSaveProfile} />
       </Modal>
 
-      {/* Modal danh sách bạn bè */}
       <Modal 
         isOpen={isFriendsModalOpen} 
         onClose={() => setIsFriendsModalOpen(false)}
@@ -394,7 +393,7 @@ export default function ProfileHeader({
         <FriendsListModal 
           username={username}
           initialFriends={friendsList}
-          initialTab={initialModalTab} // Truyền tab mặc định
+          initialTab={initialModalTab}
         />
       </Modal>
     </div>

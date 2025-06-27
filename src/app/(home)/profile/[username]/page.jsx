@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ProfileHeader from "@/components/social-app-component/ProfileHeader";
 import api from "@/utils/axios";
 import PostCard from "@/components/social-app-component/PostCard";
@@ -9,6 +9,7 @@ import usePostActions from "@/hooks/usePostAction";
 
 export default function ProfilePage() {
   const { username: routeUsername } = useParams();
+  const router = useRouter();
   const [profileData, setProfileData] = useState(null);
   const [posts, setPosts] = useState([]);
   const [filteredPosts, setFilteredPosts] = useState([]);
@@ -51,6 +52,20 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [routeUsername]);
+
+  // Handle username change from ProfileHeader
+  const handleUsernameChange = useCallback((oldUsername, newUsername) => {
+    console.log("Username changed from", oldUsername, "to", newUsername);
+    
+    // Update localStorage if this is the current user's profile
+    if (isOwnProfile) {
+      localStorage.setItem("userName", newUsername);
+      setLocalUsername(newUsername);
+    }
+    
+    // Navigate to the new profile URL
+    router.replace(`/profile/${newUsername}`);
+  }, [isOwnProfile, router]);
 
   // Fetch posts function with pagination
   const fetchPosts = useCallback(async (skipValue = 0, isLoadMore = false) => {
@@ -387,6 +402,7 @@ export default function ProfilePage() {
           onProfileUpdate={(updatedData) =>
             setProfileData((prev) => ({ ...prev, ...updatedData }))
           }
+          onUsernameChange={handleUsernameChange}
         />
       ) : (
         <ProfileHeaderSkeleton />
@@ -485,13 +501,6 @@ export default function ProfilePage() {
                             onClick={() => handleImageClick(index)}
                           />
                         )}
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                          </div>
-                        </div>
                       </div>
                     );
                   })}

@@ -11,13 +11,71 @@ import Sidebar from "@/components/ui-components/Sidebar";
 import ProgressBar from "@/components/ui-components/ProgressBar";
 import { Toaster } from "react-hot-toast";
 import ChatList from "@/components/social-app-component/ChatList";
-import { SocketProvider } from "@/context/socketContext";
 import useNotificationSocket from "@/hooks/useNotificationSocket";
 import useMessageNotification from "@/hooks/useMessageNotification";
 import { AuthProvider } from '@/hooks/useAuth'
 import useOnlineNotification from "@/hooks/useOnlineNotification";
 
-export default function MainLayout({ children }) {
+// ✅ Import Call System
+import { CallProvider } from "@/context/CallContext";
+import { useCall } from "@/context/CallContext";
+import CallPopup from "@/components/social-app-component/CallPopup";
+import CallVideo from "@/components/social-app-component/CallVideo";
+
+// ✅ Component để hiển thị call UI global
+function GlobalCallInterface() {
+  const { 
+    incomingCaller, 
+    currentCall, 
+    localStream, 
+    remoteStream, 
+    callStatus,
+    isCallEnding,
+    acceptCall, 
+    rejectCall 
+  } = useCall();
+
+  // ✅ State để control việc hiển thị CallVideo
+  const [showCallVideo, setShowCallVideo] = useState(false);
+
+  // ✅ Hiển thị CallVideo khi có cuộc gọi active hoặc đang ending
+  useEffect(() => {
+    const shouldShow = currentCall || isCallEnding;
+    console.log("[DEBUG] CallVideo visibility - currentCall:", !!currentCall, "isCallEnding:", isCallEnding, "shouldShow:", shouldShow);
+    setShowCallVideo(shouldShow);
+  }, [currentCall, isCallEnding]);
+
+  // ✅ Callback khi CallVideo đóng
+  const handleCallVideoClose = () => {
+    console.log("[DEBUG] CallVideo closed by user");
+    setShowCallVideo(false);
+  };
+
+  return (
+    <>
+      {/* Popup cho cuộc gọi đến */}
+      {incomingCaller && !currentCall && !isCallEnding && (
+        <CallPopup
+          caller={incomingCaller}
+          onAccept={acceptCall}
+          onReject={rejectCall}
+        />
+      )}
+
+      {/* Video interface khi đang trong cuộc gọi */}
+      {showCallVideo && (
+        <CallVideo 
+          localStream={localStream} 
+          remoteStream={remoteStream}
+          onCallEnd={handleCallVideoClose}
+        />
+      )}
+    </>
+  );
+}
+
+// ✅ Main Layout Content (tách ra để có thể sử dụng useCall)
+function MainLayoutContent({ children }) {
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -28,6 +86,10 @@ export default function MainLayout({ children }) {
   const [activeChatId, setActiveChatId] = useState(null);
   const [activeTargetUser, setActiveTargetUser] = useState(null);
   const [blockStatus, setBlockStatus] = useState(null);
+
+  // ✅ Sử dụng Call Hook
+  const { initializeCall, currentCall, isCallEnding } = useCall();
+
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     const storedToken = localStorage.getItem("accessToken");
@@ -35,50 +97,54 @@ export default function MainLayout({ children }) {
     if (storedUserId && storedToken) {
       setUserId(storedUserId);
       setToken(storedToken);
+      
+      // ✅ Initialize call system khi có token
+      initializeCall(storedToken);
     }
-  }, []);
+  }, [initializeCall]);
 
   // ✅ Sử dụng hook message notification mới
-    useMessageNotification(userId);
-    useNotificationSocket(userId, token);
-    useOnlineNotification(userId);
-useEffect(() => {
-  const handleNewMessage = (event) => {
-    const messageData = event.detail;
-    console.log("🔔 [MainLayout] New message received:", messageData);
-    
-    // Logic để handle tin nhắn mới
-    if (pathname === "/chats" && !activeChatId) {
-      // Auto-select chat mới nếu đang ở trang chats
-      setActiveChatId(messageData.chatId);
-      setActiveTargetUser(messageData.sender);
-    }
-  };
+  useMessageNotification(userId);
+  useNotificationSocket(userId, token);
+  useOnlineNotification(userId);
 
-  const handleOpenChat = (event) => {
-    const { chatId, targetUser } = event.detail;
-    console.log("💬 [MainLayout] Opening chat:", chatId);
-    
-    // Navigate to chats page nếu chưa ở đó
-    if (pathname !== "/chats") {
-      // Sử dụng router để navigate
-      // router.push("/chats");
-    }
-    
-    // Mở chat
-    setActiveChatId(chatId);
-    setActiveTargetUser(targetUser);
-  };
+  useEffect(() => {
+    const handleNewMessage = (event) => {
+      const messageData = event.detail;
+      console.log("🔔 [MainLayout] New message received:", messageData);
+      
+      // Logic để handle tin nhắn mới
+      if (pathname === "/chats" && !activeChatId) {
+        // Auto-select chat mới nếu đang ở trang chats
+        setActiveChatId(messageData.chatId);
+        setActiveTargetUser(messageData.sender);
+      }
+    };
 
-  // Register event listeners
-  window.addEventListener('newMessageReceived', handleNewMessage);
-  window.addEventListener('openChat', handleOpenChat);
-  
-  return () => {
-    window.removeEventListener('newMessageReceived', handleNewMessage);
-    window.removeEventListener('openChat', handleOpenChat);
-  };
-}, [pathname, activeChatId]);
+    const handleOpenChat = (event) => {
+      const { chatId, targetUser } = event.detail;
+      console.log("💬 [MainLayout] Opening chat:", chatId);
+      
+      // Navigate to chats page nếu chưa ở đó
+      if (pathname !== "/chats") {
+        // Sử dụng router để navigate
+        // router.push("/chats");
+      }
+      
+      // Mở chat
+      setActiveChatId(chatId);
+      setActiveTargetUser(targetUser);
+    };
+
+    // Register event listeners
+    window.addEventListener('newMessageReceived', handleNewMessage);
+    window.addEventListener('openChat', handleOpenChat);
+    
+    return () => {
+      window.removeEventListener('newMessageReceived', handleNewMessage);
+      window.removeEventListener('openChat', handleOpenChat);
+    };
+  }, [pathname, activeChatId]);
 
   // Xử lý animation theme change
   useEffect(() => {
@@ -104,7 +170,7 @@ useEffect(() => {
   const handleSelectChat = (chatId, user, chat) => {
     setActiveChatId(chatId);
     setActiveTargetUser(user);
-    setBlockStatus(chat.blockStatus)
+    setBlockStatus(chat.blockStatus);
   };
 
   const handleBackToList = () => {
@@ -129,7 +195,10 @@ useEffect(() => {
               chatId={activeChatId}
               targetUser={activeTargetUser}
               onBack={handleBackToList}
-              onChatCreated={handleChatCreated} // ✅ Pass callback
+              onChatCreated={handleChatCreated}
+              // ✅ Pass token cho call functionality
+              beToken={token}
+              recipientId={activeTargetUser?.id || activeTargetUser?.userId}
             />
           ) : (
             <div className="flex flex-col w-full h-full">
@@ -137,14 +206,15 @@ useEffect(() => {
                 onSelectChat={handleSelectChat}
                 selectedChatId={activeChatId}
               />
-              
-              
             </div>
           )}
         </div>
       </aside>
     );
   };
+
+  // ✅ Kiểm tra có đang trong cuộc gọi để điều chỉnh UI
+  const isInCall = currentCall || isCallEnding;
 
   const layoutContent = (
     <>
@@ -161,7 +231,8 @@ useEffect(() => {
         }} 
       />
 
-      <div className="h-screen flex flex-col">
+      {/* ✅ Main UI - ẩn khi đang trong cuộc gọi */}
+      <div className={`h-screen flex flex-col ${isInCall ? 'hidden' : ''}`}>
         <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 h-16 border-b transition-colors duration-500">
           <Header />
         </header>
@@ -187,6 +258,9 @@ useEffect(() => {
           {renderRightSidebar()}
         </div>
       </div>
+
+      {/* ✅ Global Call Interface - luôn hiển thị */}
+      <GlobalCallInterface />
     </>
   );
 
@@ -203,5 +277,16 @@ useEffect(() => {
     </AnimatePresence>
   ) : (
     layoutContent
+  );
+}
+
+// ✅ Main Layout với CallProvider wrapper
+export default function MainLayout({ children }) {
+  return (
+    <CallProvider>
+      <MainLayoutContent>
+        {children}
+      </MainLayoutContent>
+    </CallProvider>
   );
 }

@@ -367,7 +367,7 @@ class StompClientSingleton {
         }, timeout);
       }),
 
-      (async () => {
+      (async () => {  
         await new Promise(resolve => setTimeout(resolve, 15000));
         return await this.forceTokenRefresh();
       })()

@@ -148,6 +148,7 @@ export default function useChat(chatId) {
       try {
         setLoading(true);
         const res = await api.get(`/v1/chat/messages/${chatId}?page=0&size=100`);
+        console.log(res.data.body);
         setMessages(res.data.body || []);
       } catch (err) {
         console.error("❌ Lỗi tải tin nhắn:", err);

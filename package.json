@@ -28,6 +28,7 @@
     "react-use-measure": "^2.1.7",
     "recharts": "^2.15.3",
     "sockjs-client": "^1.6.1",
+    "stringee": "^2.9.3",
     "zustand": "^5.0.5"
   },
   "devDependencies": {

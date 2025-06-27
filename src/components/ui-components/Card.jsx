@@ -17,7 +17,7 @@ export default function Card({ children, className = "", elevation = 1, style })
       )}
       style={{
         maxWidth:600,
-        minWidth: 400,
+        minWidth: 300,
         minHeight:200,  // kích thước tối thiểu (bạn có thể điều chỉnh)
         ...style,
       }}

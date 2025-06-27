@@ -1,3 +1,0 @@
-return <div>
-hahaha
-</div>

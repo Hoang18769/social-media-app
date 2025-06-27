@@ -71,8 +71,6 @@ export default function MessageItem({
   const isSelf = msg.sender?.id !== targetUser?.id;
   const isSelected = selectedMessage === msg.id;
   const timeSent = dayjs(msg.sentAt).fromNow();
-  
-  // Check if message is deleted or updated based on API response
   const isDeleted = msg.deleted === true;
   const isUpdated = msg.updated === true;
 
@@ -120,6 +118,50 @@ export default function MessageItem({
     );
   };
 
+ const renderMessageContent = () => {
+  if (isDeleted) return "Tin nhắn đã bị thu hồi";
+
+  if (msg.type === "CALL" && msg.callId) {
+    if (msg.answered === false) {
+      return <>📞 Cuộc gọi nhỡ</>;
+    } else {
+      const durationSec = dayjs(msg.endAt).diff(dayjs(msg.callAt), "second");
+      const minutes = Math.floor(durationSec / 60);
+      const seconds = durationSec % 60;
+      const durationStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+      return (
+        <>
+          📞 Cuộc gọi đã kết thúc
+          <div className="text-xs opacity-70 mt-1">
+            Thời lượng: {durationStr}
+          </div>
+        </>
+      );
+    }
+  }
+
+  if (msg.attachment) {
+    return renderFileInfo(
+      msg.attachment,
+      getFileTypeFromUrl(msg.attachment),
+      getFilenameFromUrl(msg.attachment)
+    );
+  }
+
+  if (msg.attachedFile) {
+    return renderFileInfo(
+      msg.attachedFile.url,
+      msg.attachedFile.contentType,
+      msg.attachedFile.originalFilename,
+      msg.attachedFile.size
+    );
+  }
+
+  return msg.content;
+};
+
+
   return (
     <>
       <div className={clsx("flex items-start gap-2 group message-container", {
@@ -154,24 +196,7 @@ export default function MessageItem({
                 maxWidth: '100%'
               }}
             >
-              {isDeleted ? (
-                "Tin nhắn đã bị thu hồi"
-              ) : msg.attachment ? (
-                renderFileInfo(
-                  msg.attachment,
-                  getFileTypeFromUrl(msg.attachment),
-                  getFilenameFromUrl(msg.attachment)
-                )
-              ) : msg.attachedFile ? (
-                renderFileInfo(
-                  msg.attachedFile.url,
-                  msg.attachedFile.contentType,
-                  msg.attachedFile.originalFilename,
-                  msg.attachedFile.size
-                )
-              ) : (
-                msg.content
-              )}
+              {renderMessageContent()}
 
               <div className="text-xs mt-1 opacity-70 flex items-center justify-between gap-2">
                 {isUpdated && !isDeleted && (

@@ -48,14 +48,6 @@ export default function Avatar({
     (finalSrc.startsWith("http://") || finalSrc.startsWith("https://"));
   
   const handleError = (e) => {
-    console.log("Avatar load error:", {
-      src: currentSrc,
-      finalSrc,
-      error: e,
-      naturalWidth: e.target?.naturalWidth,
-      naturalHeight: e.target?.naturalHeight
-    });
-    
     if (!hasError) {
       setHasError(true);
       setIsLoading(false);
@@ -63,11 +55,6 @@ export default function Avatar({
   };
   
   const handleLoad = (e) => {
-    console.log("Avatar loaded successfully:", {
-      src: finalSrc,
-      naturalWidth: e.target?.naturalWidth,
-      naturalHeight: e.target?.naturalHeight
-    });
     setIsLoading(false);
   };
 
