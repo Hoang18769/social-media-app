@@ -1,7 +1,6 @@
 import "./globals.css";
 import ThemeProvider from "@/providers/ThemeProvider";
 import Script from "next/script";
-import { NotificationProvider } from "@/store/NotificationContext";
 
 export default function RootLayout({ children }) {
   return (
@@ -29,11 +28,11 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider>
-          <NotificationProvider>
+        
+          <>
             {children}
-          </NotificationProvider>
-        </ThemeProvider>
+          </>
+        
       </body>
     </html>
   );

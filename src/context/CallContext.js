@@ -129,7 +129,7 @@ if (localStream) {
     setCallStatus("Cleaned");
     setIsCallEnding(false);
     currentCallRef.current = null;
-      setTimeout(() => {
+    setTimeout(() => {
     isCleaningUpRef.current = false; // reset
   }, 2000);
 }, [localStream, remoteStream]);
@@ -312,7 +312,6 @@ if (localStream) {
     if (!call) return;
 
     console.log("[DEBUG] Accepting call, isVideo:", call.isVideoCall);
-    setupCallEvents(call);
 
     const stream = await createMediaStream(call.isVideoCall);
     if (!stream) return;
@@ -322,6 +321,7 @@ if (localStream) {
     setLocalStream(stream);
     setIncomingCaller(null);
     setCurrentCall(call);
+        setupCallEvents(call);
 
     call.answer();
   }, [createMediaStream, setupCallEvents]);

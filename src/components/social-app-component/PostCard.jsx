@@ -48,9 +48,9 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
     if (isModalOpen) {
       if (currentPost.sharedPost) {
         fetchOriginalPost()
-      } else {
-        fetchComments()
       }
+      // Always fetch comments for the current post
+      fetchComments()
     }
   }, [isModalOpen])
 
@@ -60,8 +60,6 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
     try {
       const res = await api.get(`/v1/posts/${currentPost.originalPost.id}`)
       setOriginalPostData(res.data.body)
-      // Also fetch comments for the original post
-      fetchCommentsForPost(currentPost.originalPost.id)
     } catch (err) {
       toast.error("Không thể tải bài viết gốc")
       console.error(err)
@@ -72,6 +70,7 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
 
   const fetchComments = async () => {
     if (loadingComments || comments.length > 0) return
+    // Always use currentPost.id for comments
     fetchCommentsForPost(currentPost.id)
   }
 
@@ -162,9 +161,9 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
     setShowModal(true)
     if (currentPost.sharedPost) {
       fetchOriginalPost()
-    } else {
-      fetchComments()
     }
+    // Always fetch comments for the current post
+    fetchComments()
   }
 
   const handleCardClick = (e) => {
@@ -260,11 +259,8 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
     }
   }
 
-  // For shared posts, we need to use the fetched original post data which has complete interaction info
+  // Always use current post for modal
   const getPostForModal = () => {
-    if (currentPost.sharedPost && originalPostData) {
-      return originalPostData
-    }
     return currentPost
   }
 
@@ -408,17 +404,13 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
           {currentPost.likeCount} lượt thích
         </p>
 
-        {(currentPost.sharedPost ? (originalPostData?.latestComment || currentPost.originalPost?.latestComment) : currentPost.latestComment) && (
+        {currentPost.latestComment && (
           <div className={textSizes.comment}>
             <span className="font-semibold">
-              {currentPost.sharedPost ? 
-                (originalPostData?.latestComment?.user || currentPost.originalPost?.latestComment?.user) : 
-                currentPost.latestComment?.user}
+              {currentPost.latestComment?.user}
             </span>
             <span className="ml-2">
-              {currentPost.sharedPost ? 
-                (originalPostData?.latestComment?.content || currentPost.originalPost?.latestComment?.content) : 
-                currentPost.latestComment?.content}
+              {currentPost.latestComment?.content}
             </span>
           </div>
         )}
@@ -430,7 +422,7 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
             openModal()
           }}
         >
-          Xem tất cả {currentPost.sharedPost ? (originalPostData?.commentCount || currentPost.originalPost?.commentCount || 0) : currentPost.commentCount} bình luận
+          Xem tất cả {currentPost.commentCount || 0} bình luận
         </button>
       </Card>
 
@@ -446,22 +438,22 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
       {isModalOpen && (
         <PostModal
           post={getPostForModal()}
-          liked={currentPost.sharedPost ? (originalPostData?.liked || false) : liked}
-          likeCount={currentPost.sharedPost ? (originalPostData?.likeCount || 0) : currentPost.likeCount}
+          liked={liked}
+          likeCount={currentPost.likeCount}
           activeIndex={activeImageIndex}
           comments={comments}
           loadingComments={loadingComments || loadingOriginalPost}
-          onFetchComments={currentPost.sharedPost ? () => fetchCommentsForPost(currentPost.originalPost.id) : fetchComments}
+          onFetchComments={fetchComments}
           onClose={() => {
             setActiveImageIndex(null)
             setShowModal(false)
-            // Reset original post data to allow fresh fetch next time
+            // Reset data to allow fresh fetch next time
             if (currentPost.sharedPost) {
               setOriginalPostData(null)
-              setComments([])
             }
+            setComments([])
           }}
-          onLikeToggle={() => onLikeToggle(currentPost.sharedPost ? currentPost.originalPost.id : currentPost.id)}
+          onLikeToggle={() => onLikeToggle(currentPost.id)}
         />
       )}
 
