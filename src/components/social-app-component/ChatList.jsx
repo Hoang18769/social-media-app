@@ -29,7 +29,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
   const listRef = useRef(null);
 
   const isChatsPage = pathname === "/chats";
-
+  console.log(chatList)
   // Debug logging
   useEffect(() => {
     console.log("🔍 ChatList Debug:", {

@@ -162,14 +162,27 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
     },
     // ✅ FIXED: Better update logic
     updateChatListAfterMessage: (chatId, lastMessage) => {
-      set((state) => ({
-        chatList: state.chatList.map(chat => 
-          (chat.id === chatId || chat.chatId === chatId)
-            ? { ...chat, lastMessage, updatedAt: new Date().toISOString() }
-            : chat
-        ).sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
-      }));
-    },
+  set((state) => {
+    const updatedChatList = state.chatList.map(chat =>
+      (chat.id === chatId || chat.chatId === chatId)
+        ? { ...chat, lastMessage, updatedAt: new Date().toISOString() }
+        : chat
+    );
+    
+    // Tìm chat được update và các chat khác
+    const selectedChat = updatedChatList.find(chat => 
+      chat.id === chatId || chat.chatId === chatId
+    );
+    const otherChats = updatedChatList.filter(chat => 
+      chat.id !== chatId && chat.chatId !== chatId
+    );
+    
+    // Đặt chat được chọn ở cuối, các chat khác giữ nguyên thứ tự
+    return {
+      chatList: [...otherChats, selectedChat]
+    };
+  });
+},
 
     getUserByChatId: (chatId) => {
       const chat = get().chatList.find(c => (c.id === chatId || c.chatId === chatId));

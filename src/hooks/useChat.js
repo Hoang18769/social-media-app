@@ -14,6 +14,9 @@ import useAppStore from "@/store/ZustandStore";
 export default function useChat(chatId) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalMessages, setTotalMessages] = useState(0);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
 
@@ -66,10 +69,11 @@ export default function useChat(chatId) {
       
       console.log("🆕 UpdatedChat latestMessage:", updatedChat.latestMessage);
       
+      // Tìm chat được update và các chat khác
       const otherChats = chatList.filter((c) => c.chatId !== chatId);
-      const newChatList = [...otherChats, updatedChat].sort(
-        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
+      
+      // Đặt chat được chọn ở cuối, các chat khác giữ nguyên thứ tự
+      const newChatList = [...otherChats, updatedChat];
 
       console.log("📜 New chatList first item latestMessage:", newChatList[0]?.latestMessage);
       
@@ -122,13 +126,16 @@ export default function useChat(chatId) {
       console.log("🆔 Current userId:", currentUserId);
       console.log("🆔 Sender ID:", data.sender?.id);
       
-      // Cập nhật messages state
+      // Cập nhật messages state - thêm vào đầu mảng (tin nhắn mới nhất)
       setMessages((prev) => {
         console.log("📝 Previous messages count:", prev.length);
         const newMessages = [newMessage, ...prev];
         console.log("📝 New messages count:", newMessages.length);
         return newMessages;
       });
+
+      // Cập nhật tổng số tin nhắn
+      setTotalMessages(prev => prev + 1);
       
       // Cập nhật chatList ngay lập tức
       requestAnimationFrame(() => {
@@ -140,26 +147,79 @@ export default function useChat(chatId) {
     }
   }, [currentUserId, updateChatList]);
 
-  // Load messages khi chatId thay đổi
+  // Load messages lần đầu khi chatId thay đổi
   useEffect(() => {
     if (!chatId) return;
 
-    const fetchMessages = async () => {
+    const fetchInitialMessages = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/v1/chat/messages/${chatId}?page=0&size=100`);
-        console.log(res.data.body);
-        setMessages(res.data.body || []);
+        setMessages([]);
+        setHasMore(true);
+        setTotalMessages(0);
+        
+        const limit = 20;
+        const skip = 0; // Bắt đầu từ 0
+        
+        const res = await api.get(`/v1/chat/messages/${chatId}?skip=${skip}&limit=${limit}`);
+        const fetchedMessages = res.data.body || [];
+        
+        // Tin nhắn trả về đã được sắp xếp từ mới nhất đến cũ nhất
+        setMessages(fetchedMessages);
+        setTotalMessages(fetchedMessages.length);
+        
+        // Nếu lấy được ít hơn limit, nghĩa là không còn tin nhắn nào
+        setHasMore(fetchedMessages.length === limit);
+        
+        console.log(`📨 Loaded initial messages: ${fetchedMessages.length}, hasMore=${fetchedMessages.length === limit}`);
       } catch (err) {
         console.error("❌ Lỗi tải tin nhắn:", err);
         setMessages([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMessages();
+    fetchInitialMessages();
   }, [chatId, currentUserId]);
+
+  // Load more messages (infinity scroll)
+  const loadMoreMessages = useCallback(async () => {
+    if (!chatId || loadingMore || !hasMore) return;
+
+    try {
+      setLoadingMore(true);
+      
+      const limit = 20;
+      const currentCount = messages.length;
+      const skip = currentCount; // Skip = số tin nhắn hiện tại
+      
+      console.log(`📨 Loading more messages: currentCount=${currentCount}, skip=${skip}`);
+      
+      const res = await api.get(`/v1/chat/messages/${chatId}?skip=${skip}&limit=${limit}`);
+      const olderMessages = res.data.body || [];
+      
+      if (olderMessages.length > 0) {
+        // Thêm tin nhắn cũ vào cuối mảng
+        setMessages(prev => [...prev, ...olderMessages]);
+        setTotalMessages(prev => prev + olderMessages.length);
+        
+        // Nếu lấy được ít hơn limit, nghĩa là không còn tin nhắn nào
+        setHasMore(olderMessages.length === limit);
+        
+        console.log(`📨 Loaded ${olderMessages.length} more messages, hasMore=${olderMessages.length === limit}`);
+      } else {
+        setHasMore(false);
+        console.log(`📨 No more messages to load`);
+      }
+    } catch (err) {
+      console.error("❌ Lỗi load thêm tin nhắn:", err);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [chatId, messages.length, loadingMore, hasMore]);
 
   // Quản lý WebSocket subscription với singleton client
   useEffect(() => {
@@ -312,8 +372,12 @@ export default function useChat(chatId) {
   return { 
     messages, 
     loading, 
+    loadingMore,
+    hasMore,
+    totalMessages,
     currentUserId,
     connectionStatus,
+    loadMoreMessages,
     forceReconnect
   };
 }

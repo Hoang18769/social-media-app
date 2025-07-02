@@ -10,6 +10,7 @@ import Avatar from "../ui-components/Avatar";
 import FilePreviewInChat from "../ui-components/FilePreviewInChat";
 import dayjs from "dayjs";
 import toast from "react-hot-toast";
+import { getUserId } from "@/utils/axios";
 
 const isVideo = (url = "") => /\.(mp4|webm|ogg)$/i.test(url);
 
@@ -184,7 +185,10 @@ export const Comment = ({
   handleReplySubmit,
   useForm,
 }) => {
-  const isOwnComment = comment.author?.id === post.author?.id;
+  // Kiểm tra xem comment có phải của user hiện tại không
+  const currentUserId = getUserId();
+  const isOwnComment = comment.author?.id === currentUserId;
+  
   const showReplies = comments.showReplies[comment.id];
   const isLoadingReplies = comments.loadingReplies[comment.id];
   const replies = comments.repliesData[comment.id];
@@ -252,35 +256,54 @@ export const Comment = ({
               </p>
             ) : (
               <div className="space-y-3">
-                {replies?.map((reply) => (
-                  <div key={reply.id} className="flex gap-2 text-sm">
-                    <Avatar
-                      src={reply.author?.profilePictureUrl}
-                      alt={reply.author?.username}
-                      size={24}
-                    />
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <p className="font-semibold text-xs">
-                          {reply.author?.givenName} {reply.author?.familyName}
-                        </p>
-                        <span className="text-xs text-[var(--muted-foreground)]">
-                          {dayjs(reply.createdAt).fromNow()}
-                        </span>
-                      </div>
-                      <p className="text-xs mb-1">{reply.content}</p>
-                      {reply.fileUrl && (
-                        <div className="mb-1">
-                          <MediaDisplay
-                            url={reply.fileUrl}
-                            alt="reply media"
-                            className="max-h-40"
-                          />
+                {replies?.map((reply) => {
+                  // Kiểm tra xem reply có phải của user hiện tại không
+                  const isOwnReply = reply.author?.id === currentUserId;
+                  
+                  return (
+                    <div key={reply.id} className="flex gap-2 text-sm">
+                      <Avatar
+                        src={reply.author?.profilePictureUrl}
+                        alt={reply.author?.username}
+                        size={24}
+                      />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex justify-between">
+                              <p className="font-semibold text-xs">
+                                {reply.author?.givenName} {reply.author?.familyName}
+                              </p>
+                              <span className="text-xs text-[var(--muted-foreground)]">
+                                {dayjs(reply.createdAt).fromNow()}
+                              </span>
+                            </div>
+                            <p className="text-xs mb-1">{reply.content}</p>
+                            {reply.fileUrl && (
+                              <div className="mb-1">
+                                <MediaDisplay
+                                  url={reply.fileUrl}
+                                  alt="reply media"
+                                  className="max-h-40"
+                                />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Nút xóa cho reply nếu là của user hiện tại */}
+                          {isOwnReply && (
+                            <button
+                              className="text-xs text-red-500 hover:underline ml-2"
+                              onClick={() => comments.deleteReply && comments.deleteReply(reply.id)}
+                            >
+                              Xóa
+                            </button>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

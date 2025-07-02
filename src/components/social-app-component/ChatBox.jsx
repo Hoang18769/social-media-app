@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -29,14 +29,28 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const [filePreview, setFilePreview] = useState(null);
   const [currentChatId, setCurrentChatId] = useState(chatId);
   const [isNewChat, setIsNewChat] = useState(!chatId);
-  const scrollRef = useRef(null);
+  
+  // Refs for infinity scroll
+  const messagesContainerRef = useRef(null);
+  const topElementRef = useRef(null);
+  const bottomElementRef = useRef(null); // Thêm ref cho bottom element
+  const scrollPositionRef = useRef(0);
+  const isLoadingMoreRef = useRef(false);
 
   // Zustand store
   const fetchChatList = useAppStore((state) => state.fetchChatList);
   const selectChat = useAppStore((state) => state.selectChat);
   const clearChatSelection = useAppStore((state) => state.clearChatSelection);
 
-  const { messages, loading } = useChat(currentChatId);
+  const { 
+    messages, 
+    loading, 
+    loadingMore, 
+    hasMore, 
+    totalMessages,
+    loadMoreMessages 
+  } = useChat(currentChatId);
+  
   const { sendMessage, isConnected } = useSendMessage({
     chatId: currentChatId,
     receiverUsername: targetUser?.username,
@@ -54,20 +68,19 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     rejectCall,
     remoteStream,
     localStream,
-    initializeCall, // ✅ Thêm dòng này
+    initializeCall,
   } = useCall();
 
   // Popup nhận cuộc gọi
-useEffect(() => {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    console.log("[DEBUG] Initializing call system with accessToken present:", !!token);
-    initializeCall(token);
-  } else {
-    console.warn("[DEBUG] No accessToken found in localStorage!");
-  }
-}, []);
-
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      console.log("[DEBUG] Initializing call system with accessToken present:", !!token);
+      initializeCall(token);
+    } else {
+      console.warn("[DEBUG] No accessToken found in localStorage!");
+    }
+  }, []);
 
   useEffect(() => {
     if (chatId !== currentChatId) {
@@ -76,11 +89,62 @@ useEffect(() => {
     }
   }, [chatId]);
 
+  // Infinity scroll using Intersection Observer thay vì scroll event
   useEffect(() => {
-    if (messages?.length > 0) {
-      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!bottomElementRef.current || !hasMore || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !isLoadingMoreRef.current) {
+          console.log("📜 Bottom element visible, loading more messages...");
+          isLoadingMoreRef.current = true;
+          
+          loadMoreMessages().then(() => {
+            isLoadingMoreRef.current = false;
+          }).catch(() => {
+            isLoadingMoreRef.current = false;
+          });
+        }
+      },
+      {
+        root: messagesContainerRef.current,
+        rootMargin: '0px',
+        threshold: 0.1
+      }
+    );
+
+    observer.observe(bottomElementRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, loadingMore, loadMoreMessages, messages]);
+
+  // Auto scroll to bottom for new messages (only if user is near bottom)
+  useEffect(() => {
+    if (messages?.length > 0 && messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      
+      // Only auto-scroll if user is near bottom or it's a new chat
+      if (isNearBottom || messages.length === 1) {
+        container.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   }, [messages]);
+
+  // Attach scroll listener - giữ lại cho auto-scroll behavior
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      const handleScroll = () => {
+        scrollPositionRef.current = container.scrollTop;
+      };
+      container.addEventListener('scroll', handleScroll, { passive: true });
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -209,6 +273,7 @@ useEffect(() => {
       setSelectedMessage(selectedMessage === msg.id ? null : msg.id);
     }
   };
+  
   const handleDeleteMessage = async (messageId) => {
     try {
       await api.delete(`/v1/chat/${messageId}`);
@@ -218,15 +283,18 @@ useEffect(() => {
       toast.error("Lỗi xóa tin nhắn");
     }
   };
+  
   const handleEditMessage = (msg) => {
     setEditingMessage(msg);
     setInput(msg.content);
     setSelectedMessage(null);
   };
+  
   const handleCancelEdit = () => {
     setEditingMessage(null);
     setInput("");
   };
+  
   const handleSaveEdit = async () => {
     const trimmed = input.trim();
     if (!trimmed || !editingMessage) return;
@@ -245,9 +313,80 @@ useEffect(() => {
     }
   };
 
+  const renderMessages = () => {
+    if (loading && currentChatId) {
+      return (
+        <div className="text-center py-4">
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+          <p className="text-sm text-[var(--muted-foreground)] mt-2">
+            Đang tải tin nhắn...
+          </p>
+        </div>
+      );
+    }
+
+    if (isNewChat) {
+      return (
+        <div className="text-center py-8 text-[var(--muted-foreground)] text-sm">
+          Bắt đầu cuộc trò chuyện với{" "}
+          {targetUser?.displayName || targetUser?.username}
+        </div>
+      );
+    }
+
+    if (messages?.length === 0) {
+      return (
+        <p className="text-center text-sm text-[var(--muted-foreground)] py-8">
+          Chưa có tin nhắn nào
+        </p>
+      );
+    }
+
+    return (
+      <>
+        {/* Load more indicator */}
+        {loadingMore && (
+          <div className="text-center py-2">
+            <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+            <p className="text-xs text-[var(--muted-foreground)] mt-1">
+              Đang tải thêm tin nhắn...
+            </p>
+          </div>
+        )}
+        
+        {/* No more messages indicator */}
+        {!hasMore && totalMessages > 20 && (
+          <div className="text-center py-2">
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Đã hiển thị tất cả tin nhắn
+            </p>
+          </div>
+        )}
+        
+        {/* Messages list - reversed order (newest first) */}
+        {messages.map((msg) => (
+          <MessageItem
+            key={msg.id}
+            msg={msg}
+            targetUser={targetUser}
+            selectedMessage={selectedMessage}
+            onMessageClick={handleMessageClick}
+            onEditMessage={handleEditMessage}
+            onDeleteMessage={handleDeleteMessage}
+          />
+        ))}
+        
+        {/* Bottom element reference for intersection observer */}
+        <div ref={bottomElementRef} className="h-1" />
+        
+        {/* Top element reference for scroll positioning */}
+        <div ref={topElementRef} />
+      </>
+    );
+  };
+
   return (
     <>
-
       <div className="flex flex-col h-full w-full bg-[var(--card)] text-[var(--foreground)] rounded-2xl overflow-hidden shadow-sm">
         {/* Header */}
         <ChatHeader
@@ -259,38 +398,16 @@ useEffect(() => {
           onVideoCall={() => makeCall(targetUser?.username, true)} // Video call
         />
 
-        {/* Messages */}
-        <div className="flex-1 px-4 py-3 overflow-y-auto space-y-2 bg-transparent">
-          {loading && currentChatId ? (
-            <p className="text-sm text-[var(--muted-foreground)]">
-              Đang tải tin nhắn...
-            </p>
-          ) : isNewChat ? (
-            <div className="text-center py-8 text-[var(--muted-foreground)] text-sm">
-              Bắt đầu cuộc trò chuyện với{" "}
-              {targetUser?.displayName || targetUser?.username}
-            </div>
-          ) : messages?.length === 0 ? (
-            <p className="text-center text-sm text-[var(--muted-foreground)]">
-              Chưa có tin nhắn nào
-            </p>
-          ) : (
-            messages
-              ?.slice()
-              .reverse()
-              .map((msg) => (
-                <MessageItem
-                  key={msg.id}
-                  msg={msg}
-                  targetUser={targetUser}
-                  selectedMessage={selectedMessage}
-                  onMessageClick={handleMessageClick}
-                  onEditMessage={handleEditMessage}
-                  onDeleteMessage={handleDeleteMessage}
-                />
-              ))
-          )}
-          <div ref={scrollRef} />
+        {/* Messages Container - with reverse flex direction */}
+        <div 
+          ref={messagesContainerRef}
+          className="flex-1 px-4 py-3 overflow-y-auto space-y-2 bg-transparent flex flex-col-reverse"
+          style={{ 
+            scrollBehavior: 'smooth',
+            overscrollBehavior: 'contain'
+          }}
+        >
+          {renderMessages()}
         </div>
 
         {/* Preview file */}
