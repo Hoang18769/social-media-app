@@ -13,6 +13,7 @@ import { Toaster } from "react-hot-toast";
 import ChatList from "@/components/social-app-component/ChatList";
 import useNotificationSocket from "@/hooks/useNotificationSocket";
 import useMessageNotification from "@/hooks/useMessageNotification";
+import useErrorSocket from "@/hooks/useErrorSocket"; // ✅ Import useErrorSocket
 import { AuthProvider } from '@/hooks/useAuth'
 import useOnlineNotification from "@/hooks/useOnlineNotification";
 
@@ -103,10 +104,11 @@ function MainLayoutContent({ children }) {
     }
   }, [initializeCall]);
 
-  // ✅ Sử dụng hook message notification mới
+  // ✅ Sử dụng các socket hooks
   useMessageNotification(userId);
   useNotificationSocket(userId, token);
   useOnlineNotification(userId);
+  useErrorSocket(userId); // ✅ Subscribe tới error channel
 
   useEffect(() => {
     const handleNewMessage = (event) => {
@@ -136,13 +138,24 @@ function MainLayoutContent({ children }) {
       setActiveTargetUser(targetUser);
     };
 
+    // ✅ Handle error events từ useErrorSocket
+    const handleErrorReceived = (event) => {
+      const errorData = event.detail;
+      console.log("🚨 [MainLayout] Error received:", errorData);
+      
+      // Có thể thêm logic xử lý error cụ thể ở đây
+      // Ví dụ: redirect về login nếu token expired, etc.
+    };
+
     // Register event listeners
     window.addEventListener('newMessageReceived', handleNewMessage);
     window.addEventListener('openChat', handleOpenChat);
+    window.addEventListener('errorReceived', handleErrorReceived); // ✅ Listen for errors
     
     return () => {
       window.removeEventListener('newMessageReceived', handleNewMessage);
       window.removeEventListener('openChat', handleOpenChat);
+      window.removeEventListener('errorReceived', handleErrorReceived); // ✅ Cleanup
     };
   }, [pathname, activeChatId]);
 

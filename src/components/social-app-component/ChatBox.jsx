@@ -30,10 +30,19 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const [currentChatId, setCurrentChatId] = useState(chatId);
   const [isNewChat, setIsNewChat] = useState(!chatId);
   
+  // ✅ Thêm state để track việc tạo chat
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  
+  // ✅ Refs để handle abort và prevent duplicate requests
+  const abortControllerRef = useRef(null);
+  const createChatPromiseRef = useRef(null);
+  const lastMessageTimestampRef = useRef(0);
+  
   // Refs for infinity scroll
   const messagesContainerRef = useRef(null);
   const topElementRef = useRef(null);
-  const bottomElementRef = useRef(null); // Thêm ref cho bottom element
+  const bottomElementRef = useRef(null);
   const scrollPositionRef = useRef(0);
   const isLoadingMoreRef = useRef(false);
 
@@ -86,8 +95,27 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     if (chatId !== currentChatId) {
       setCurrentChatId(chatId);
       setIsNewChat(!chatId);
+      // ✅ Reset states khi chuyển chat
+      setIsCreatingChat(false);
+      setIsSendingMessage(false);
+      // Cancel pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      createChatPromiseRef.current = null;
     }
   }, [chatId]);
+
+  // ✅ Cleanup effect
+  useEffect(() => {
+    return () => {
+      // Cleanup khi component unmount
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Infinity scroll using Intersection Observer thay vì scroll event
   useEffect(() => {
@@ -164,49 +192,130 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     };
   }, [filePreview]);
 
+  // ✅ Tối ưu hóa hàm createNewChat với abort controller và debounce
   const createNewChat = async (message) => {
-    try {
-      const response = await api.post("/v1/chat/send", {
-        username: targetUser?.username,
-        text: message,
-      });
-
-      if (response.data?.body.chatId) {
-        const newChatId = response.data.body.chatId;
-        setCurrentChatId(newChatId);
-        setIsNewChat(false);
-
-        await fetchChatList();
-        selectChat(newChatId);
-        if (onChatCreated) onChatCreated(newChatId, targetUser);
-
-        toast.success("Đã tạo cuộc trò chuyện mới!");
-        return newChatId;
-      }
-      throw new Error("Không thể tạo chat mới");
-    } catch (error) {
-      toast.error("Không thể tạo cuộc trò chuyện mới");
-      throw error;
+    // Prevent duplicate calls
+    const currentTime = Date.now();
+    if (currentTime - lastMessageTimestampRef.current < 1000) {
+      console.log("🚫 Debouncing: Too fast, ignoring duplicate request");
+      return null;
     }
+    lastMessageTimestampRef.current = currentTime;
+
+    // If already creating chat, wait for the existing promise
+    if (createChatPromiseRef.current) {
+      console.log("⏳ Chat creation in progress, waiting...");
+      try {
+        return await createChatPromiseRef.current;
+      } catch (error) {
+        console.error("❌ Error waiting for existing chat creation:", error);
+        createChatPromiseRef.current = null;
+        throw error;
+      }
+    }
+
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    // Create the promise and store it
+    const createChatPromise = (async () => {
+      try {
+        setIsCreatingChat(true);
+        console.log("🆕 Creating new chat with message:", message);
+
+        const response = await api.post("/v1/chat/send", {
+          username: targetUser?.username,
+          text: message,
+        }, {
+          signal: abortController.signal, // ✅ Add abort signal
+          timeout: 15000, // 15s timeout
+        });
+
+        if (abortController.signal.aborted) {
+          console.log("🚫 Request was aborted");
+          return null;
+        }
+
+        if (response.data?.body.chatId) {
+          const newChatId = response.data.body.chatId;
+          console.log("✅ New chat created with ID:", newChatId);
+          
+          setCurrentChatId(newChatId);
+          setIsNewChat(false);
+
+          await fetchChatList();
+          selectChat(newChatId);
+          if (onChatCreated) onChatCreated(newChatId, targetUser);
+
+          toast.success("Đã tạo cuộc trò chuyện mới!");
+          return newChatId;
+        }
+        throw new Error("Không thể tạo chat mới");
+      } catch (error) {
+        if (error.name === 'AbortError' || abortController.signal.aborted) {
+          console.log("🚫 Chat creation was cancelled");
+          return null;
+        }
+        console.error("❌ Error creating chat:", error);
+        toast.error("Không thể tạo cuộc trò chuyện mới");
+        throw error;
+      } finally {
+        setIsCreatingChat(false);
+        createChatPromiseRef.current = null;
+        if (abortControllerRef.current === abortController) {
+          abortControllerRef.current = null;
+        }
+      }
+    })();
+
+    createChatPromiseRef.current = createChatPromise;
+    return await createChatPromise;
   };
 
+  // ✅ Tối ưu hóa hàm handleSend
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
 
+    // ✅ Prevent spam clicking
+    if (isSendingMessage || isCreatingChat) {
+      console.log("🚫 Already sending message or creating chat, please wait");
+      return;
+    }
+
     try {
+      setIsSendingMessage(true);
+      
       if (isNewChat) {
-        await createNewChat(trimmed);
+        console.log("📝 Sending first message to create new chat");
+        const newChatId = await createNewChat(trimmed);
+        if (newChatId) {
+          console.log("✅ Chat created successfully:", newChatId);
+        } else {
+          console.log("⏭️ Chat creation was cancelled or failed");
+          return;
+        }
       } else {
         if (!isConnected) {
           toast.error("Chưa kết nối đến server");
           return;
         }
+        console.log("📨 Sending message via socket");
         await sendMessage(trimmed);
       }
       setInput("");
     } catch (err) {
-      toast.error("Lỗi khi gửi tin nhắn");
+      console.error("❌ Error in handleSend:", err);
+      if (err.name !== 'AbortError') {
+        toast.error("Lỗi khi gửi tin nhắn");
+      }
+    } finally {
+      setIsSendingMessage(false);
     }
   };
 
@@ -385,6 +494,16 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     );
   };
 
+  // ✅ Tính toán trạng thái input disabled
+  const isInputDisabled = !isConnected || isSendingMessage || isCreatingChat || uploading;
+  const inputPlaceholder = isCreatingChat 
+    ? "Đang tạo cuộc trò chuyện..." 
+    : isSendingMessage 
+      ? "Đang gửi tin nhắn..."
+      : isNewChat
+        ? `Nhắn tin cho ${targetUser?.displayName || targetUser?.username}...`
+        : "Nhập tin nhắn...";
+
   return (
     <>
       <div className="flex flex-col h-full w-full bg-[var(--card)] text-[var(--foreground)] rounded-2xl overflow-hidden shadow-sm">
@@ -417,14 +536,16 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
           onCancel={handleCancelFile}
         />
 
-        {/* Input */}
+        {/* ✅ Input với loading states */}
         <ChatInput
           input={input}
           setInput={setInput}
-          isConnected={isNewChat ? true : isConnected}
+          isConnected={!isInputDisabled} // ✅ Sử dụng computed disabled state
           selectedFile={selectedFile}
           editingMessage={editingMessage}
           uploading={uploading}
+          disabled={isInputDisabled} // ✅ Pass disabled state
+          loading={isSendingMessage || isCreatingChat} // ✅ Pass loading state
           onSend={handleSend}
           onSendFile={handleSendFile}
           onSaveEdit={handleSaveEdit}
@@ -432,13 +553,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
           onCancelFile={handleCancelFile}
           onFileSelect={handleFileSelect}
           onKeyDown={handleKeyDown}
-          placeholder={
-            isNewChat
-              ? `Nhắn tin cho ${
-                  targetUser?.displayName || targetUser?.username
-                }...`
-              : "Nhập tin nhắn..."
-          }
+          placeholder={inputPlaceholder} // ✅ Dynamic placeholder
         />
       </div>
     </>

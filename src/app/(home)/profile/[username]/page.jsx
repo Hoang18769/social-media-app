@@ -166,7 +166,9 @@ export default function ProfilePage() {
       }
     };
   }, [routeUsername, fetchPosts]);
-
+const handlePostDeleted = useCallback((deletedPostId) => {
+  setPosts(prevPosts => prevPosts.filter(post => post.id !== deletedPostId));
+}, []);
   // Throttled scroll handler for better performance
   const handleScroll = useCallback(() => {
     if (activeTab !== "posts" || loadingMore || !hasMore || loading) {
@@ -414,16 +416,17 @@ export default function ProfilePage() {
             ) : filteredPosts.length > 0 ? (
               <>
                 {filteredPosts.map((post) => (
-                  <PostCard
-                    key={post.id || Math.random().toString(36)}
-                    post={post}
-                    liked={post.liked}
-                    likeCount={post.likeCount}
-                    onLikeToggle={() => toggleLike(post.id)}
-                    isOwnProfile={isOwnProfile}
-                    isFriend={profileData?.isFriend}
-                  />
-                ))}
+  <PostCard
+    key={post.id || Math.random().toString(36)}
+    post={post}
+    liked={post.liked}
+    likeCount={post.likeCount}
+    onLikeToggle={() => toggleLike(post.id)}
+    onPostDeleted={handlePostDeleted} // Thêm dòng này
+    isOwnProfile={isOwnProfile}
+    isFriend={profileData?.isFriend}
+  />
+))}
                 
                 {loadingMore && <PostsLoadingSkeleton count={3} />}
                 

@@ -1,0 +1,240 @@
+"use client"
+
+import api from "@/utils/axios"
+import { useState, useEffect } from "react"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+} from "recharts"
+import { Users, TrendingUp, Calendar, Clock, Eye, UserCheck, UserX } from "lucide-react"
+
+export default function UsersPage() {
+  const [usersData, setUsersData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  const fetchUsersStatistics = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const res = await api.get("/v1/statistics/users")
+      setUsersData(res.data.body)
+    } catch (err) {
+      setError(`Không thể tải thống kê users: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsersStatistics()
+  }, [])
+
+  // Transform data for charts - handle null values properly
+  const transformWeeklyData = (data) => {
+    if (!data) return []
+    return Object.entries(data).map(([day, value]) => ({
+      day: day.substring(0, 3),
+      value: value === null ? 0 : value,
+    }))
+  }
+
+  const transformMonthlyData = (data) => {
+    if (!data) return []
+    return Object.entries(data).map(([date, value]) => ({
+      date: `Day ${date}`,
+      value: value === null ? 0 : value,
+    }))
+  }
+
+  const transformYearlyData = (data) => {
+    if (!data) return []
+    return Object.entries(data)
+      .filter(([month, value]) => value !== null)
+      .map(([month, value]) => ({
+        month: month.substring(0, 3),
+        value: value,
+      }))
+  }
+
+  const StatCard = ({ title, value, icon: Icon, color, trend }) => (
+    <div
+      className={`bg-gradient-to-r ${color} p-6 rounded-xl shadow-lg text-white transform hover:scale-105 transition-transform duration-200`}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-white/80 text-sm font-medium">{title}</p>
+          <p className="text-3xl font-bold mt-1">{value}</p>
+          {trend && (
+            <div className="flex items-center mt-2 text-white/90">
+              <TrendingUp className="w-4 h-4 mr-1" />
+              <span className="text-sm">{trend}</span>
+            </div>
+          )}
+        </div>
+        <Icon className="w-12 h-12 text-white/80" />
+      </div>
+    </div>
+  )
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderColor: "var(--primary)" }}
+          ></div>
+          <p style={{ color: "var(--primary)" }} className="font-medium">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center p-8 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <p className="text-red-600 font-medium">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {usersData && (
+        <div className="space-y-8">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard
+              title="Total Users"
+              value={usersData.totalUsers}
+              icon={Users}
+              color="from-blue-500 to-blue-600"
+              trend={`+${usersData.newUsersThisMonth} this month`}
+            />
+            <StatCard
+              title="Online Now"
+              value={usersData.onlineUsersNow}
+              icon={Eye}
+              color="from-green-500 to-green-600"
+            />
+            <StatCard
+              title="New Today"
+              value={usersData.newUsersToday}
+              icon={UserCheck}
+              color="from-purple-500 to-purple-600"
+            />
+            <StatCard
+              title="Not Verified"
+              value={usersData.notVerifiedUsers}
+              icon={UserX}
+              color="from-orange-500 to-orange-600"
+            />
+          </div>
+
+          {/* Charts Section */}
+          {/* Weekly & Yearly Charts - 50% Width Each */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Weekly Chart */}
+            <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+              <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
+                <Calendar className="w-5 h-5 mr-2 text-blue-500" />
+                Weekly Growth
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={transformWeeklyData(usersData.thisWeekStatistics)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="day" stroke="var(--muted-foreground)" />
+                  <YAxis stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      color: "var(--card-foreground)",
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Yearly Overview */}
+            <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+              <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
+                <Clock className="w-5 h-5 mr-2 text-purple-500" />
+                Yearly Overview
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={transformYearlyData(usersData.thisYearStatistics)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="month" stroke="var(--muted-foreground)" />
+                  <YAxis stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      color: "var(--card-foreground)",
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#8B5CF6"
+                    strokeWidth={3}
+                    dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Monthly Chart - Full Width */}
+          <div className="w-full">
+            <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+              <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
+                <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                Monthly Trend
+              </h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={transformMonthlyData(usersData.thisMonthStatistics)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis
+                    dataKey="date"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    interval={0}
+                    stroke="var(--muted-foreground)"
+                  />
+                  <YAxis stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      color: "var(--card-foreground)",
+                    }}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="#10B981" fill="#10B981" fillOpacity={0.3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}

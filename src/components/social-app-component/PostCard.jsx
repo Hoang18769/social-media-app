@@ -16,7 +16,8 @@ import Modal from "../ui-components/Modal"
 
 dayjs.extend(relativeTime)
 
-export default function PostCard({ post, liked, onLikeToggle, size = "default", className = "" }) {
+export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted, 
+ size = "default", className = "" }) {
   const [isMobile, setIsMobile] = useState(undefined)
   const [activeImageIndex, setActiveImageIndex] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -140,13 +141,17 @@ export default function PostCard({ post, liked, onLikeToggle, size = "default", 
     }
   }
 
-  const handleDeletePost = async () => {
+ const handleDeletePost = async () => {
     if (!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return
     setDeleting(true)
     try {
       await api.delete(`/v1/posts/${currentPost.id}`)
       toast.success("Đã xóa bài viết!")
-      router.refresh?.() || window.location.reload()
+      
+      // Thay vì refresh, gọi callback để cập nhật state
+      if (onPostDeleted) {
+        onPostDeleted(currentPost.id)
+      }
     } catch (err) {
       toast.error("Không thể xóa bài viết!")
       console.error(err)

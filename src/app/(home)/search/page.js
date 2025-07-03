@@ -101,7 +101,7 @@ export default function ExplorerPage() {
                     user={{
                       familyName: user.familyName,
                       givenName: user.givenName,
-                      profilePictureUrl: user.avatar,
+                      profilePictureUrl: user.profilePictureUrl,
                       lastOnline: user.isOnline ? "Online" : user.lastOnline,
                     }}
                     showOptions={false}

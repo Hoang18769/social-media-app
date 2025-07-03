@@ -15,10 +15,11 @@ class StompClientSingleton {
     this.reconnectDelay = 5000;
     this.tokenRefreshPromise = null;
     this.tokenRefreshListeners = [];
+    this.isCleaningUp = false;
     
     // Configuration
     this.config = {
-      url: process.env.NEXT_PUBLIC_SOCKET_ENDPOINT || "http://localhost/ws",
+      url: process.env.NEXT_PUBLIC_SOCKET_ENDPOINT,
       reconnectDelay: 5000,
       maxReconnectAttempts: 5,
     };
@@ -94,6 +95,10 @@ class StompClientSingleton {
 
   // Get or create the singleton instance
   async getInstance() {
+    if (this.isCleaningUp) {
+      throw new Error("STOMP client is being cleaned up");
+    }
+
     if (!this.client) {
       this.initializeClient();
     }
@@ -111,6 +116,10 @@ class StompClientSingleton {
 
   // Connect to STOMP server
   async connect() {
+    if (this.isCleaningUp) {
+      throw new Error("Cannot connect while cleaning up");
+    }
+
     if (this.client?.connected) {
       return this.client;
     }
@@ -169,7 +178,11 @@ class StompClientSingleton {
   async disconnect() {
     if (this.client?.active) {
       console.log("🔌 Disconnecting STOMP client...");
-      await this.client.deactivate();
+      try {
+        await this.client.deactivate();
+      } catch (error) {
+        console.warn("⚠️ Error during disconnect:", error);
+      }
     }
     
     this.subscribers.clear();
@@ -180,6 +193,11 @@ class StompClientSingleton {
 
   // Send message with automatic connection handling
   async sendMessage(destination, message, headers = {}) {
+    if (this.isCleaningUp) {
+      console.warn("⚠️ Cannot send message while cleaning up");
+      return false;
+    }
+
     try {
       const client = await this.getInstance();
       
@@ -210,6 +228,11 @@ class StompClientSingleton {
 
   // Subscribe to channel with automatic connection handling
   async subscribe(destination, callback, headers = {}) {
+    if (this.isCleaningUp) {
+      console.warn("⚠️ Cannot subscribe while cleaning up");
+      return null;
+    }
+
     try {
       const client = await this.getInstance();
       
@@ -239,7 +262,11 @@ class StompClientSingleton {
   unsubscribe(destination) {
     const subscriberInfo = this.subscribers.get(destination);
     if (subscriberInfo?.subscription) {
-      subscriberInfo.subscription.unsubscribe();
+      try {
+        subscriberInfo.subscription.unsubscribe();
+      } catch (error) {
+        console.warn("⚠️ Error unsubscribing:", error);
+      }
       this.subscribers.delete(destination);
       console.log("✅ Unsubscribed from", destination);
     }
@@ -247,6 +274,10 @@ class StompClientSingleton {
 
   // Resubscribe to all channels after reconnection
   resubscribeAll() {
+    if (this.isCleaningUp) {
+      return;
+    }
+
     console.log("🔄 Resubscribing to all channels...");
     
     for (const [destination, subscriberInfo] of this.subscribers) {
@@ -267,6 +298,10 @@ class StompClientSingleton {
 
   // Handle authentication errors
   async handleAuthError() {
+    if (this.isCleaningUp) {
+      return;
+    }
+
     try {
       this.reconnectAttempts++;
       
@@ -286,7 +321,9 @@ class StompClientSingleton {
         
         await this.disconnect();
         setTimeout(() => {
-          this.connect();
+          if (!this.isCleaningUp) {
+            this.connect();
+          }
         }, 15000);
       } else {
         console.error("❌ Unable to get valid token. Clearing session...");
@@ -303,6 +340,10 @@ class StompClientSingleton {
   // Setup token refresh listener
   setupTokenRefreshListener() {
     const unsubscribe = onTokenRefresh((newToken) => {
+      if (this.isCleaningUp) {
+        return;
+      }
+
       if (newToken && this.client?.connected) {
         console.log("🔄 Token refreshed, updating STOMP headers...");
         this.client.connectHeaders = {
@@ -331,6 +372,10 @@ class StompClientSingleton {
 
   // Ensure valid token (same as original)
   async ensureValidToken(timeout = 15000) {
+    if (this.isCleaningUp) {
+      throw new Error("Cannot refresh token while cleaning up");
+    }
+
     const currentToken = getAuthToken();
     if (currentToken && isTokenValid()) {
       return currentToken;
@@ -439,17 +484,47 @@ class StompClientSingleton {
     return this.subscribers.size;
   }
 
-  // Cleanup
-  cleanup() {
+  // Enhanced cleanup with proper async handling
+  async cleanup() {
+    if (this.isCleaningUp) {
+      return;
+    }
+
     console.log("🧹 Cleaning up STOMP singleton...");
+    this.isCleaningUp = true;
     
-    this.tokenRefreshListeners.forEach(unsubscribe => unsubscribe());
+    // Clear token refresh listeners
+    this.tokenRefreshListeners.forEach(unsubscribe => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn("⚠️ Error unsubscribing token listener:", error);
+      }
+    });
     this.tokenRefreshListeners = [];
     
-    this.disconnect();
-    
-    this.client = null;
+    // Clear all subscriptions
+    for (const [destination, subscriberInfo] of this.subscribers) {
+      try {
+        if (subscriberInfo.subscription) {
+          subscriberInfo.subscription.unsubscribe();
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error unsubscribing from ${destination}:`, error);
+      }
+    }
     this.subscribers.clear();
+    
+    // Disconnect client
+    await this.disconnect();
+    
+    // Clear references
+    this.client = null;
+    this.connectionPromise = null;
+    this.tokenRefreshPromise = null;
+    this.reconnectAttempts = 0;
+    
+    console.log("✅ STOMP cleanup completed");
   }
 }
 
@@ -493,8 +568,8 @@ export function updateConfig(config) {
   return stompClientSingleton.updateConfig(config);
 }
 
-export function cleanup() {
-  return stompClientSingleton.cleanup();
+export async function cleanup() {
+  return await stompClientSingleton.cleanup();
 }
 
 // Legacy function for backward compatibility
@@ -534,9 +609,75 @@ export function createBasicStompClient(onConnect) {
 // Export singleton instance for advanced usage
 export { stompClientSingleton };
 
-// Cleanup on page unload
+// Enhanced cleanup on page lifecycle events
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
-    stompClientSingleton.cleanup();
-  });
+  let isCleanupRegistered = false;
+  
+  const performCleanup = async () => {
+    if (!isCleanupRegistered) {
+      return;
+    }
+    
+    console.log("🔄 Page lifecycle cleanup triggered");
+    try {
+      await stompClientSingleton.cleanup();
+    } catch (error) {
+      console.error("❌ Error during cleanup:", error);
+    }
+  };
+
+  // Register cleanup for multiple events to ensure reliability
+  const registerCleanup = () => {
+    if (isCleanupRegistered) {
+      return;
+    }
+    
+    isCleanupRegistered = true;
+    
+    // Standard page unload events
+    window.addEventListener('beforeunload', performCleanup);
+    window.addEventListener('unload', performCleanup);
+    window.addEventListener('pagehide', performCleanup);
+    
+    // Handle visibility changes (important for mobile)
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'hidden') {
+        console.log("🔄 Page hidden, disconnecting STOMP...");
+        try {
+          await stompClientSingleton.disconnect();
+        } catch (error) {
+          console.error("❌ Error disconnecting on visibility change:", error);
+        }
+      } else if (document.visibilityState === 'visible') {
+        console.log("🔄 Page visible, checking STOMP connection...");
+        // Optional: Auto-reconnect when page becomes visible
+        // Uncomment if you want auto-reconnection
+        // setTimeout(() => {
+        //   if (!stompClientSingleton.isConnected()) {
+        //     stompClientSingleton.connect().catch(console.error);
+        //   }
+        // }, 1000);
+      }
+    });
+
+    // Handle focus/blur events as additional safeguards
+    window.addEventListener('blur', async () => {
+      console.log("🔄 Window blur detected");
+      // Optional: Could add additional logic here
+    });
+
+    window.addEventListener('focus', () => {
+      console.log("🔄 Window focus detected");
+      // Optional: Could add reconnection logic here
+    });
+
+    console.log("✅ STOMP lifecycle cleanup handlers registered");
+  };
+
+  // Register cleanup handlers when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', registerCleanup);
+  } else {
+    registerCleanup();
+  }
 }
