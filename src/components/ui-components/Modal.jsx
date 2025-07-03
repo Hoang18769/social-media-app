@@ -3,10 +3,10 @@
 import { X } from "lucide-react"
 import React, { useEffect } from "react"
 
-export default function Modal({ 
-  isOpen, 
-  onClose, 
-  children, 
+export default function Modal({
+  isOpen,
+  onClose,
+  children,
   size = "large" // "small", "medium", "large"
 }) {
   // ESC để đóng modal
@@ -64,10 +64,13 @@ export default function Modal({
 
       {/* Nội dung modal */}
       <div
-        className={`relative z-10 ${getWidthClass()} h-[90vh] md:h-[90vh] rounded-xl bg-[var(--card)] text-[var(--card-foreground)] shadow-xl overflow-hidden pointer-events-auto`}
+        className={`relative z-10 ${getWidthClass()} max-h-[90vh] rounded-xl bg-[var(--card)] text-[var(--card-foreground)] shadow-xl flex flex-col pointer-events-auto`}
         onClick={(e) => e.stopPropagation()} // ⛔ Chặn lan click
       >
-        {children}
+        {/* Nội dung có thể cuộn */}
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   )

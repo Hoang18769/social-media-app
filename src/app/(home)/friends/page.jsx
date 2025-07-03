@@ -75,9 +75,8 @@ export default function FriendPage() {
   }, [activeTab]);
 
   const handleAction = async (userId, actionType) => {
-    console.log("username",userId)
+    console.log("username", userId);
     const previousUsers = [...users];
-    setUsers(prev => prev.filter(user => user.uuid !== userId));
     setActionLoading(prev => ({ ...prev, [userId]: true }));
 
     try {
@@ -110,10 +109,18 @@ export default function FriendPage() {
           return;
       }
 
-      await api[method](endpoint, data);
-      toast.success(tabConfig[activeTab].successMessages[actionType]);
+      const response = await api[method](endpoint, data);
+      
+      // Chỉ ẩn user khi response trả về code 200
+      if (response.data.code === 200) {
+        setUsers(prev => prev.filter(user => user.username !== userId));
+        toast.success(tabConfig[activeTab].successMessages[actionType]);
+      } else {
+        // Nếu không phải code 200, hiển thị thông báo lỗi từ server
+        toast.error(response.data.message || "Có lỗi xảy ra");
+      }
     } catch (error) {
-      setUsers(previousUsers);
+      // Không cần rollback users vì chúng ta chưa thay đổi optimistically
       toast.error(`Lỗi: ${error.response?.data?.message || error.message}`);
     } finally {
       setActionLoading(prev => ({ ...prev, [userId]: false }));

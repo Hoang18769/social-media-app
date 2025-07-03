@@ -16,7 +16,7 @@ import Modal from "../ui-components/Modal"
 
 dayjs.extend(relativeTime)
 
-export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted, 
+export default function PostCard({ post, liked, onLikeToggle, onPostDeleted, 
  size = "default", className = "" }) {
   const [isMobile, setIsMobile] = useState(undefined)
   const [activeImageIndex, setActiveImageIndex] = useState(null)
@@ -34,6 +34,11 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
   const [isSharing, setIsSharing] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [currentPost, setCurrentPost] = useState(post)
+  
+  // Optimistic UI state for like
+  const [optimisticLiked, setOptimisticLiked] = useState(liked)
+  const [optimisticLikeCount, setOptimisticLikeCount] = useState(post.likeCount || 0)
+  const [isLiking, setIsLiking] = useState(false)
 
   const router = useRouter()
   const isModalOpen = activeImageIndex !== null || showModal
@@ -54,6 +59,48 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
       fetchComments()
     }
   }, [isModalOpen])
+
+  // Update optimistic state when props change
+  useEffect(() => {
+    setOptimisticLiked(liked)
+    setOptimisticLikeCount(post.likeCount || 0)
+    setCurrentPost(post)
+  }, [liked, post])
+
+  // Function to detect and convert links in text
+  const renderTextWithLinks = (text) => {
+    if (!text) return text
+    
+    // Regex to match URLs (including domain.extension pattern)
+    const urlRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g
+    
+    const parts = text.split(urlRegex)
+    const matches = text.match(urlRegex) || []
+    
+    return parts.map((part, index) => {
+      if (index === parts.length - 1) {
+        return part
+      }
+      
+      const url = matches[index]
+      const fullUrl = url.startsWith('http') ? url : `https://${url}`
+      
+      return (
+        <span key={index}>
+          {part}
+          <a
+            href={fullUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-700 underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {url}
+          </a>
+        </span>
+      )
+    })
+  }
 
   const fetchOriginalPost = async () => {
     if (loadingOriginalPost || originalPostData) return
@@ -89,6 +136,47 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
       console.error(err)
     } finally {
       setLoadingComments(false)
+    }
+  }
+
+  // Optimistic like handler
+  const handleLikeToggle = async () => {
+    if (isLiking) return
+    
+    setIsLiking(true)
+    
+    // Store previous state for rollback
+    const prevLiked = optimisticLiked
+    const prevLikeCount = optimisticLikeCount
+    
+    // Update optimistically
+    const newLiked = !prevLiked
+    const newLikeCount = prevLikeCount + (newLiked ? 1 : -1)
+    
+    setOptimisticLiked(newLiked)
+    setOptimisticLikeCount(newLikeCount)
+    
+    try {
+      // Call parent handler if it exists
+      if (onLikeToggle) {
+        const response = await onLikeToggle()
+        
+        // Check if response indicates failure
+        if (response && response.data && response.data.code !== 200) {
+          // Rollback on failure
+          setOptimisticLiked(prevLiked)
+          setOptimisticLikeCount(prevLikeCount)
+          toast.error("Không thể thực hiện thao tác")
+        }
+      }
+    } catch (error) {
+      // Rollback on error
+      setOptimisticLiked(prevLiked)
+      setOptimisticLikeCount(prevLikeCount)
+      toast.error("Có lỗi xảy ra khi thực hiện thao tác")
+      console.error("Like error:", error)
+    } finally {
+      setIsLiking(false)
     }
   }
 
@@ -173,7 +261,7 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
 
   const handleCardClick = (e) => {
     // Không mở modal nếu đang click vào button hoặc đang trong mode edit
-    if (e.target.closest('button') || e.target.closest('select') || e.target.closest('textarea')) {
+    if (e.target.closest('button') || e.target.closest('select') || e.target.closest('textarea') || e.target.closest('a')) {
       return
     }
     openModal()
@@ -242,7 +330,7 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
         {/* Original post content */}
         {currentPost.originalPost.content && (
           <p className="text-sm text-[var(--card-foreground)] mb-3">
-            {currentPost.originalPost.content}
+            {renderTextWithLinks(currentPost.originalPost.content)}
           </p>
         )}
 
@@ -356,7 +444,7 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
             openModal()
           }}>
             <p className={`${textSizes.content} ${spacing}`}>
-              {currentPost.content}
+              {renderTextWithLinks(currentPost.content)}
             </p>
           </div>
         )}
@@ -382,11 +470,12 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
           <button 
             onClick={(e) => {
               e.stopPropagation()
-              onLikeToggle()
+              handleLikeToggle()
             }} 
-            className="p-2 rounded-full hover:bg-[var(--input)]"
+            className={`p-2 rounded-full hover:bg-[var(--input)] transition-colors ${isLiking ? 'opacity-70' : ''}`}
+            disabled={isLiking}
           >
-            <Heart className={`h-5 w-5 ${liked ? "fill-red-500 text-red-500" : ""}`} />
+            <Heart className={`h-5 w-5 transition-colors ${optimisticLiked ? "fill-red-500 text-red-500" : ""}`} />
           </button>
           <button 
             onClick={handleMessageCircleClick}
@@ -406,7 +495,7 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
         </div>
 
         <p className={textSizes.likes}>
-          {currentPost.likeCount} lượt thích
+          {optimisticLikeCount} lượt thích
         </p>
 
         {currentPost.latestComment && (
@@ -415,7 +504,7 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
               {currentPost.latestComment?.user}
             </span>
             <span className="ml-2">
-              {currentPost.latestComment?.content}
+              {renderTextWithLinks(currentPost.latestComment?.content)}
             </span>
           </div>
         )}
@@ -443,8 +532,8 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
       {isModalOpen && (
         <PostModal
           post={getPostForModal()}
-          liked={liked}
-          likeCount={currentPost.likeCount}
+          liked={optimisticLiked}
+          likeCount={optimisticLikeCount}
           activeIndex={activeImageIndex}
           comments={comments}
           loadingComments={loadingComments || loadingOriginalPost}
@@ -458,7 +547,7 @@ export default function PostCard({ post, liked, onLikeToggle,  onPostDeleted,
             }
             setComments([])
           }}
-          onLikeToggle={() => onLikeToggle(currentPost.id)}
+          onLikeToggle={handleLikeToggle}
         />
       )}
 

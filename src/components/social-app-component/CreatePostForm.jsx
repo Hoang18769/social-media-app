@@ -8,6 +8,7 @@ import ImagePreview from "../ui-components/ImagePreview";
 
 export default function NewPostModal({ isOpen, onClose }) {
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
   const [media, setMedia] = useState([]);
   const [privacy, setPrivacy] = useState("PUBLIC");
   const [content, setContent] = useState("");
@@ -41,6 +42,17 @@ export default function NewPostModal({ isOpen, onClose }) {
 
   const handleRemoveMedia = (index) => {
     setMedia((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // 🔧 Hàm để tự động điều chỉnh chiều cao textarea
+  const handleContentChange = (e) => {
+    setContent(e.target.value);
+    
+    // Auto-resize textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, 96)}px`; // min height 96px (4 rows)
+    }
   };
 
   const handleSubmit = async () => {
@@ -134,11 +146,13 @@ export default function NewPostModal({ isOpen, onClose }) {
                 <div>
                   <label className="block text-sm font-medium mb-1">Caption</label>
                   <textarea
+                    ref={textareaRef}
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    onChange={handleContentChange}
                     rows={4}
                     placeholder="Viết điều gì đó..."
-                    className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none"
+                    className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none overflow-hidden min-h-[96px]"
+                    style={{ height: '96px' }}
                   />
                 </div>
 
@@ -174,11 +188,13 @@ export default function NewPostModal({ isOpen, onClose }) {
               <div>
                 <label className="block text-sm font-medium mb-1">What's on your mind?</label>
                 <textarea
+                  ref={textareaRef}
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={handleContentChange}
                   rows={4}
                   placeholder="Viết điều gì đó..."
-                  className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none"
+                  className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none overflow-hidden min-h-[96px]"
+                  style={{ height: '96px' }}
                 />
               </div>
 

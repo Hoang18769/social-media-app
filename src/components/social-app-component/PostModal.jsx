@@ -39,6 +39,9 @@ export default function PostModal({
   
   const [page, setPage] = useState({ index: activeIndex, direction: 0 });
   const [replyingTo, setReplyingTo] = useState(null);
+  const [isContentExpanded, setIsContentExpanded] = useState(false);
+  const [isSharedContentExpanded, setIsSharedContentExpanded] = useState(false);
+  
   console.log("PostModal initialized with post:", post);
   console.log("Media found:", media);
   console.log("Comments received:", comments);
@@ -48,6 +51,52 @@ export default function PostModal({
     console.log("Original post ID:", post.originalPost?.id);
   }
   const commentsManager = useComments(comments, post);
+
+  // Function to detect and convert links in text
+  const renderTextWithLinks = (text) => {
+    if (!text) return text;
+    
+    // Regex to match URLs (including domain.extension pattern)
+    const urlRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
+    
+    const parts = text.split(urlRegex);
+    const matches = text.match(urlRegex) || [];
+    
+    return parts.map((part, index) => {
+      if (index === parts.length - 1) {
+        return part;
+      }
+      
+      const url = matches[index];
+      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+      
+      return (
+        <span key={index}>
+          {part}
+          <a
+            href={fullUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-700 underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {url}
+          </a>
+        </span>
+      );
+    });
+  };
+
+  // Function to check if content should be truncated
+  const shouldTruncateContent = (content, maxLength = 200) => {
+    return content && content.length > maxLength;
+  };
+
+  // Function to get truncated content
+  const getTruncatedContent = (content, maxLength = 200) => {
+    if (!content) return '';
+    return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
+  };
 
   // Handle reply submission
   const handleReplySubmit = useCallback(async (content, file, commentId) => {
@@ -150,7 +199,31 @@ export default function PostModal({
       {/* Show shared post content if exists */}
       {isSharedPost && post.content && (
         <div className="ml-12">
-          <p className="text-sm">{post.content}</p>
+          <div className="text-sm">
+            {shouldTruncateContent(post.content) && !isSharedContentExpanded ? (
+              <>
+                {renderTextWithLinks(getTruncatedContent(post.content))}
+                <button
+                  onClick={() => setIsSharedContentExpanded(true)}
+                  className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                >
+                  Xem thêm
+                </button>
+              </>
+            ) : (
+              <>
+                {renderTextWithLinks(post.content)}
+                {shouldTruncateContent(post.content) && (
+                  <button
+                    onClick={() => setIsSharedContentExpanded(false)}
+                    className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                  >
+                    Thu gọn
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
       
@@ -160,31 +233,55 @@ export default function PostModal({
           src={displayPost.author?.profilePictureUrl}
           alt={displayPost.author?.username}
         />
+        <div>
           <p className="font-semibold text-sm">
             {displayPost.author?.givenName} {displayPost.author?.familyName}
           </p>
-        <div>
           <p className="text-xs text-[var(--muted-foreground)]">
             {new Date(displayPost.createdAt).toLocaleString()}
           </p>
         </div>
       </div>
     </div>
-  ), [post, displayPost, isSharedPost]);
+  ), [post, displayPost, isSharedPost, isSharedContentExpanded]);
 
   const PostContent = useMemo(() => {
     if (!displayPost?.content) return null;
     
     return (
       <div className={`p-4 border-b border-[var(--border)] ${isSharedPost ? 'ml-4 mr-4 p-3 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`}>
-        <p className="text-sm mb-4">{displayPost.content}</p>
+        <div className="text-sm mb-4">
+          {shouldTruncateContent(displayPost.content) && !isContentExpanded ? (
+            <>
+              {renderTextWithLinks(getTruncatedContent(displayPost.content))}
+              <button
+                onClick={() => setIsContentExpanded(true)}
+                className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+              >
+                Xem thêm
+              </button>
+            </>
+          ) : (
+            <>
+              {renderTextWithLinks(displayPost.content)}
+              {shouldTruncateContent(displayPost.content) && (
+                <button
+                  onClick={() => setIsContentExpanded(false)}
+                  className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                >
+                  Thu gọn
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     );
-  }, [displayPost?.content, isSharedPost]);
+  }, [displayPost?.content, isSharedPost, isContentExpanded]);
 
   const PostActions = useMemo(() => (
-    <div className="flex gap-4 text-[var(--muted-foreground)] p-4 border-b border-[var(--border)]">
-      <div>
+    <div className="border-b border-[var(--border)] ">
+    <div className="flex gap-4 text-[var(--muted-foreground)] items-center p-3 ">
         <button onClick={onLikeToggle}>
           <Heart
             className={`h-5 w-5 ${
@@ -192,14 +289,15 @@ export default function PostModal({
             }`}
           />
         </button>
-        <p className="text-xs">{likeCount} lượt thích</p>
-      </div>
       <button>
         <MessageCircle className="h-5 w-5" />
       </button>
       <button>
         <SendHorizonal className="h-5 w-5" />
       </button>
+    </div>
+        <p className="text-xs px-4 pb-2">{likeCount} lượt thích</p>
+
     </div>
   ), [liked, likeCount, onLikeToggle]);
 
@@ -278,6 +376,26 @@ export default function PostModal({
     </>
   ), [mainCommentForm]);
 
+  // Scrollable content section for layouts without media
+  const ScrollableContent = useMemo(() => (
+    <div className="flex-1 overflow-y-auto">
+      {PostHeader}
+      {PostContent}
+      {PostActions}
+      {CommentsSection}
+    </div>
+  ), [PostHeader, PostContent, PostActions, CommentsSection]);
+
+  // Scrollable sidebar content for layouts with media
+  const ScrollableSidebar = useMemo(() => (
+    <div className="flex-1 overflow-y-auto">
+      {PostHeader}
+      {PostContent}
+      {PostActions}
+      {CommentsSection}
+    </div>
+  ), [PostHeader, PostContent, PostActions, CommentsSection]);
+
   return (
     <Modal
       isOpen={true}
@@ -291,12 +409,11 @@ export default function PostModal({
       >
         {/* Layout for posts without media */}
         {!hasMedia && (
-          <div className="flex flex-col w-full overflow-y-auto">
-            {PostHeader}
-            {PostContent}
-            {PostActions}
-            {CommentsSection}
-            {CommentInput}
+          <div className="flex flex-col w-full h-full">
+            {ScrollableContent}
+            <div className="flex-shrink-0">
+              {CommentInput}
+            </div>
           </div>
         )}
 
@@ -310,11 +427,10 @@ export default function PostModal({
 
             {/* Sidebar - Desktop */}
             <div className="hidden md:flex md:flex-col md:w-1/3 md:h-full md:border-l md:border-[var(--border)]">
-              {PostHeader}
-              {PostContent}
-              {PostActions}
-              {CommentsSection}
-              {CommentInput}
+              {ScrollableSidebar}
+              <div className="flex-shrink-0">
+                {CommentInput}
+              </div>
             </div>
           </>
         )}
