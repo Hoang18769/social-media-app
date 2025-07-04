@@ -22,6 +22,7 @@ import { CallProvider } from "@/context/CallContext";
 import { useCall } from "@/context/CallContext";
 import CallPopup from "@/components/social-app-component/CallPopup";
 import CallVideo from "@/components/social-app-component/CallVideo";
+import ThemeProvider from "@/providers/ThemeProvider";
 
 // ✅ Component để hiển thị call UI global
 function GlobalCallInterface() {
@@ -297,9 +298,12 @@ function MainLayoutContent({ children }) {
 export default function MainLayout({ children }) {
   return (
     <CallProvider>
+    <ThemeProvider>
       <MainLayoutContent>
         {children}
       </MainLayoutContent>
+
+    </ThemeProvider>
     </CallProvider>
   );
 }

@@ -8,6 +8,7 @@ const CallVideo = ({ onCallEnd }) => {
   const remoteVideoRef = useRef(null);
   const { 
     endCall, 
+    toggleMute, toggleLocalVideo,
     callStatus, 
     currentCall, 
     isCallEnding, 
@@ -20,7 +21,6 @@ const CallVideo = ({ onCallEnd }) => {
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
   const [autoplayError, setAutoplayError] = useState(false);
-  const [currentLocalStream, setCurrentLocalStream] = useState(null);
 
   useEffect(() => {
     console.log("[DEBUG] CallVideo - callStatus:", callStatus);
@@ -30,9 +30,9 @@ const CallVideo = ({ onCallEnd }) => {
     console.log("[DEBUG] CallVideo - remoteStream:", !!remoteStream);
   }, [callStatus, currentCall, isCallEnding, localStream, remoteStream]);
 
+  // Sync state with actual stream track states
   useEffect(() => {
     if (localStream) {
-      setCurrentLocalStream(localStream);
       const videoTracks = localStream.getVideoTracks();
       const audioTracks = localStream.getAudioTracks();
       
@@ -43,18 +43,20 @@ const CallVideo = ({ onCallEnd }) => {
     }
   }, [localStream]);
 
+  // Setup local video
   useEffect(() => {
-    if (currentLocalStream && localVideoRef.current) {
+    if (localStream && localVideoRef.current) {
       console.log("[DEBUG] Assigning local stream to video element");
-      localVideoRef.current.srcObject = currentLocalStream;
+      localVideoRef.current.srcObject = localStream;
       
       localVideoRef.current.play().catch(error => {
         console.warn("[DEBUG] Local video autoplay failed:", error);
         setAutoplayError(true);
       });
     }
-  }, [currentLocalStream]);
+  }, [localStream]);
 
+  // Setup remote video
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
       console.log("[DEBUG] Assigning remote stream to video element");
@@ -67,125 +69,74 @@ const CallVideo = ({ onCallEnd }) => {
     }
   }, [remoteStream]);
 
-  const getMediaStream = async (video, audio) => {
-    try {
-      if (!video && !audio) {
-        return null;
-      }
-      
-      const constraints = {};
-      if (video && mediaPermissions.video) {
-        constraints.video = true;
-      }
-      if (audio && mediaPermissions.audio) {
-        constraints.audio = true;
-      }
-      
-      if (Object.keys(constraints).length === 0) {
-        return null;
-      }
-      
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log("[DEBUG] New media stream created:", stream);
-      return stream;
-    } catch (error) {
-      console.error("[DEBUG] Error getting media stream:", error);
-      return null;
-    }
-  };
-
-  const stopCurrentStream = () => {
-    if (currentLocalStream) {
-      currentLocalStream.getTracks().forEach(track => {
-        track.stop();
-        console.log("[DEBUG] Stopped track:", track.kind);
-      });
-    }
-  };
-
-  const updateStream = async (newCameraState, newMicState) => {
-    console.log("[DEBUG] Updating stream - Camera:", newCameraState, "Mic:", newMicState);
-    
-    // Stop current stream
-    stopCurrentStream();
-    
-    // Get new stream with updated constraints
-    const newStream = await getMediaStream(newCameraState, newMicState);
-    
-    if (newStream) {
-      setCurrentLocalStream(newStream);
-      
-      // Update the original localStream if it exists (for WebRTC connection)
-      if (localStream && currentCall) {
-        // Replace tracks in the peer connection
-        const sender = currentCall.getSenders ? currentCall.getSenders() : [];
-        
-        if (newCameraState && newStream.getVideoTracks().length > 0) {
-          const videoSender = sender.find(s => s.track && s.track.kind === 'video');
-          if (videoSender) {
-            await videoSender.replaceTrack(newStream.getVideoTracks()[0]);
-          }
-        }
-        
-        if (newMicState && newStream.getAudioTracks().length > 0) {
-          const audioSender = sender.find(s => s.track && s.track.kind === 'audio');
-          if (audioSender) {
-            await audioSender.replaceTrack(newStream.getAudioTracks()[0]);
-          }
-        }
-      }
-    } else {
-      setCurrentLocalStream(null);
-    }
-  };
-
+  // Toggle camera at device level
   const toggleCamera = async () => {
-    if (!mediaPermissions.video) {
-      console.warn("[DEBUG] Camera permission not available");
+    if (!mediaPermissions.video || !localStream) {
+      console.warn("[DEBUG] Camera permission not available or no local stream");
       return;
     }
-    
+
+    const videoTracks = localStream.getVideoTracks();
+    if (videoTracks.length === 0) {
+      console.warn("[DEBUG] No video tracks available");
+      return;
+    }
+
     const newCameraState = !isCameraOn;
-    setIsCameraOn(newCameraState);
     console.log("[DEBUG] Camera toggled:", newCameraState);
+
+    // Toggle the track enabled state
+    videoTracks.forEach(track => {
+      track.enabled = newCameraState;
+      console.log("[DEBUG] Video track enabled:", track.enabled);
+    });
+
+    setIsCameraOn(newCameraState);
     
-    await updateStream(newCameraState, isMicOn);
+    // Call context method to sync state
+    toggleLocalVideo(newCameraState);
   };
 
+  // Toggle microphone at device level
   const toggleMicrophone = async () => {
-    if (!mediaPermissions.audio) {
-      console.warn("[DEBUG] Microphone permission not available");
+    if (!mediaPermissions.audio || !localStream) {
+      console.warn("[DEBUG] Microphone permission not available or no local stream");
       return;
     }
-    
+
+    const audioTracks = localStream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      console.warn("[DEBUG] No audio tracks available");
+      return;
+    }
+
     const newMicState = !isMicOn;
-    setIsMicOn(newMicState);
     console.log("[DEBUG] Microphone toggled:", newMicState);
+
+    // Toggle the track enabled state
+    audioTracks.forEach(track => {
+      track.enabled = newMicState;
+      console.log("[DEBUG] Audio track enabled:", track.enabled);
+    });
+
+    setIsMicOn(newMicState);
     
-    await updateStream(isCameraOn, newMicState);
+    // Call context method to sync state (note: toggleMute expects muted state)
+    toggleMute(!newMicState);
   };
 
   const handleEndCall = () => {
     console.log("[DEBUG] Handle end call clicked");
-    stopCurrentStream();
     endCall();
   };
 
   const handleClose = () => {
     console.log("[DEBUG] Handle close clicked");
-    stopCurrentStream();
     cleanupCall(11);
     if (onCallEnd) {
       onCallEnd();
     }
   };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopCurrentStream();
-    };
-  }, []);
 
   if (!currentCall && !isCallEnding) {
     console.log("[DEBUG] No call and not ending, hiding CallVideo");
@@ -249,7 +200,7 @@ const CallVideo = ({ onCallEnd }) => {
           </div>
 
           <div className="absolute bottom-10 right-10 w-64 h-48 bg-gray-800 rounded-lg overflow-hidden border-2 border-white z-10">
-            {currentLocalStream && isCameraOn ? (
+            {localStream && isCameraOn ? (
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -262,7 +213,7 @@ const CallVideo = ({ onCallEnd }) => {
                 <div className="text-white text-center">
                   <div className="text-4xl mb-2">📷</div>
                   <p className="text-sm">
-                    {!currentLocalStream ? "Đang khởi tạo camera..." : "Camera tắt"}
+                    {!localStream ? "Đang khởi tạo camera..." : "Camera tắt"}
                   </p>
                 </div>
               </div>
@@ -272,12 +223,12 @@ const CallVideo = ({ onCallEnd }) => {
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-4 z-20">
             <button
               onClick={toggleCamera}
-              disabled={!mediaPermissions.video}
+              disabled={!mediaPermissions.video || !localStream}
               className={`${
                 isCameraOn 
                   ? "bg-gray-600 hover:bg-gray-700" 
                   : "bg-red-600 hover:bg-red-700"
-              } ${!mediaPermissions.video ? "opacity-50 cursor-not-allowed" : ""} text-white px-4 py-3 rounded-full shadow-lg transition-colors flex items-center justify-center w-12 h-12`}
+              } ${(!mediaPermissions.video || !localStream) ? "opacity-50 cursor-not-allowed" : ""} text-white px-4 py-3 rounded-full shadow-lg transition-colors flex items-center justify-center w-12 h-12`}
               title={isCameraOn ? "Tắt camera" : "Bật camera"}
             >
               <span className="text-lg">
@@ -287,12 +238,12 @@ const CallVideo = ({ onCallEnd }) => {
 
             <button
               onClick={toggleMicrophone}
-              disabled={!mediaPermissions.audio}
+              disabled={!mediaPermissions.audio || !localStream}
               className={`${
                 isMicOn 
                   ? "bg-gray-600 hover:bg-gray-700" 
                   : "bg-red-600 hover:bg-red-700"
-              } ${!mediaPermissions.audio ? "opacity-50 cursor-not-allowed" : ""} text-white px-4 py-3 rounded-full shadow-lg transition-colors flex items-center justify-center w-12 h-12`}
+              } ${(!mediaPermissions.audio || !localStream) ? "opacity-50 cursor-not-allowed" : ""} text-white px-4 py-3 rounded-full shadow-lg transition-colors flex items-center justify-center w-12 h-12`}
               title={isMicOn ? "Tắt mic" : "Bật mic"}
             >
               <span className="text-lg">

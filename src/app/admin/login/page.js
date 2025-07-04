@@ -1,18 +1,31 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Eye, EyeOff, Shield, ArrowLeftRight } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import api, { clearSession } from "@/utils/axios";
+import { jwtDecode } from "jwt-decode";
+
+// Constants
+const REDIRECT_DELAYS = {
+  SUCCESS: 1200,
+  FALLBACK: 2000
+};
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
+  const [status, setStatus] = useState({
+    loading: false
+  });
+  const [messages, setMessages] = useState({
+    general: ""
+  });
 
   // Hàm parse lỗi tái sử dụng
   const parseApiError = (error) => {
@@ -28,53 +41,144 @@ export default function AdminLoginPage() {
       return error.message || "Lỗi không xác định";
     }
   };
-  const handleLogout = async () => {
-  try {
-    await api.delete("/v1/auth/logout");
-  } catch (err) {
-    console.error("Logout failed:", err.response?.data || err.message);
-  } finally {
-    clearSession(); // ✅ xoá localStorage + cookie + token headers
 
-    router.push("/register");
-  }
-};
-  const handleSubmit = async () => {
-    setMessage("");
-
-    if (!email || !password) {
-      setMessage("❌ Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-
-    setLoading(true);
+  // Hàm sync cookie (giả định bạn có hàm setAuthToken)
+  const setAuthToken = (token, userId, username, role) => {
     try {
-      // Gửi request login-admin
-      const res = await api.post("/v1/auth/login-admin", {
-        email: email,
-        password: password,
-      });
-      console.log(res)
-
-      if (res.data.code===200) {
-        const token=res.data.body.token;
-        setMessage("✅ Đăng nhập admin thành công!");
-        localStorage.setItem("accessToken", token);
-        setTimeout(() => {
-          router.push("/admin/dashboard"); // Chuyển hướng đến trang quản trị
-        }, 1200);
-      } else {
-        setMessage(`❌ ${res.data.message || "Đăng nhập thất bại"}`);
-      }
+      // Implement cookie sync logic here
+      // document.cookie = `accessToken=${token}; path=/; secure; httpOnly`;
+      // Hoặc sử dụng library như js-cookie
+      console.log('Setting auth cookies:', { userId, username, role });
+      return true;
     } catch (error) {
-      setMessage(`❌ Đăng nhập thất bại: ${parseApiError(error)}`);
-    } finally {
-      setLoading(false);
+      console.error('Cookie sync failed:', error);
+      return false;
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await api.delete("/v1/auth/logout");
+    } catch (err) {
+      console.error("Logout failed:", err.response?.data || err.message);
+    } finally {
+      clearSession(); // ✅ xoá localStorage + cookie + token headers
+      router.push("/register");
+    }
+  };
+
+  const handleAdminLogin = useCallback(async () => {
+    setStatus(prev => ({ ...prev, loading: true }));
+    setMessages(prev => ({ ...prev, general: "" }));
+
+    // Validation
+    if (!formData.email || !formData.password) {
+      setMessages(prev => ({
+        ...prev,
+        general: "❌ Vui lòng điền đầy đủ thông tin"
+      }));
+      setStatus(prev => ({ ...prev, loading: false }));
+      return;
+    }
+
+    try {
+      // Gửi request login-admin
+      const res = await api.post("/v1/auth/login-admin", {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      console.log('🔐 Admin login response:', res);
+
+      if (res.data.code === 200 && res.data.body.token) {
+        const token = res.data.body.token;
+        console.log('🔐 Admin login success, token:', token.substring(0, 20) + '...');
+
+        // Decode token
+        const decoded = jwtDecode(token);
+        console.log('🔓 Decoded admin token:', decoded);
+
+        // Batch localStorage operations
+        const authData = {
+          accessToken: token,
+          userId: decoded.sub,
+          userName: decoded.username,
+          userRole: decoded.scope,
+        };
+
+        // Set localStorage
+        Object.entries(authData).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+        });
+
+        // Sync cookies
+        console.log('📝 Syncing admin session to cookies...');
+        const syncSuccess = setAuthToken(
+          token, 
+          decoded.sub, 
+          decoded.username, 
+          decoded.scope
+        );
+
+        if (syncSuccess) {
+          console.log('✅ Admin cookies synced successfully');
+          setMessages(prev => ({
+            ...prev,
+            general: "✅ Đăng nhập admin thành công!"
+          }));
+
+          // Clear form
+          setFormData(prev => ({ 
+            ...prev, 
+            email: "", 
+            password: "" 
+          }));
+
+          // Redirect to admin dashboard
+          setTimeout(() => {
+            router.push('/admin/dashboard');
+          }, REDIRECT_DELAYS.SUCCESS);
+
+        } else {
+          console.error('❌ Failed to sync admin cookies');
+          setMessages(prev => ({
+            ...prev,
+            general: "⚠️ Đăng nhập admin thành công nhưng có lỗi khi đồng bộ hóa phiên làm việc"
+          }));
+
+          // Fallback redirect
+          setTimeout(() => {
+            router.push("/admin/dashboard");
+          }, REDIRECT_DELAYS.FALLBACK);
+        }
+
+      } else {
+        setMessages(prev => ({
+          ...prev,
+          general: `❌ ${res.data.message || "Đăng nhập admin thất bại"}`
+        }));
+      }
+
+    } catch (error) {
+      console.error('Admin login error:', error);
+      setMessages(prev => ({
+        ...prev,
+        general: `❌ Đăng nhập admin thất bại: ${parseApiError(error)}`
+      }));
+    } finally {
+      setStatus(prev => ({ ...prev, loading: false }));
+    }
+  }, [formData.email, formData.password, router]);
+
   const handleBackToLogin = () => {
     router.push("/auth"); // Quay lại trang login thường
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   return (
@@ -95,7 +199,7 @@ export default function AdminLoginPage() {
               <p className="text-muted-foreground">
                 Truy cập hệ thống quản trị
               </p>
-              <button onClick={handleLogout}>
+              <button onClick={handleLogout} className="mt-4 text-sm text-muted-foreground hover:text-foreground">
                 logout
               </button>
             </div>
@@ -141,15 +245,15 @@ export default function AdminLoginPage() {
                 </div>
               </div>
 
-              {message && (
+              {messages.general && (
                 <div
                   className={`p-3 text-sm rounded-lg mb-6 ${
-                    message.includes("✅")
+                    messages.general.includes("✅")
                       ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800"
                       : "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800"
                   }`}
                 >
-                  {message}
+                  {messages.general}
                 </div>
               )}
 
@@ -161,8 +265,8 @@ export default function AdminLoginPage() {
                   </h4>
                   <input
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
                     className="w-full bg-transparent border-b border-input px-0 py-2 focus:outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
                     placeholder="admin@example.com"
                     required
@@ -176,12 +280,17 @@ export default function AdminLoginPage() {
                   </h4>
                   <input
                     type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
                     className="w-full bg-transparent border-b border-input px-0 py-2 pr-10 focus:outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
                     placeholder="Enter admin password"
                     required
                     minLength={6}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAdminLogin();
+                      }
+                    }}
                   />
                   <button
                     onClick={() => setShowPassword(!showPassword)}
@@ -201,11 +310,11 @@ export default function AdminLoginPage() {
 
                 {/* Submit */}
                 <button
-                  onClick={handleSubmit}
-                  disabled={loading}
+                  onClick={handleAdminLogin}
+                  disabled={status.loading}
                   className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-foreground font-medium py-3 px-4 rounded-lg transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                 >
-                  {loading ? (
+                  {status.loading ? (
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
                       Authenticating...

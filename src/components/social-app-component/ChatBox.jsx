@@ -59,7 +59,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     totalMessages,
     loadMoreMessages 
   } = useChat(currentChatId);
-  
+  console.log(messages)
   const { sendMessage, isConnected } = useSendMessage({
     chatId: currentChatId,
     receiverUsername: targetUser?.username,

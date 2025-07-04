@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -67,12 +67,31 @@ export default function MessageItem({
   const [modalOpen, setModalOpen] = useState(false);
   const [currentFile, setCurrentFile] = useState(null);
   const [currentFileType, setCurrentFileType] = useState(null);
+  const [popupPosition, setPopupPosition] = useState('bottom');
+  const buttonRef = useRef(null);
 
   const isSelf = msg.sender?.id !== targetUser?.id;
   const isSelected = selectedMessage === msg.id;
   const timeSent = dayjs(msg.sentAt).fromNow();
   const isDeleted = msg.deleted === true;
   const isUpdated = msg.updated === true;
+
+  // Calculate popup position based on message position in viewport
+  useEffect(() => {
+    if (isSelected && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const messagePosition = rect.top;
+      const distanceFromBottom = viewportHeight - messagePosition;
+      
+      // If message is in bottom half of screen (or too close to bottom), show popup above
+      if (messagePosition > viewportHeight / 2 || distanceFromBottom < 200) {
+        setPopupPosition('top');
+      } else {
+        setPopupPosition('bottom');
+      }
+    }
+  }, [isSelected]);
 
   const handlePreviewClick = (url, fileType) => {
     setCurrentFile(url);
@@ -142,10 +161,13 @@ export default function MessageItem({
   }
 
   if (msg.attachment) {
+    // Sử dụng attachmentName thay vì trim từ attachment URL
+    const filename = msg.attachmentName || getFilenameFromUrl(msg.attachment);
+    
     return renderFileInfo(
       msg.attachment,
       getFileTypeFromUrl(msg.attachment),
-      getFilenameFromUrl(msg.attachment)
+      filename
     );
   }
 
@@ -181,6 +203,51 @@ export default function MessageItem({
           "flex-row": !isSelf,
         })}>
           <div className="relative flex items-start gap-1">
+            {/* More button - bên trái bubble */}
+            {isSelf && !isDeleted && (
+              <div className="relative">
+                <button
+                  ref={buttonRef}
+                  onClick={() => onMessageClick(msg)}
+                  className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] p-1 rounded-full hover:bg-[var(--muted)] transition-all opacity-0 group-hover:opacity-100"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+
+                {isSelected && (
+                  <div
+                    className={clsx(
+                      "absolute left-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-10 min-w-[100px]",
+                      popupPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditMessage(msg);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded w-full text-left"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Sửa</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteMessage(msg.id);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded w-full text-left"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Xóa</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Message bubble */}
             <div
               className={clsx(
                 "rounded-xl px-3 py-2 text-sm inline-block",
@@ -208,45 +275,6 @@ export default function MessageItem({
                 <span className="ml-auto">{timeSent}</span>
               </div>
             </div>
-
-            {isSelf && !isDeleted && (
-              <div className="relative">
-                <button
-                  onClick={() => onMessageClick(msg)}
-                  className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] p-1 rounded-full hover:bg-[var(--muted)] transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-
-                {isSelected && (
-                  <div
-                    className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-1 z-10 min-w-[100px]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditMessage(msg);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded w-full text-left"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span>Sửa</span>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteMessage(msg.id);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded w-full text-left"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Xóa</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -329,7 +329,7 @@ export default function ProfileHeader({
 
           <div className="flex gap-4 mt-1 text-sm">
             <span>
-              <strong>0</strong> Bài viết
+              <strong>{profileData.postCount || 0}</strong> Bài viết
             </span>
             <button 
               onClick={handleGetListFriend}
@@ -344,7 +344,7 @@ export default function ProfileHeader({
               disabled={isLoadingFriends}
               className="hover:text-blue-600 transition-colors disabled:opacity-50"
             >
-              <strong>{profileData?.mutualFriendCount || 0}</strong> Bạn chung
+              <strong>{profileData?.mutualFriendsCount || 0}</strong> Bạn chung
               {isLoadingFriends && <span className="ml-1">...</span>}
             </button>
           </div>

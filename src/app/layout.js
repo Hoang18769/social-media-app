@@ -1,7 +1,14 @@
+import AutoTitle from "@/components/ui-components/AutoTittle";
 import "./globals.css";
 import ThemeProvider from "@/providers/ThemeProvider";
 import Script from "next/script";
-
+export const metadata = {
+  title: "PocPoc",
+  description: "Mạng xã hội kết nối mọi người",
+  icons: {
+    icon: "/pocpoc.png", // hoặc .png/.svg tùy loại file
+  },
+};
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -32,7 +39,6 @@ export default function RootLayout({ children }) {
           <>
             {children}
           </>
-        
       </body>
     </html>
   );

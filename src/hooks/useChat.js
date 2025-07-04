@@ -96,6 +96,7 @@ export default function useChat(chatId) {
 
   // Xử lý message nhận được từ WebSocket
   const handleMessage = useCallback((message) => {
+    
     try {
       const data = JSON.parse(message.body);
       console.log("📩 Received:", data);
@@ -113,7 +114,7 @@ export default function useChat(chatId) {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === data.id
-              ? { ...msg, content: data.message, edited: true, editedAt: data.editedAt || new Date().toISOString() }
+              ? { ...msg, content: data.message, updated: true, editedAt: data.editedAt || new Date().toISOString() }
               : msg
           )
         );

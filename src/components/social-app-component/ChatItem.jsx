@@ -11,10 +11,13 @@ dayjs.locale("vi");
 
 export default function ChatItem({ chat, onClick, selected }) {
   const { chatId, latestMessage, target, notReadMessageCount } = chat;
-  
+
   const isOnline = target?.isOnline || false;
   const isUnread = notReadMessageCount > 0;
-  const displayName = `${target?.givenName || ""} ${target?.familyName || ""}`.trim() || target?.username || "Unknown User";
+  const displayName =
+    `${target?.givenName || ""} ${target?.familyName || ""}`.trim() ||
+    target?.username ||
+    "Unknown User";
 
   let content = "Chưa có tin nhắn nào";
   let sentTime = "";
@@ -22,35 +25,43 @@ export default function ChatItem({ chat, onClick, selected }) {
   if (latestMessage) {
     const isSenderTarget = latestMessage.sender?.id === target?.id;
     const senderPrefix = isSenderTarget ? "" : "Bạn: ";
-    const { type, callId, answered, endAt, callAt, deleted } = latestMessage;
+    const {
+      type,
+      callId,
+      answered,
+      endAt,
+      callAt,
+      deleted,
+      attachment,
+      content: msgContent,
+      sentAt,
+    } = latestMessage;
 
-    if (callId) {
-      // ✅ Message là cuộc gọi
-      if (!answered) {
-        content = "📞 Cuộc gọi nhỡ";
-      } else {
-        let duration = "";
-        if (endAt && callAt) {
-          const durationSec = dayjs(endAt).diff(dayjs(callAt), "second");
-          const min = Math.floor(durationSec / 60);
-          const sec = durationSec % 60;
-          duration = ` (${min}:${sec.toString().padStart(2, "0")})`;
-        }
+    if (type === "CALL") {
+      if (callAt && endAt) {
+        // ✅ Cuộc gọi kết thúc
+        const durationSec = dayjs(endAt).diff(dayjs(callAt), "second");
+        const min = Math.floor(durationSec / 60);
+        const sec = durationSec % 60;
+        const duration = ` (${min}:${sec.toString().padStart(2, "0")})`;
         content = `📞 Cuộc gọi đã kết thúc${duration}`;
+      } else {
+        // ❌ Cuộc gọi nhỡ
+        content = "📞 Cuộc gọi nhỡ";
       }
     } else {
-      // ✅ Tin nhắn văn bản, ảnh, tệp, v.v.
+      // ✅ Tin nhắn thường
       if (deleted) {
         content = "Tin nhắn đã bị thu hồi";
-      } else if (latestMessage.attachment) {
+      } else if (attachment) {
         content = "[Tệp đính kèm]";
       } else {
-        content = latestMessage.content?.slice(0, 60) || "Tin nhắn đã bị xoá";
+        content = msgContent?.slice(0, 60) || "Tin nhắn đã bị xoá";
       }
       content = senderPrefix + content;
     }
 
-    sentTime = dayjs(latestMessage.sentAt).fromNow();
+    sentTime = dayjs(sentAt).fromNow();
   }
 
   return (
@@ -63,29 +74,23 @@ export default function ChatItem({ chat, onClick, selected }) {
     >
       {/* Avatar */}
       <div className="relative">
-        <Avatar 
-          src={target?.profilePictureUrl} 
+        <Avatar
+          src={target?.profilePictureUrl}
           alt={displayName}
           className="w-12 h-12"
         />
 
         <div className="absolute bottom-0 right-0">
-          <div className={`w-3.5 h-3.5 rounded-full border-2 border-background ${
-            isOnline ? 'bg-green-500' : 'bg-gray-400'
-          }`}>
+          <div
+            className={`w-3.5 h-3.5 rounded-full border-2 border-background ${
+              isOnline ? "bg-green-500" : "bg-gray-400"
+            }`}
+          >
             {isOnline && (
               <div className="absolute inset-0 w-3.5 h-3.5 bg-green-500 rounded-full animate-pulse opacity-75" />
             )}
           </div>
         </div>
-
-        {notReadMessageCount > 0 && (
-          <div className="absolute -top-1 -right-1 block md:hidden">
-            <Badge variant="secondary" className="rounded-full px-1.5 text-[10px] border">
-              {notReadMessageCount}
-            </Badge>
-          </div>
-        )}
       </div>
 
       {/* Info */}
@@ -114,7 +119,10 @@ export default function ChatItem({ chat, onClick, selected }) {
             {content}
           </p>
           {notReadMessageCount > 0 && (
-            <Badge variant="secondary" className="rounded-full border px-2 text-xs ml-2 shrink-0">
+            <Badge
+              variant="secondary"
+              className="rounded-full border px-2 text-xs ml-2 shrink-0"
+            >
               {notReadMessageCount}
             </Badge>
           )}

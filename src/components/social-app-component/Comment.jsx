@@ -14,6 +14,17 @@ import { getUserId } from "@/utils/axios";
 
 const isVideo = (url = "") => /\.(mp4|webm|ogg)$/i.test(url);
 
+// Admin check function
+const isAdmin = () => {
+  try {
+    const userRole = localStorage.getItem('userRole')
+    return userRole === 'ADMIN'
+  } catch (error) {
+    console.error('Error checking admin role:', error)
+    return false
+  }
+}
+
 // Media Display Component
 export const MediaDisplay = ({ url, alt, className = "" }) =>
   isVideo(url) ? (
@@ -40,7 +51,7 @@ export const CommentActions = ({
   onToggleReplies,
   showReplies,
   onDelete,
-  isOwnComment,
+  canDeleteComment,
 }) => {
   const handleLike = useCallback(() => {
     onLike(comment.id, comment.liked);
@@ -91,7 +102,7 @@ export const CommentActions = ({
         </button>
       )}
 
-      {isOwnComment && (
+      {canDeleteComment && (
         <button
           className="hover:underline text-red-500"
           onClick={handleDelete}
@@ -182,12 +193,16 @@ export const Comment = ({
   onReply,
   replyingTo,
   onCancelReply,
+  isOwnPost,
   handleReplySubmit,
   useForm,
 }) => {
   // Kiểm tra xem comment có phải của user hiện tại không
   const currentUserId = getUserId();
   const isOwnComment = comment.author?.id === currentUserId;
+  
+  // Kiểm tra quyền xóa comment: nếu là comment của bản thân hoặc bài viết của bản thân hoặc là admin
+  const canDeleteComment = isOwnComment || isOwnPost || isAdmin();
   
   const showReplies = comments.showReplies[comment.id];
   const isLoadingReplies = comments.loadingReplies[comment.id];
@@ -244,7 +259,7 @@ export const Comment = ({
           onToggleReplies={comments.toggleReplies}
           showReplies={showReplies}
           onDelete={comments.deleteComment}
-          isOwnComment={isOwnComment}
+          canDeleteComment={canDeleteComment}
         />
 
         {/* Replies */}
@@ -259,6 +274,9 @@ export const Comment = ({
                 {replies?.map((reply) => {
                   // Kiểm tra xem reply có phải của user hiện tại không
                   const isOwnReply = reply.author?.id === currentUserId;
+                  
+                  // Kiểm tra quyền xóa reply: nếu là reply của bản thân hoặc bài viết của bản thân hoặc là admin
+                  const canDeleteReply = isOwnReply || isOwnPost || isAdmin();
                   
                   return (
                     <div key={reply.id} className="flex gap-2 text-sm">
@@ -290,8 +308,8 @@ export const Comment = ({
                             )}
                           </div>
                           
-                          {/* Nút xóa cho reply nếu là của user hiện tại */}
-                          {isOwnReply && (
+                          {/* Nút xóa cho reply nếu có quyền xóa */}
+                          {canDeleteReply && (
                             <button
                               className="text-xs text-red-500 hover:underline ml-2"
                               onClick={() => comments.deleteReply && comments.deleteReply(reply.id)}

@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import useAppStore from "@/store/ZustandStore";
 import { isTokenValid } from "@/utils/axios";
 import { useRouter } from "next/navigation";
+import { playSound } from "@/utils/playSound";
 
 export default function useMessageNotification(userId) {
   const subscriptionRef = useRef(null);
@@ -103,7 +104,16 @@ export default function useMessageNotification(userId) {
         !newMessage.isOwnMessage
       ) {
         const senderName = messageData.sender.username || messageData.sender.givenName || "ai đó";
-
+        try {
+              playSound("pocpoc.mp3", { 
+                loop: false, 
+                volume: 0.7, 
+                duration: 3000 
+              });
+              console.log("🔊 Playing notification sound for NEW_CHAT_CREATED");
+            } catch (soundError) {
+              console.warn("🔇 Failed to play notification sound:", soundError);
+            }
         toast(
           (t) => (
             <div

@@ -31,6 +31,8 @@ export default function NewPostModal({ isOpen, onClose }) {
 
   const handleFileChange = (e) => {
     handleMediaSelect(Array.from(e.target.files));
+    // Reset input value để có thể chọn cùng file nhiều lần
+    e.target.value = '';
   };
 
   const handleDrop = (e) => {
@@ -38,7 +40,10 @@ export default function NewPostModal({ isOpen, onClose }) {
     handleMediaSelect(Array.from(e.dataTransfer.files));
   };
 
-  const handleClickUploadArea = () => fileInputRef.current?.click();
+  const handleClickUploadArea = () => {
+    console.log("🔍 Clicking file input..."); // Debug log
+    fileInputRef.current?.click();
+  };
 
   const handleRemoveMedia = (index) => {
     setMedia((prev) => prev.filter((_, i) => i !== index));
@@ -100,6 +105,16 @@ export default function NewPostModal({ isOpen, onClose }) {
             </button>
           </div>
 
+          {/* Hidden file input - đặt ở đây để luôn có thể truy cập */}
+          <input
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
           {media.length === 0 ? (
             <div
               onClick={handleClickUploadArea}
@@ -109,14 +124,6 @@ export default function NewPostModal({ isOpen, onClose }) {
             >
               <p className="text-sm">Chọn ảnh hoặc video, hoặc kéo thả vào đây</p>
               <div className="text-4xl">📁</div>
-              <input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                hidden
-              />
             </div>
           ) : (
             <div className="flex flex-col md:flex-row gap-6 p-4">
@@ -129,7 +136,7 @@ export default function NewPostModal({ isOpen, onClose }) {
                 />
               </div>
 
-              <div className="md:w-1/2 w-full flex flex-col gap-4">
+              <div className="md:w-1/2 w-full space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Privacy</label>
                   <select
@@ -143,7 +150,7 @@ export default function NewPostModal({ isOpen, onClose }) {
                   </select>
                 </div>
 
-                <div>
+                <div className="flex-1">
                   <label className="block text-sm font-medium mb-1">Caption</label>
                   <textarea
                     ref={textareaRef}
@@ -156,7 +163,7 @@ export default function NewPostModal({ isOpen, onClose }) {
                   />
                 </div>
 
-                <div className="flex justify-end mt-auto">
+                <div className="flex justify-end">
                   <button
                     onClick={handleSubmit}
                     disabled={isLoading}

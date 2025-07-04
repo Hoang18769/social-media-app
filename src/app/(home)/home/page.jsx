@@ -306,8 +306,11 @@ export default function HomePage() {
   }, [loading, filteredPosts, posts.length, loadingMore, hasMore, currentUser, loadingSkeletons, loadingMoreSkeletons, toggleLike])
 
   return (
+    <>
     <div ref={containerRef} className="p-6 space-y-6 flex flex-col items-center">
       {renderContent}
     </div>
+
+    </>
   )
 }

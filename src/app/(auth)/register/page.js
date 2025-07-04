@@ -361,11 +361,15 @@ function AuthFormWithParams() {
         
         // Batch localStorage operations
         const authData = {
+          role:decoded.role,
           accessToken: token,
           userId: decoded.sub,
           userName: decoded.username
         }
         
+        Object.entries(authData).forEach(([key, value]) => {
+          localStorage.setItem(key, value)
+        })
         Object.entries(authData).forEach(([key, value]) => {
           localStorage.setItem(key, value)
         })

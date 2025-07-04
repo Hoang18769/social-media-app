@@ -46,7 +46,7 @@ export default function NotificationList() {
     ensureNotificationsLoaded,
     markNotificationAsRead
   } = useAppStore();
-
+  console.log(notifications)
   useEffect(() => {
     // Tự động fetch notifications nếu danh sách rỗng
     ensureNotificationsLoaded();
@@ -70,21 +70,15 @@ export default function NotificationList() {
   };
 
   const handleNotificationClick = async (notification) => {
-    console.log('Notification clicked:', notification);
-    
-    // Mark as read when clicked
-    if (!notification.isRead) {
-      markNotificationAsRead(notification.id);
-    }
-
+    console.log('Notification clicked:', notification);   
+ 
     // Handle navigation based on notification type
-    if (notification.targetType === 'USER' && notification.targetId) {
+    if (notification.targetType === 'USER' || notification.targetType==="REQUEST" && notification.targetId) {
       // Navigate to user profile
       router.push(`/profile/${notification.creator.username}`);
-    } else if (notification.targetType === 'POST' && notification.targetId) {
+    } else if ((notification.targetType === 'POST' && notification.targetId)) {
       console.log('Fetching post with ID:', notification.targetId);
-      setIsLoadingPost(true);
-      
+      setIsLoadingPost(true)
       try {
         const response = await api.get(`/v1/posts/${notification.targetId}`);
         console.log('Post fetch response:', response);
@@ -96,6 +90,32 @@ export default function NotificationList() {
           setIsPostModalOpen(true);
           // Fetch comments for the post
           fetchComments(notification.targetId);
+        } else {
+          console.error('No post data in response body');
+          toast.error('Không thể tải bài viết - dữ liệu trống');
+        }
+      } catch (error) {
+        console.error('Error fetching post:', error);
+        console.error('Error response:', error.response);
+        toast.error('Không thể tải bài viết');
+      } finally {
+        setIsLoadingPost(false);
+      }
+    }
+    else if ((notification.targetType === 'COMMENT' && notification.postId)) {
+      console.log('Fetching post with ID:', notification.postId);
+      setIsLoadingPost(true)
+      try {
+        const response = await api.get(`/v1/posts/${notification.postId}`);
+        console.log('Post fetch response:', response);
+        console.log('Response data:', response.data);
+        console.log('Response body:', response.data.body);
+        
+        if (response.data.body) {
+          setSelectedPost(response.data.body);
+          setIsPostModalOpen(true);
+          // Fetch comments for the post
+          fetchComments(notification.postId);
         } else {
           console.error('No post data in response body');
           toast.error('Không thể tải bài viết - dữ liệu trống');

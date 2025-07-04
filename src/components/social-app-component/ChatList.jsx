@@ -27,7 +27,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
   const [isSearching, setIsSearching] = useState(false);
   const [fetchAttempted, setFetchAttempted] = useState(false); // ✅ Track fetch attempts
   const listRef = useRef(null);
-
+  console.log(chatList)
   const isChatsPage = pathname === "/chats";
   console.log(chatList)
   // Debug logging

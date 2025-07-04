@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import UserHeader from "@/components/social-app-component/UserHeader";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 export default function FriendPage() {
   const [activeTab, setActiveTab] = useState("friends");
@@ -210,7 +211,8 @@ export default function FriendPage() {
           <ul className="divide-y divide-[var(--border)]">
             {users.map((user) => (
               <li key={user.username} className="p-4 hover:bg-[var(--accent)] transition-colors">
-                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4">
+                <Link href={`/profile/${user.username}`} className="flex items-center justify-between">
                   <UserHeader
                   key={user.username}
                     user={user} 
@@ -218,6 +220,7 @@ export default function FriendPage() {
                     className="flex-grow min-w-0"
                   />
                   
+                </Link>
                   <div className="ml-4 flex-shrink-0">
                     {renderActionButton(user)}
                   </div>

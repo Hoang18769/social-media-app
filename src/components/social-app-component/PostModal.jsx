@@ -19,6 +19,7 @@ export default function PostModal({
   comments = [],
   loadingComments = false,
   activeIndex = 0,
+  isOwnPost,
   onClose,
   onLikeToggle,
   onCommentSubmit,
@@ -280,8 +281,8 @@ export default function PostModal({
   }, [displayPost?.content, isSharedPost, isContentExpanded]);
 
   const PostActions = useMemo(() => (
-    <div className="border-b border-[var(--border)] ">
-    <div className="flex gap-4 text-[var(--muted-foreground)] items-center p-3 ">
+    <div className="border-b border-[var(--border)]">
+      <div className="flex gap-4 text-[var(--muted-foreground)] items-center p-3">
         <button onClick={onLikeToggle}>
           <Heart
             className={`h-5 w-5 ${
@@ -289,21 +290,20 @@ export default function PostModal({
             }`}
           />
         </button>
-      <button>
-        <MessageCircle className="h-5 w-5" />
-      </button>
-      <button>
-        <SendHorizonal className="h-5 w-5" />
-      </button>
-    </div>
-        <p className="text-xs px-4 pb-2">{likeCount} lượt thích</p>
-
+        <button>
+          <MessageCircle className="h-5 w-5" />
+        </button>
+        <button>
+          <SendHorizonal className="h-5 w-5" />
+        </button>
+      </div>
+      <p className="text-xs px-4 pb-2">{likeCount} lượt thích</p>
     </div>
   ), [liked, likeCount, onLikeToggle]);
 
   // Memoized comments section
   const CommentsSection = useMemo(() => (
-    <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+    <div className="p-4 space-y-2">
       <p className="text-sm font-semibold">Bình luận ({commentsManager.localComments.length})</p>
       {loadingComments ? (
         <p className="text-xs text-muted">Đang tải bình luận...</p>
@@ -316,6 +316,7 @@ export default function PostModal({
               key={comment.id}
               comment={comment}
               post={post}
+              isOwnPost={isOwnPost}
               comments={commentsManager}
               onReply={handleReply}
               replyingTo={replyingTo}
@@ -331,7 +332,7 @@ export default function PostModal({
 
   // Memoized comment input
   const CommentInput = useMemo(() => (
-    <>
+    <div className="flex-shrink-0 bg-[var(--card)] border-t border-[var(--border)]">
       {mainCommentForm.file && (
         <div className="p-4">
           <FilePreviewInChat
@@ -344,7 +345,7 @@ export default function PostModal({
 
       <form
         onSubmit={mainCommentForm.submit}
-        className="border-t border-[var(--border)] pt-2 flex items-center gap-2 p-4"
+        className="flex items-center gap-2 p-4"
       >
         <input
           type="text"
@@ -373,28 +374,8 @@ export default function PostModal({
           {mainCommentForm.isSubmitting ? "Đang gửi..." : "Gửi"}
         </button>
       </form>
-    </>
+    </div>
   ), [mainCommentForm]);
-
-  // Scrollable content section for layouts without media
-  const ScrollableContent = useMemo(() => (
-    <div className="flex-1 overflow-y-auto">
-      {PostHeader}
-      {PostContent}
-      {PostActions}
-      {CommentsSection}
-    </div>
-  ), [PostHeader, PostContent, PostActions, CommentsSection]);
-
-  // Scrollable sidebar content for layouts with media
-  const ScrollableSidebar = useMemo(() => (
-    <div className="flex-1 overflow-y-auto">
-      {PostHeader}
-      {PostContent}
-      {PostActions}
-      {CommentsSection}
-    </div>
-  ), [PostHeader, PostContent, PostActions, CommentsSection]);
 
   return (
     <Modal
@@ -404,16 +385,21 @@ export default function PostModal({
     >
       <div
         className={`flex flex-col w-full ${
-          hasMedia ? "md:flex-row h-[90vh]" : "h-auto max-h-[80vh]"
+          hasMedia ? "md:flex-row h-[90vh]" : "h-[80vh]"
         } bg-[var(--card)] text-[var(--card-foreground)] rounded-xl overflow-hidden`}
       >
-        {/* Layout for posts without media */}
+        {/* Layout for posts without media - Updated for full scrollable content */}
         {!hasMedia && (
           <div className="flex flex-col w-full h-full">
-            {ScrollableContent}
-            <div className="flex-shrink-0">
-              {CommentInput}
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto">
+              {PostHeader}
+              {PostContent}
+              {PostActions}
+              {CommentsSection}
             </div>
+            {/* Fixed comment input at bottom */}
+            {CommentInput}
           </div>
         )}
 
@@ -421,16 +407,19 @@ export default function PostModal({
         {hasMedia && (
           <>
             {/* Desktop Layout */}
-            <div className="hidden md:flex md:w-2/3 md:h-full">
+            <div className="hidden md:flex md:w-3/5 md:h-full">
               <MediaCarousel media={media} page={page} setPage={setPage} />
             </div>
 
             {/* Sidebar - Desktop */}
-            <div className="hidden md:flex md:flex-col md:w-1/3 md:h-full md:border-l md:border-[var(--border)]">
-              {ScrollableSidebar}
-              <div className="flex-shrink-0">
-                {CommentInput}
+            <div className="hidden md:flex md:flex-col md:w-2/5 md:h-full md:border-l md:border-[var(--border)]">
+              <div className="flex-1 overflow-y-auto">
+                {PostHeader}
+                {PostContent}
+                {PostActions}
+                {CommentsSection}
               </div>
+              {CommentInput}
             </div>
           </>
         )}

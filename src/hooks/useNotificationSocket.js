@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { subscribe, unsubscribe, getStompClient } from "@/utils/socket";
 import toast from "react-hot-toast";
 import useAppStore from "@/store/ZustandStore";
-
+import { playSound } from "@/utils/playSound";
 export default function useNotificationSocket(userId) {
   const subscriptionRef = useRef(null);
   const isSubscribedRef = useRef(false);
@@ -62,6 +62,19 @@ export default function useNotificationSocket(userId) {
 
         case "NEW_MESSAGE": {
           toast(`${name} đã nhắn tin cho bạn 💬`);
+          
+          // Play sound notification for new message
+          try {
+            playSound("/pocpoc.mp3", { 
+              loop: false,
+              volume: 0.9, 
+              duration: 1000 
+            });
+            console.log("🔊 Playing notification sound for NEW_MESSAGE");
+          } catch (soundError) {
+            console.warn("🔇 Failed to play notification sound:", soundError);
+          }
+          
           try {
             if (!data.message || !data.message.senderUsername) break;
 
@@ -122,6 +135,8 @@ export default function useNotificationSocket(userId) {
           if (data.chat) {
             onChatCreated(data.chat);
             toast(`${name} đã tạo cuộc trò chuyện mới 💬`);
+            
+            // Play sound notification for new chat created            
           }
           break;
 
@@ -129,15 +144,19 @@ export default function useNotificationSocket(userId) {
           toast(`🔔 Có thông báo mới từ ${name}`);
       }
 
-      // ✅ Đồng bộ thông báo vào store
+      // ✅ Đồng bộ thông báo vào store và cập nhật unread count
       if (onNotificationReceived && fetchNotifications) {
-        onNotificationReceived(data); // Tạm thời hiển thị ngay
-
-        // Sync lại từ server để đảm bảo không thiếu
-        // setTimeout(() => {
-        //   fetchNotifications(true);
-        // }, 300);
-        // delay nhẹ tránh spam call nếu nhận liên tục
+        onNotificationReceived(data); // Tạm thời hiển thị ngay - sẽ tự động cập nhật unread count
+        
+        // ✅ Cập nhật unread count trực tiếp cho đảm bảo
+        const currentState = useAppStore.getState();
+        const newUnreadCount = currentState.unreadNotificationCount + 1;
+        
+        useAppStore.setState({ 
+          unreadNotificationCountFromSocket: newUnreadCount 
+        });
+        
+        console.log(`📊 Unread notification count updated: ${newUnreadCount}`);
       }
     };
 

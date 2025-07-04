@@ -8,6 +8,7 @@ import api from "@/utils/axios";
 
 export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const [newContent, setNewContent] = useState("");
   const [newPrivacy, setNewPrivacy] = useState("PUBLIC");
@@ -20,6 +21,16 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) 
   
   const [loading, setLoading] = useState(false);
   const [zoomIndex, setZoomIndex] = useState(null);
+
+  const handleContentChange = (e) => {
+    setNewContent(e.target.value);
+    
+    // Auto-resize textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, 96)}px`; // min height 96px (4 rows)
+    }
+  };
 
   // Reset state khi modal mở/đóng hoặc post thay đổi
   useEffect(() => {
@@ -35,6 +46,14 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) 
       setZoomIndex(null);
     }
   }, [isOpen, post]);
+
+  // Auto-resize textarea khi content thay đổi từ useEffect
+  useEffect(() => {
+    if (textareaRef.current && newContent) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, 96)}px`;
+    }
+  }, [newContent]);
 
   // Tạo combined array để hiển thị trong ImagePreview
   const displayMedia = [
@@ -196,6 +215,7 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) 
                 type="file"
                 accept="image/*,video/*"
                 multiple
+                
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 hidden
@@ -243,11 +263,13 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) 
                     {isSharedPost ? "Nội dung chia sẻ" : "Content"}
                   </label>
                   <textarea
+                    ref={textareaRef}
                     value={newContent}
-                    onChange={(e) => setNewContent(e.target.value)}
+                    onChange={handleContentChange}
                     rows={4}
                     placeholder={isSharedPost ? "Bạn muốn nói gì về bài viết này?" : "Viết điều gì đó..."}
-                    className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none"
+                    className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none overflow-hidden"
+                    style={{ minHeight: '96px' }}
                   />
                 </div>
 
@@ -296,11 +318,13 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) 
               <div>
                 <label className="block text-sm font-medium mb-1">What's on your mind?</label>
                 <textarea
+                  ref={textareaRef}
                   value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
+                  onChange={handleContentChange}
                   rows={4}
                   placeholder="Viết điều gì đó..."
-                  className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none"
+                  className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none overflow-hidden"
+                  style={{ minHeight: '96px' }}
                 />
               </div>
 
@@ -337,11 +361,13 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) 
                   Nội dung chia sẻ
                 </label>
                 <textarea
+                  ref={textareaRef}
                   value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
+                  onChange={handleContentChange}
                   rows={4}
                   placeholder="Bạn muốn nói gì về bài viết này?"
-                  className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none"
+                  className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none overflow-hidden"
+                  style={{ minHeight: '96px' }}
                 />
               </div>
 

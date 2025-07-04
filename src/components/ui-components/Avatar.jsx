@@ -1,25 +1,22 @@
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
-// Try multiple fallback approaches
+// Memoize default avatar to prevent re-creation
 const getDefaultAvatar = () => {
-  // Method 1: Public folder
   const publicPath = "/images/AfroAvatar.png";
   
-  // Method 2: Try importing if available
   let importedAvatar = null;
   try {
-    // This might work if the import path is correct
     importedAvatar = require("@/assests/photo/AfroAvatar.png");
   } catch (e) {
-    console.log("Import fallback failed:", e.message);
+    // Silent fail for import
   }
-  
-  // Method 3: Base64 placeholder (you can replace this with your actual image)
-  const base64Placeholder = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiNEMUQ1REIiLz4KPGNpcmNsZSBjeD0iMzIiIGN5PSIyNCIgcj0iOCIgZmlsbD0iIzZCNzI4MCIvPgo8cGF0aCBkPSJNMTYgNTJDMTYgNDEuNTA4NiAyMS41MDg2IDM2IDMyIDM2QzQyLjQ5MTQgMzYgNDggNDEuNTA4NiA0OCA1MkM0OCA1Ny41MjI4IDQ0LjQxODMgNjIgNDAgNjJIMjRDMTkuNTgxNyA2MiAxNiA1Ny41MjI4IDE2IDUyWiIgZmlsbD0iIzZCNzI4MCIvPgo8L3N2Zz4K";
   
   return importedAvatar?.default || importedAvatar || publicPath;
 };
+
+// Cache the default avatar
+const DEFAULT_AVATAR = getDefaultAvatar();
 
 export default function Avatar({
   src,
@@ -30,65 +27,94 @@ export default function Avatar({
   ...props
 }) {
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentSrc, setCurrentSrc] = useState(src);
+  const [isLoading, setIsLoading] = useState(!!src); // Only loading if src exists
+  const [useRegularImg, setUseRegularImg] = useState(false);
   
-  // Reset error state when src changes
+  // Memoize the final source to prevent unnecessary re-renders
+  const finalSrc = useMemo(() => {
+    return (!src || hasError) ? DEFAULT_AVATAR : src;
+  }, [src, hasError]);
+  
+  // Check if it's an external URL
+  const isExternalUrl = useMemo(() => {
+    return typeof finalSrc === "string" && 
+      (finalSrc.startsWith("http://") || finalSrc.startsWith("https://"));
+  }, [finalSrc]);
+  
+  // Reset states when src changes
   useEffect(() => {
-    setHasError(false);
-    setCurrentSrc(src);
-    setIsLoading(true);
+    if (src) {
+      setHasError(false);
+      setIsLoading(true);
+      setUseRegularImg(false);
+    } else {
+      setIsLoading(false);
+    }
   }, [src]);
   
-  // Determine which source to use
-  const finalSrc = (!currentSrc || hasError) ? getDefaultAvatar() : currentSrc;
-  
-  // Check if it's an external URL that needs unoptimized
-  const isExternalUrl = typeof finalSrc === "string" && 
-    (finalSrc.startsWith("http://") || finalSrc.startsWith("https://"));
-  
-  const handleError = (e) => {
+  const handleError = useCallback((e) => {
+    console.log("Image load error:", e);
     if (!hasError) {
       setHasError(true);
       setIsLoading(false);
     }
-  };
+  }, [hasError]);
   
-  const handleLoad = (e) => {
+  const handleLoad = useCallback(() => {
     setIsLoading(false);
-  };
+  }, []);
+  
+  const handleNextImageError = useCallback((e) => {
+    console.log("Next.js Image failed, switching to regular img");
+    setUseRegularImg(true);
+    handleError(e);
+  }, [handleError]);
+  
+  const handleRegularImgError = useCallback((e) => {
+    console.log("Regular img also failed, showing fallback");
+    e.target.style.display = 'none';
+    setHasError(true);
+    setIsLoading(false);
+  }, []);
+  
+  // Generate fallback letter from alt text
+  const fallbackLetter = useMemo(() => {
+    return alt.charAt(0).toUpperCase();
+  }, [alt]);
+  
+  // Base container classes
+  const containerClasses = useMemo(() => {
+    return `relative rounded-full overflow-hidden w-8 h-8 sm:w-12 sm:h-12 md:w-12 md:h-12 bg-gray-200 flex items-center justify-center ${className}`;
+  }, [className]);
 
-  // Fallback to regular img if Next.js Image fails
-  const [useRegularImg, setUseRegularImg] = useState(false);
-
+  // If we should use regular img element
   if (useRegularImg) {
     return (
-      <div
-        className={`relative rounded-full overflow-hidden w-8 h-8 sm:w-12 sm:h-12 md:w-12 md:h-12 bg-gray-200 flex items-center justify-center ${className}`}
-      >
+      <div className={containerClasses}>
+        {/* Loading skeleton - only show if still loading */}
         {isLoading && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+          <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-full" />
         )}
         
         {/* Regular img as fallback */}
         <img
           src={finalSrc}
           alt={alt}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            console.log("Regular img also failed, showing placeholder");
-            e.target.style.display = 'none';
-            setIsLoading(false);
-          }}
+          className="w-full h-full object-cover transition-opacity duration-200"
+          onError={handleRegularImgError}
           onLoad={handleLoad}
+          style={{ 
+            opacity: isLoading ? 0 : 1,
+            transition: 'opacity 0.2s ease-in-out'
+          }}
           {...props}
         />
         
         {/* Ultimate fallback - CSS-only avatar */}
-        {!isLoading && hasError && (
-          <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+        {hasError && (
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
             <span className="text-white font-bold text-lg">
-              {alt.charAt(0).toUpperCase()}
+              {fallbackLetter}
             </span>
           </div>
         )}
@@ -97,37 +123,37 @@ export default function Avatar({
   }
 
   return (
-    <div
-      className={`relative rounded-full overflow-hidden w-8 h-8 sm:w-12 sm:h-12 md:w-12 md:h-12 bg-gray-200 flex items-center justify-center ${className}`}
-    >
+    <div className={containerClasses}>
+      {/* Loading skeleton - only show briefly */}
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-full" />
       )}
       
+      {/* Next.js Image */}
       <Image
         src={finalSrc}
         alt={alt}
         width={width}
         height={width} // Square avatar
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover transition-opacity duration-200"
         unoptimized={isExternalUrl || finalSrc.startsWith("data:")}
-        onError={(e) => {
-          handleError(e);
-          // If Next.js Image fails, try regular img
-          setUseRegularImg(true);
-        }}
+        onError={handleNextImageError}
         onLoad={handleLoad}
         priority={false}
         placeholder="blur"
         blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+        style={{ 
+          opacity: isLoading ? 0 : 1,
+          transition: 'opacity 0.2s ease-in-out'
+        }}
         {...props}
       />
       
       {/* Ultimate CSS fallback */}
-      {!isLoading && hasError && !useRegularImg && (
-        <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+      {hasError && !useRegularImg && (
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
           <span className="text-white font-bold text-lg">
-            {alt.charAt(0).toUpperCase()}
+            {fallbackLetter}
           </span>
         </div>
       )}
@@ -135,9 +161,9 @@ export default function Avatar({
   );
 }
 
-// Debug component to help troubleshoot
+// Optimized debug component
 export function AvatarDebug({ src }) {
-  const defaultAvatar = getDefaultAvatar();
+  const defaultAvatar = DEFAULT_AVATAR;
   
   return (
     <div className="p-4 border rounded bg-gray-50">

@@ -12,6 +12,7 @@ import toast from "react-hot-toast"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import api from "@/utils/axios"
+import { getUserId } from "@/utils/axios"
 import Modal from "../ui-components/Modal"
 
 dayjs.extend(relativeTime)
@@ -35,6 +36,11 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
   const [deleting, setDeleting] = useState(false)
   const [currentPost, setCurrentPost] = useState(post)
   
+  // Content expansion states
+  const [isContentExpanded, setIsContentExpanded] = useState(false)
+  const [isSharedContentExpanded, setIsSharedContentExpanded] = useState(false)
+  const [isOriginalContentExpanded, setIsOriginalContentExpanded] = useState(false)
+  
   // Optimistic UI state for like
   const [optimisticLiked, setOptimisticLiked] = useState(liked)
   const [optimisticLikeCount, setOptimisticLikeCount] = useState(post.likeCount || 0)
@@ -42,6 +48,24 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
 
   const router = useRouter()
   const isModalOpen = activeImageIndex !== null || showModal
+  
+  // Check if current post is owned by current user
+  const currentUserId = getUserId()
+  const isOwnPost = currentPost.author?.id === currentUserId
+
+  // Check if current user is admin
+  const isAdmin = () => {
+    try {
+      const userRole = localStorage.getItem('userRole')
+      return userRole === 'ADMIN'
+    } catch (error) {
+      console.error('Error checking admin role:', error)
+      return false
+    }
+  }
+
+  // Show more options if it's user's own post OR if user is admin
+  const showMoreOptions = isOwnPost || isAdmin()
   
   useEffect(() => {
     const checkScreenSize = () => setIsMobile(window.innerWidth < 640)
@@ -100,6 +124,17 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
         </span>
       )
     })
+  }
+
+  // Function to check if content should be truncated
+  const shouldTruncateContent = (content, maxLength = 200) => {
+    return content && content.length > maxLength
+  }
+
+  // Function to get truncated content
+  const getTruncatedContent = (content, maxLength = 200) => {
+    if (!content) return ''
+    return content.length > maxLength ? content.substring(0, maxLength) + '...' : content
   }
 
   const fetchOriginalPost = async () => {
@@ -230,7 +265,11 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
   }
 
  const handleDeletePost = async () => {
-    if (!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return
+    const confirmMessage = isAdmin() && !isOwnPost 
+      ? "Bạn có chắc chắn muốn xóa bài viết này với tư cách admin không?" 
+      : "Bạn có chắc chắn muốn xóa bài viết này không?"
+    
+    if (!confirm(confirmMessage)) return
     setDeleting(true)
     try {
       await api.delete(`/v1/posts/${currentPost.id}`)
@@ -327,11 +366,39 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
           </div>
         </div>
 
-        {/* Original post content */}
+        {/* Original post content with truncation */}
         {currentPost.originalPost.content && (
-          <p className="text-sm text-[var(--card-foreground)] mb-3">
-            {renderTextWithLinks(currentPost.originalPost.content)}
-          </p>
+          <div className="text-sm text-[var(--card-foreground)] mb-3">
+            {shouldTruncateContent(currentPost.originalPost.content) && !isOriginalContentExpanded ? (
+              <>
+                {renderTextWithLinks(getTruncatedContent(currentPost.originalPost.content))}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsOriginalContentExpanded(true)
+                  }}
+                  className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                >
+                  Xem thêm
+                </button>
+              </>
+            ) : (
+              <>
+                {renderTextWithLinks(currentPost.originalPost.content)}
+                {shouldTruncateContent(currentPost.originalPost.content) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsOriginalContentExpanded(false)
+                    }}
+                    className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                  >
+                    Thu gọn
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         )}
 
         {/* Original post images */}
@@ -401,51 +468,85 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
             </div>
           </div>
 
-          <div className="relative">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptions(!showOptions)
-              }} 
-              className="text-xl text-[var(--muted-foreground)] hover:bg-[var(--input)] rounded-full p-1"
-            >
-              <MoreVertical className="w-5 h-5" />
-            </button>
-            {showOptions && (
-              <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-[var(--background)] border rounded shadow z-10">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleEdit()
-                  }} 
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-[var(--input)]"
-                >
-                  ✏️ Chỉnh sửa
-                </button>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDeletePost()
-                  }} 
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-[var(--input)] disabled:opacity-50"
-                  disabled={deleting}
-                >
-                  🗑️ {deleting ? "Đang xóa..." : "Xóa"}
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Show options menu if it's the user's own post OR if user is admin */}
+          {showMoreOptions && (
+            <div className="relative">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowOptions(!showOptions)
+                }} 
+                className="text-xl text-[var(--muted-foreground)] hover:bg-[var(--input)] rounded-full p-1"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+              {showOptions && (
+                <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-[var(--background)] border rounded shadow z-10">
+                  {/* Only show edit button for own posts */}
+                  {isOwnPost && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEdit()
+                      }} 
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-[var(--input)]"
+                    >
+                      ✏️ Chỉnh sửa
+                    </button>
+                  )}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeletePost()
+                    }} 
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-[var(--input)] disabled:opacity-50"
+                    disabled={deleting}
+                  >
+                    🗑️ {deleting ? "Đang xóa..." : "Xóa"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Current post content (share comment) */}
+        {/* Current post content (share comment) with truncation */}
         {currentPost.content && (
           <div onClick={(e) => {
             e.stopPropagation()
             openModal()
           }}>
-            <p className={`${textSizes.content} ${spacing}`}>
-              {renderTextWithLinks(currentPost.content)}
-            </p>
+            <div className={`${textSizes.content} ${spacing}`}>
+              {shouldTruncateContent(currentPost.content) && !isContentExpanded ? (
+                <>
+                  {renderTextWithLinks(getTruncatedContent(currentPost.content))}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsContentExpanded(true)
+                    }}
+                    className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                  >
+                    Xem thêm
+                  </button>
+                </>
+              ) : (
+                <>
+                  {renderTextWithLinks(currentPost.content)}
+                  {shouldTruncateContent(currentPost.content) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsContentExpanded(false)
+                      }}
+                      className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                    >
+                      Thu gọn
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
         
@@ -520,13 +621,15 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
         </button>
       </Card>
 
-      {/* Edit Post Modal */}
-      <EditPostModal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        post={currentPost}
-        onPostUpdated={handlePostUpdated}
-      />
+      {/* Edit Post Modal - Only show if it's the user's own post */}
+      {isOwnPost && (
+        <EditPostModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          post={currentPost}
+          onPostUpdated={handlePostUpdated}
+        />
+      )}
 
       {/* Post Modal */}
       {isModalOpen && (
@@ -538,6 +641,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
           comments={comments}
           loadingComments={loadingComments || loadingOriginalPost}
           onFetchComments={fetchComments}
+          isOwnPost={isOwnPost}
           onClose={() => {
             setActiveImageIndex(null)
             setShowModal(false)

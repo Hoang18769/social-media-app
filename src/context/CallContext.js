@@ -9,7 +9,7 @@ import React, {
   useCallback,
 } from "react";
 import { jwtDecode } from "jwt-decode";
-import api from "@/utils/axios";
+import { playRingtone, stopSound, initAudioSystem, preloadAudio } from "@/utils/playSound";
 
 function decodeJWT(token) {
   try {
@@ -18,33 +18,6 @@ function decodeJWT(token) {
     console.error("[DEBUG] Failed to decode JWT:", e);
     return null;
   }
-}
-
-function connectStringeeClient(token, onIncomingCall, onConnectionChange) {
-  const client = new window.StringeeClient();
-  client.connect(token);
-
-  client.on("connect", () => {
-    console.log("[DEBUG] Stringee connected successfully ✅");
-    onConnectionChange(true);
-  });
-
-  client.on("disconnect", () => {
-    console.warn("[DEBUG] Stringee disconnected ❌");
-    onConnectionChange(false);
-  });
-
-  client.on("incomingcall", (call) => {
-    console.log("[DEBUG] Incoming call event fired 📞");
-    onIncomingCall(call);
-  });
-
-  client.on("requestnewtoken", async () => {
-    console.warn("[DEBUG] Token expired — need to request new one 🔄");
-    onConnectionChange(false);
-  });
-
-  return client;
 }
 
 const CallContext = createContext();
@@ -59,6 +32,7 @@ export const CallProvider = ({ children }) => {
   const [localStream, setLocalStream] = useState(null);
   const [callerName, setCallerName] = useState("");
   const [isCallEnding, setIsCallEnding] = useState(false);
+  
   const [mediaPermissions, setMediaPermissions] = useState({
     audio: false,
     video: false,
@@ -67,6 +41,22 @@ export const CallProvider = ({ children }) => {
   const clientRef = useRef(null);
   const currentCallRef = useRef(null);
   const beTokenRef = useRef("");
+
+  // Khởi tạo hệ thống âm thanh và preload ringtone
+  useEffect(() => {
+    // Khởi tạo audio system
+    initAudioSystem();
+    
+    // Preload ringtone
+    preloadAudio("/ringtone.mp3");
+    
+    // Yêu cầu notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log("[DEBUG] Notification permission:", permission);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !window.StringeeClient) {
@@ -106,33 +96,29 @@ export const CallProvider = ({ children }) => {
     }
   }, []);
 
-const isCleaningUpRef = useRef(false);
-
-const cleanupCall = useCallback((stt) => {
-  if (isCleaningUpRef.current) {
-    console.warn("[DEBUG] ⛔️ cleanupCall already triggered, skipping", stt);
-    return;
-  }
-  isCleaningUpRef.current = true;
-
-  console.log("[DEBUG] 🚨 cleanupCall triggered - Reason:", stt);
-if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
-    }
-    if (remoteStream) {
-      remoteStream.getTracks().forEach((track) => track.stop());
-    }
-    setRemoteStream(null);
-    setLocalStream(null);
-    setCurrentCall(null);
-    setIncomingCaller(null);
-    setCallStatus("Cleaned");
-    setIsCallEnding(false);
-    currentCallRef.current = null;
-    setTimeout(() => {
-    isCleaningUpRef.current = false; // reset
-  }, 2000);
-}, [localStream, remoteStream]);
+  const cleanupCall = useCallback(
+    (stt) => {
+      console.log("[DEBUG] Cleaning up call...");
+      
+      // Dừng âm thanh
+      stopSound();
+      
+      if (localStream) {
+        localStream.getTracks().forEach((track) => track.stop());
+      }
+      if (remoteStream) {
+        remoteStream.getTracks().forEach((track) => track.stop());
+      }
+      setRemoteStream(null);
+      setLocalStream(null);
+      setCurrentCall(null);
+      setIncomingCaller(null);
+      setCallStatus("Cleaned");
+      setIsCallEnding(false);
+      currentCallRef.current = null;
+    },
+    [localStream, remoteStream]
+  );
 
   const setupCallEvents = useCallback(
     (call) => {
@@ -174,12 +160,16 @@ if (localStream) {
         if (state.reason === "answered") {
           console.log("[DEBUG] 📞 Call was answered!");
           setCallStatus("Call answered");
+          // Dừng ringtone khi cuộc gọi được trả lời
+          stopSound();
         } else if (
-          ["ended", "busy", "rejected", "disconnected"].includes(state.reason)
+          ["Ended", "Busy here", "Rejected", "Disconnected"].includes(
+            state.reason
+          )
         ) {
           console.log("[DEBUG] 📞 Call ending with reason:", state.reason);
           setIsCallEnding(true);
-          setTimeout(()=>cleanupCall(1), 1500);
+          setTimeout(() => cleanupCall(1), 1500);
         }
       });
 
@@ -188,14 +178,14 @@ if (localStream) {
         if (state.code === 0) {
           console.log("[DEBUG] 🎥 Media disconnected");
           setIsCallEnding(true);
-          setTimeout(()=>cleanupCall(2), 1500);
+          setTimeout(() => cleanupCall(2), 1500);
         }
       });
 
       call.on("disconnect", () => {
         console.log("[DEBUG] 📞 Call disconnected event");
         setIsCallEnding(true);
-        setTimeout(()=>cleanupCall(3), 1500);
+        setTimeout(() => cleanupCall(3), 1500);
       });
 
       call.on("remotevideostatuschange", (enabled) => {
@@ -208,6 +198,42 @@ if (localStream) {
     },
     [cleanupCall]
   );
+
+  function connectStringeeClient(token, onIncomingCall, onConnectionChange) {
+    const client = new window.StringeeClient();
+    client.connect(token);
+
+    client.on("connect", () => {
+      console.log("[DEBUG] Stringee connected successfully ✅");
+      onConnectionChange(true);
+    });
+
+    client.on("disconnect", () => {
+      console.warn("[DEBUG] Stringee disconnected ❌");
+      onConnectionChange(false);
+    });
+
+    client.on("incomingcall", (call) => {
+      console.log("[DEBUG] Incoming call event fired 📞");
+      
+      // Phát ringtone với hệ thống nâng cao
+      playRingtone("/ringtone.mp3", {
+        loop: true,
+        duration: 30000, // 30 giây
+        volume: 0.8,
+      });
+      
+      onIncomingCall(call);
+      setupCallEvents(call);
+    });
+
+    client.on("requestnewtoken", async () => {
+      console.warn("[DEBUG] Token expired — need to request new one 🔄");
+      onConnectionChange(false);
+    });
+
+    return client;
+  }
 
   const initializeCall = useCallback(async (beToken) => {
     beTokenRef.current = beToken;
@@ -252,6 +278,7 @@ if (localStream) {
       console.log("[DEBUG] Making call to:", callee, "isVideo:", isVideo);
 
       const stream = await createMediaStream(isVideo);
+      console.log(stream.getTracks());
       if (!stream) {
         console.error("[DEBUG] Failed to create media stream");
         setCallStatus("Media permission denied");
@@ -280,7 +307,6 @@ if (localStream) {
         setCurrentCall(call);
         setLocalStream(stream);
         setCallStatus("Initiating call...");
-
         call.makeCall((res) => {
           console.log("[DEBUG] makeCall response:", res);
           if (res.r === 0) {
@@ -294,6 +320,7 @@ if (localStream) {
               res.message
             );
             setCallStatus(`Call failed: ${res.message || "Unknown error"}`);
+            console.log(res);
             stream.getTracks().forEach((track) => track.stop());
             cleanupCall(4);
           }
@@ -312,8 +339,15 @@ if (localStream) {
     if (!call) return;
 
     console.log("[DEBUG] Accepting call, isVideo:", call.isVideoCall);
+    
+    // Dừng ringtone
+    stopSound();
+    
+    setupCallEvents(call);
 
     const stream = await createMediaStream(call.isVideoCall);
+    console.log(stream);
+
     if (!stream) return;
 
     call.localStream = stream;
@@ -321,13 +355,16 @@ if (localStream) {
     setLocalStream(stream);
     setIncomingCaller(null);
     setCurrentCall(call);
-        setupCallEvents(call);
 
     call.answer();
   }, [createMediaStream, setupCallEvents]);
 
   const rejectCall = useCallback(() => {
     const call = currentCallRef.current;
+    
+    // Dừng ringtone
+    stopSound();
+    
     if (!call) return;
     call.reject(() => cleanupCall(5));
   }, [cleanupCall]);
@@ -341,6 +378,61 @@ if (localStream) {
       setTimeout(() => cleanupCall(6), 1500);
     });
   }, [currentCall, cleanupCall]);
+
+  // Simplified toggle functions - only for device level control
+  const toggleMute = useCallback(
+    (muted) => {
+      if (!localStream) {
+        console.warn("[DEBUG] Cannot toggle mute - no local stream");
+        return;
+      }
+
+      const audioTracks = localStream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        console.warn("[DEBUG] No audio tracks available");
+        return;
+      }
+
+      console.log("[DEBUG] Toggling mute:", muted);
+      audioTracks.forEach((track) => {
+        track.enabled = !muted;
+      });
+
+      // Also call Stringee API if available
+      const call = currentCallRef.current;
+      if (call && typeof call.mute === "function") {
+        call.mute(muted);
+      }
+    },
+    [localStream]
+  );
+
+  const toggleLocalVideo = useCallback(
+    (enabled) => {
+      if (!localStream) {
+        console.warn("[DEBUG] Cannot toggle video - no local stream");
+        return;
+      }
+
+      const videoTracks = localStream.getVideoTracks();
+      if (videoTracks.length === 0) {
+        console.warn("[DEBUG] No video tracks available");
+        return;
+      }
+
+      console.log("[DEBUG] Toggling local video:", enabled);
+      videoTracks.forEach((track) => {
+        track.enabled = enabled;
+      });
+
+      // Also call Stringee API if available
+      const call = currentCallRef.current;
+      if (call && typeof call.enableLocalVideo === "function") {
+        call.enableLocalVideo(enabled);
+      }
+    },
+    [localStream]
+  );
 
   return (
     <CallContext.Provider
@@ -359,6 +451,8 @@ if (localStream) {
         acceptCall,
         rejectCall,
         endCall,
+        toggleMute,
+        toggleLocalVideo,
         cleanupCall,
         createMediaStream,
       }}

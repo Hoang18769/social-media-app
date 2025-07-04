@@ -9,6 +9,7 @@ export const STORE_EVENTS = {
   MESSAGE_RECEIVED: 'message_received',
   NOTIFICATION_RECEIVED: 'notification_received',
   NOTIFICATIONS_LOAD: 'notifications_load',
+  UNREAD_COUNT_LOAD: 'unread_count_load',
   NEWSFEED_LOAD: 'newsfeed_load',
   POST_CREATED: 'post_created',
   SEARCH_PERFORMED: 'search_performed',
@@ -67,25 +68,26 @@ const useAppStore = create(
         throw error; // ✅ Re-throw for component to handle
       }
     },
+
     // Thêm vào trong useAppStore create function, section CHAT STATE
-updateChatUserOnlineStatus: (userId, onlineStatusData) => {
-  set((state) => ({
-    chatList: state.chatList.map((chat) => {
-      if (chat.target && chat.target.id === userId) {
-        return {
-          ...chat,
-          target: {
-            ...chat.target,
-            isOnline: onlineStatusData.online,
-            lastOnline: onlineStatusData.lastOnline || null
+    updateChatUserOnlineStatus: (userId, onlineStatusData) => {
+      set((state) => ({
+        chatList: state.chatList.map((chat) => {
+          if (chat.target && chat.target.id === userId) {
+            return {
+              ...chat,
+              target: {
+                ...chat.target,
+                isOnline: onlineStatusData.online,
+                lastOnline: onlineStatusData.lastOnline || null
+              }
+            };
           }
-        };
-      }
-      return chat;
-    })
-  }));
-  console.log(`✅ Updated target online status for ${userId}`, onlineStatusData);
-},
+          return chat;
+        })
+      }));
+      console.log(`✅ Updated target online status for ${userId}`, onlineStatusData);
+    },
 
     // Helper để lấy online status của user từ chatList
     getUserOnlineStatusFromChats: (userId) => {
@@ -160,29 +162,30 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
 
       console.log(`✅ Bulk updated online status for ${userStatusList.length} users`);
     },
+
     // ✅ FIXED: Better update logic
     updateChatListAfterMessage: (chatId, lastMessage) => {
-  set((state) => {
-    const updatedChatList = state.chatList.map(chat =>
-      (chat.id === chatId || chat.chatId === chatId)
-        ? { ...chat, lastMessage, updatedAt: new Date().toISOString() }
-        : chat
-    );
-    
-    // Tìm chat được update và các chat khác
-    const selectedChat = updatedChatList.find(chat => 
-      chat.id === chatId || chat.chatId === chatId
-    );
-    const otherChats = updatedChatList.filter(chat => 
-      chat.id !== chatId && chat.chatId !== chatId
-    );
-    
-    // Đặt chat được chọn ở cuối, các chat khác giữ nguyên thứ tự
-    return {
-      chatList: [...otherChats, selectedChat]
-    };
-  });
-},
+      set((state) => {
+        const updatedChatList = state.chatList.map(chat =>
+          (chat.id === chatId || chat.chatId === chatId)
+            ? { ...chat, lastMessage, updatedAt: new Date().toISOString() }
+            : chat
+        );
+        
+        // Tìm chat được update và các chat khác
+        const selectedChat = updatedChatList.find(chat => 
+          chat.id === chatId || chat.chatId === chatId
+        );
+        const otherChats = updatedChatList.filter(chat => 
+          chat.id !== chatId && chat.chatId !== chatId
+        );
+        
+        // Đặt chat được chọn ở cuối, các chat khác giữ nguyên thứ tự
+        return {
+          chatList: [...otherChats, selectedChat]
+        };
+      });
+    },
 
     getUserByChatId: (chatId) => {
       const chat = get().chatList.find(c => (c.id === chatId || c.chatId === chatId));
@@ -250,9 +253,30 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
     // ============ NOTIFICATIONS STATE ============
     notifications: [],
     isLoadingNotifications: false,
-    unreadNotificationCount: 0,
+    unreadNotificationCount: 0, // ✅ From REST API (only set once during init)
+    unreadNotificationCountFromSocket: 0, // ✅ NEW: From socket notifications
 
-    // ✅ FIXED: Return Promise
+    // ✅ FIXED: Fetch unread notification count từ API (chỉ set 1 lần)
+    fetchUnreadNotificationCount: async () => {
+      try {
+        const res = await api.get('/v1/notifications/unread-count');
+        console.log('📊 Unread count API response:', res);
+        
+        const unreadCount = res.data.body;
+        
+        set({ 
+          unreadNotificationCount: unreadCount,
+          error: null
+        });
+
+        console.log(`✅ ${STORE_EVENTS.UNREAD_COUNT_LOAD} - ${unreadCount} unread notifications from API`);
+        return unreadCount;
+      } catch (error) {
+        console.error('❌ Error fetching unread notification count:', error);
+        return 0;
+      }
+    },
+
     fetchNotifications: async (force = false, page = 0, size = 10) => {
       const { notifications, isLoadingNotifications } = get();
       
@@ -273,7 +297,7 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
         
         console.log('📊 Notifications API response:', res);
         
-        const responseData = res.data;
+        const responseData = res.data.body.notifications;
         let data = [];
         
         if (responseData) {
@@ -286,26 +310,22 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
         
         const currentNotifications = get().notifications;
         let finalNotifications = data;
-        let unreadCount = 0;
         
+        // ✅ Merge với socket notifications nếu có
         if (currentNotifications.length > 0) {
           const apiNotificationIds = new Set(data.map(n => n.id));
           const socketOnlyNotifications = currentNotifications.filter(n => !apiNotificationIds.has(n.id));
           
           finalNotifications = [...socketOnlyNotifications, ...data];
-          unreadCount = finalNotifications.filter(n => !n.isRead).length;
-        } else {
-          unreadCount = data.filter(n => !n.isRead).length;
         }
         
         set({ 
           notifications: finalNotifications,
-          unreadNotificationCount: unreadCount,
           isLoadingNotifications: false,
           error: null
         });
 
-        console.log(`✅ ${STORE_EVENTS.NOTIFICATIONS_LOAD} - ${finalNotifications.length} notifications, ${unreadCount} unread`);
+        console.log(`✅ ${STORE_EVENTS.NOTIFICATIONS_LOAD} - ${finalNotifications.length} notifications loaded`);
         return finalNotifications;
       } catch (error) {
         console.error('❌ Error fetching notifications:', error);
@@ -320,6 +340,7 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
       }
     },
 
+    // ✅ UPDATED: Cập nhật socket notification count khi nhận thông báo từ socket
     onNotificationReceived: (notification) => {
       const { notifications } = get();
       
@@ -336,80 +357,37 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
 
       set(state => ({
         notifications: [notification, ...state.notifications],
-        unreadNotificationCount: !notification.isRead 
-          ? state.unreadNotificationCount + 1
-          : state.unreadNotificationCount
+        // ✅ NEW: Increment socket notification count
+        unreadNotificationCountFromSocket: state.unreadNotificationCountFromSocket + 1
       }));
 
-      console.log(`📊 ${STORE_EVENTS.NOTIFICATION_RECEIVED} - ${notification.id || 'new notification'}`);
+      console.log(`📊 ${STORE_EVENTS.NOTIFICATION_RECEIVED} - ${notification.id || 'new notification'} | Socket count: ${get().unreadNotificationCountFromSocket}`);
     },
 
-    markNotificationAsRead: async (notificationId) => {
-      try {
-        const { notifications } = get();
-        const notification = notifications.find(n => n.id === notificationId);
-        
-        if (!notification || notification.isRead) {
-          return;
-        }
-        
-        set(state => ({
-          notifications: state.notifications.map(n =>
-            n.id === notificationId
-              ? { ...n, isRead: true }
-              : n
-          ),
-          unreadNotificationCount: Math.max(0, state.unreadNotificationCount - 1)
-        }));
-      } catch (error) {
-        console.error('❌ Error marking notification as read:', error);
-      }
+    // ✅ NEW: Reset socket notification count (when user reads notifications)
+    resetSocketNotificationCount: () => {
+      set({ unreadNotificationCountFromSocket: 0 });
+      console.log('✅ Reset socket notification count to 0');
     },
 
-    markAllNotificationsAsRead: async () => {
-      try {
-        set(state => ({
-          notifications: state.notifications.map(notification =>
-            ({ ...notification, isRead: true })
-          ),
-          unreadNotificationCount: 0
-        }));
-      } catch (error) {
-        console.error('❌ Error marking all notifications as read:', error);
-      }
+    // ✅ NEW: Get total unread notification count (API + Socket)
+    getTotalUnreadNotificationCount: () => {
+      const { unreadNotificationCount, unreadNotificationCountFromSocket } = get();
+      return unreadNotificationCount + unreadNotificationCountFromSocket;
     },
 
-    removeNotification: (notificationId) => {
-      set(state => {
-        const notification = state.notifications.find(n => n.id === notificationId);
-        const wasUnread = notification && !notification.isRead;
-        
-        return {
-          notifications: state.notifications.filter(n => n.id !== notificationId),
-          unreadNotificationCount: wasUnread 
-            ? Math.max(0, state.unreadNotificationCount - 1)
-            : state.unreadNotificationCount
-        };
-      });
-    },
-
+    // ✅ UPDATED: Clear all notifications và reset socket count
     clearAllNotifications: async () => {
       try {
         set({ 
           notifications: [],
-          unreadNotificationCount: 0
+          unreadNotificationCountFromSocket: 0 // ✅ Reset socket count, keep API count
         });
+        
+        console.log('✅ Cleared all notifications and reset socket count');
       } catch (error) {
         console.error('❌ Error clearing all notifications:', error);
       }
-    },
-
-    syncUnreadCount: () => {
-      const { notifications } = get();
-      const unreadCount = notifications.filter(n => !n.isRead).length;
-      
-      set({ unreadNotificationCount: unreadCount });
-      console.log(`📊 Synced unread count: ${unreadCount}`);
     },
 
     // ============ CHAT NAVIGATION & SELECTION LOGIC ============
@@ -498,7 +476,8 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
       try {
         await Promise.allSettled([
           get().fetchChatList(),
-          get().fetchNotifications()
+          get().fetchUnreadNotificationCount(), // ✅ Fetch unread count riêng biệt (chỉ 1 lần)
+          // get().fetchNotifications() // ✅ Fetch notifications riêng biệt
         ]);
         console.log('✅ App initialized successfully');
       } catch (error) {
@@ -516,6 +495,7 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
         virtualChatUser: null,
         notifications: [],
         unreadNotificationCount: 0,
+        unreadNotificationCountFromSocket: 0, // ✅ Reset socket count
         error: null,
         isLoadingChats: false,
         isLoadingNotifications: false,
@@ -547,6 +527,12 @@ updateChatUserOnlineStatus: (userId, onlineStatusData) => {
     refreshNotifications: async () => {
       console.log('🔄 Force refreshing notifications...');
       return get().fetchNotifications(true);
+    },
+
+    // ✅ NEW: Force refresh unread count (từ API)
+    refreshUnreadCount: async () => {
+      console.log('🔄 Force refreshing unread count...');
+      return get().fetchUnreadNotificationCount();
     },
 
   }), {
