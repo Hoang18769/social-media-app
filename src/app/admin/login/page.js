@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Eye, EyeOff, Shield, ArrowLeftRight } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -13,8 +13,34 @@ const REDIRECT_DELAYS = {
   FALLBACK: 2000
 };
 
+// Utility function to safely access localStorage
+const safeLocalStorage = {
+  getItem: (key) => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(key);
+    }
+    return null;
+  },
+  setItem: (key, value) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+  removeItem: (key) => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  },
+  clear: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+    }
+  }
+};
+
 export default function AdminLoginPage() {
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -26,6 +52,11 @@ export default function AdminLoginPage() {
   const [messages, setMessages] = useState({
     general: ""
   });
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Hàm parse lỗi tái sử dụng
   const parseApiError = (error) => {
@@ -68,6 +99,12 @@ export default function AdminLoginPage() {
   };
 
   const handleAdminLogin = useCallback(async () => {
+    // Check if we're on client side
+    if (!isClient) {
+      console.warn('Attempted to login before client hydration');
+      return;
+    }
+
     setStatus(prev => ({ ...prev, loading: true }));
     setMessages(prev => ({ ...prev, general: "" }));
 
@@ -98,18 +135,20 @@ export default function AdminLoginPage() {
         const decoded = jwtDecode(token);
         console.log('🔓 Decoded admin token:', decoded);
 
-        // Batch localStorage operations
-        const authData = {
-          accessToken: token,
-          userId: decoded.sub,
-          userName: decoded.username,
-          userRole: decoded.scope,
-        };
+        // Batch localStorage operations - only on client side
+        if (typeof window !== 'undefined') {
+          const authData = {
+            accessToken: token,
+            userId: decoded.sub,
+            userName: decoded.username,
+            userRole: decoded.scope,
+          };
 
-        // Set localStorage
-        Object.entries(authData).forEach(([key, value]) => {
-          localStorage.setItem(key, value);
-        });
+          // Set localStorage safely
+          Object.entries(authData).forEach(([key, value]) => {
+            safeLocalStorage.setItem(key, value);
+          });
+        }
 
         // Sync cookies
         console.log('📝 Syncing admin session to cookies...');
@@ -168,7 +207,7 @@ export default function AdminLoginPage() {
     } finally {
       setStatus(prev => ({ ...prev, loading: false }));
     }
-  }, [formData.email, formData.password, router]);
+  }, [formData.email, formData.password, router, isClient]);
 
   const handleBackToLogin = () => {
     router.push("/auth"); // Quay lại trang login thường
@@ -180,6 +219,18 @@ export default function AdminLoginPage() {
       [field]: value
     }));
   };
+
+  // Don't render until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <span className="text-muted-foreground">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
