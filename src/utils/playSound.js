@@ -42,12 +42,11 @@ export function initAudioSystem() {
 }
 
 /**
- * Phát âm thanh với nhiều phương pháp bypass autoplay
+ * Phát âm thanh với cách tiếp cận đơn giản hơn
  */
 export function playSound(url, { loop = false, volume = 1, duration = 20000 } = {}) {
   stopSound(); // Dừng âm thanh cũ nếu có
 
-  // Phương pháp 1: Thử phát trực tiếp
   currentAudio = new Audio(url);
   currentAudio.loop = loop;
   currentAudio.volume = volume;
@@ -62,7 +61,7 @@ export function playSound(url, { loop = false, volume = 1, duration = 20000 } = 
       .catch(async (error) => {
         console.warn("[playSound] Direct play failed:", error);
         
-        // Phương pháp 2: Thử với AudioContext
+        // Thử với AudioContext nếu có
         if (audioContext && audioContext.state === 'suspended') {
           try {
             await audioContext.resume();
@@ -70,17 +69,16 @@ export function playSound(url, { loop = false, volume = 1, duration = 20000 } = 
             console.log("[playSound] Audio played after AudioContext resume");
           } catch (resumeError) {
             console.warn("[playSound] AudioContext resume failed:", resumeError);
-            
-            // Phương pháp 3: Hiển thị notification yêu cầu user interaction
-            showPlayPrompt(url, { loop, volume, duration });
+            // Không hiển thị modal, chỉ log lỗi
+            console.log("[playSound] Audio autoplay blocked - waiting for user interaction");
           }
         } else {
-          showPlayPrompt(url, { loop, volume, duration });
+          // Không hiển thị modal, chỉ log lỗi
+          console.log("[playSound] Audio autoplay blocked - waiting for user interaction");
         }
       });
   }
 
-  // Tự động tắt sau `duration` ms
   if (duration) {
     stopTimeout = setTimeout(() => {
       stopSound();
@@ -91,95 +89,62 @@ export function playSound(url, { loop = false, volume = 1, duration = 20000 } = 
 }
 
 /**
- * Hiển thị prompt yêu cầu user click để phát âm thanh
+ * Tạo notification âm thanh cho ringtone
  */
-function showPlayPrompt(url, options) {
-  // Tạo overlay
-  const overlay = document.createElement('div');
-  overlay.id = 'audio-play-prompt';
-  overlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    font-family: Arial, sans-serif;
-  `;
+export function playRingtone(url, { loop = true, volume = 1, duration = 30000 } = {}) {
+  // Thử phát trực tiếp trước
+  const result = playSound(url, { loop, volume, duration });
+  
+  // Nếu có notification API, tạo thông báo
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('📞 Cuộc gọi đến', {
+      body: 'Bạn có cuộc gọi đến',
+      icon: '/favicon.ico',
+      requireInteraction: true,
+      silent: false // Để browser tự phát âm thanh notification
+    });
+  }
+  
+  return result;
+}
 
-  // Tạo modal
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    max-width: 400px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  `;
-
-  modal.innerHTML = `
-    <h3 style="margin-top: 0; color: #333;">📞 Cuộc gọi đến</h3>
-    <p style="color: #666; margin-bottom: 20px;">Nhấn để phát nhạc chuông</p>
-    <button id="play-audio-btn" style="
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-right: 10px;
-    ">📱 Phát nhạc</button>
-    <button id="dismiss-audio-btn" style="
-      background: #f44336;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    ">❌ Tắt tiếng</button>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  // Xử lý sự kiện
-  document.getElementById('play-audio-btn').onclick = () => {
-    document.body.removeChild(overlay);
+/**
+ * Thử phát lại âm thanh sau khi có user interaction
+ * Hàm này có thể được gọi từ các button accept/reject call
+ */
+export function retryPlaySound(url, options = {}) {
+  if (!isUserInteracted) {
     isUserInteracted = true;
     
-    // Phát âm thanh sau user interaction
-    currentAudio = new Audio(url);
-    currentAudio.loop = options.loop;
-    currentAudio.volume = options.volume;
-    currentAudio.play().catch(err => 
-      console.warn("[playSound] Still failed after user interaction:", err)
-    );
+    // Resume AudioContext nếu cần
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+  }
+  
+  return playSound(url, options);
+}
+
+/**
+ * Hàm để kích hoạt âm thanh từ các button interaction
+ * Gọi hàm này trong onClick của các button accept/reject
+ */
+export function enableAudioOnUserAction() {
+  if (!isUserInteracted) {
+    isUserInteracted = true;
     
-    // Tự động tắt sau duration
-    if (options.duration) {
-      stopTimeout = setTimeout(() => {
-        stopSound();
-      }, options.duration);
+    // Resume AudioContext nếu cần
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume();
     }
-  };
-
-  document.getElementById('dismiss-audio-btn').onclick = () => {
-    document.body.removeChild(overlay);
-  };
-
-  // Tự động đóng sau 10 giây
-  setTimeout(() => {
-    if (document.getElementById('audio-play-prompt')) {
-      document.body.removeChild(overlay);
+    
+    // Nếu có âm thanh đang cố phát, thử phát lại
+    if (currentAudio && currentAudio.paused) {
+      currentAudio.play().catch(err => 
+        console.warn("[enableAudioOnUserAction] Still failed:", err)
+      );
     }
-  }, 10000);
+  }
 }
 
 /**
@@ -194,12 +159,6 @@ export function stopSound() {
   if (stopTimeout) {
     clearTimeout(stopTimeout);
     stopTimeout = null;
-  }
-  
-  // Xóa prompt nếu có
-  const prompt = document.getElementById('audio-play-prompt');
-  if (prompt) {
-    document.body.removeChild(prompt);
   }
 }
 
@@ -237,24 +196,4 @@ if (typeof window !== 'undefined') {
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     initAudioSystem();
   }
-}
-
-/**
- * Tạo notification âm thanh cho ringtone
- */
-export function playRingtone(url, { loop = true, volume = 1, duration = 30000 } = {}) {
-  // Thử phát trực tiếp trước
-  const result = playSound(url, { loop, volume, duration });
-  
-  // Nếu có notification API, tạo thông báo
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('📞 Cuộc gọi đến', {
-      body: 'Bạn có cuộc gọi đến',
-      icon: '/favicon.ico',
-      requireInteraction: true,
-      silent: false // Để browser tự phát âm thanh notification
-    });
-  }
-  
-  return result;
 }

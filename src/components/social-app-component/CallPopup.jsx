@@ -1,10 +1,30 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { enableAudioOnUserAction, stopSound } from "@/utils/playSound";
 
 const CallPopup = ({ caller, onAccept, onReject }) => {
   // Nếu không có caller thì không hiển thị
   if (!caller) return null;
+
+  const handleAccept = () => {
+    enableAudioOnUserAction(); // Kích hoạt audio system
+    stopSound(); // Dừng ringtone
+    onAccept();
+  };
+
+  const handleReject = () => {
+    enableAudioOnUserAction(); // Kích hoạt audio system
+    stopSound(); // Dừng ringtone
+    onReject();
+  };
+
+  // Cleanup khi component unmount
+  useEffect(() => {
+    return () => {
+      stopSound();
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
@@ -44,7 +64,7 @@ const CallPopup = ({ caller, onAccept, onReject }) => {
           {/* Buttons */}
           <div className="flex space-x-4">
             <button
-              onClick={onReject}
+              onClick={handleReject}
               className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-medium transition-colors shadow-md active:scale-95"
               aria-label="Từ chối cuộc gọi"
             >
@@ -55,7 +75,7 @@ const CallPopup = ({ caller, onAccept, onReject }) => {
             </button>
             
             <button
-              onClick={onAccept}
+              onClick={handleAccept}
               className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-medium transition-colors shadow-md active:scale-95"
               aria-label="Chấp nhận cuộc gọi"
             >

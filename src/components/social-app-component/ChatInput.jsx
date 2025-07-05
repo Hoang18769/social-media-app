@@ -128,7 +128,7 @@ export default function ChatInput({
       )}
 
       {/* Main input area */}
-      <div className="flex items-end space-x-2">
+      <div className="flex items-center space-x-2">
         {/* File upload button */}
         <button
           onClick={handleFileClick}
@@ -151,7 +151,7 @@ export default function ChatInput({
         </button>
 
         {/* Input field */}
-        <div className="flex-1">
+        <div className="flex-1 m-2">
           <textarea
             ref={textareaRef}
             value={input}
