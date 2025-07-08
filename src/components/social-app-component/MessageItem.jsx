@@ -49,6 +49,29 @@ const formatFileSize = (bytes) => {
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 };
 
+// Helper function to truncate filename while preserving extension
+const truncateFilename = (filename, maxLength = 35) => {
+  if (!filename || filename.length <= maxLength) return filename;
+  
+  const lastDotIndex = filename.lastIndexOf('.');
+  if (lastDotIndex === -1) {
+    // No extension, just truncate
+    return filename.substring(0, maxLength - 3) + '...';
+  }
+  
+  const extension = filename.substring(lastDotIndex);
+  const nameWithoutExt = filename.substring(0, lastDotIndex);
+  
+  // Calculate how much space we have for the name part
+  const availableSpace = maxLength - extension.length - 3; // 3 for "..."
+  
+  if (availableSpace <= 0) {
+    return '...' + extension;
+  }
+  
+  return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
+};
+
 const FileIcon = ({ fileType }) => {
   if (isImageFile(fileType)) return <Image className="w-5 h-5" />;
   if (isVideoFile(fileType)) return <Film className="w-5 h-5" />;
@@ -123,14 +146,21 @@ export default function MessageItem({
       return renderMediaPreview(url, fileType);
     }
 
+    const truncatedFilename = truncateFilename(filename);
+
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg">
+      <div className="flex items-center gap-2 p-2 rounded-lg max-w-full">
         <FileIcon fileType={fileType} />
         <div className="flex-1 min-w-0">
-          <div className="font-medium truncate">{filename}</div>
+          <div 
+            className="font-medium" 
+            title={filename} // Show full filename on hover
+          >
+            {truncatedFilename}
+          </div>
           {size && <div className="text-xs opacity-70">{formatFileSize(size)}</div>}
         </div>
-        <a href={url} download className="p-1 rounded hover:bg-black/10">
+        <a href={url} download className="p-1 rounded hover:bg-black/10 flex-shrink-0">
           <Download className="w-4 h-4" />
         </a>
       </div>
@@ -250,7 +280,7 @@ export default function MessageItem({
             {/* Message bubble */}
             <div
               className={clsx(
-                "rounded-xl px-3 py-2 text-sm inline-block",
+                "rounded-xl px-3 py-2 text-sm inline-block max-w-[60%] break-words",
                 isDeleted
                   ? "bg-gray-200 text-gray-500 italic dark:bg-gray-700 dark:text-gray-400"
                   : isSelf

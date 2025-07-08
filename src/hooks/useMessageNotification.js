@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { subscribe, unsubscribe, sendMessage as sendStompMessage, isConnected } from "@/utils/socket";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { 
+  subscribe, 
+  unsubscribe, 
+  sendMessage as sendStompMessage, 
+  isConnected,
+  getStompClient,
+  stompClientSingleton 
+} from "@/utils/socket";
 import { toast } from "react-hot-toast";
 import useAppStore from "@/store/ZustandStore";
 import { isTokenValid } from "@/utils/axios";
@@ -12,17 +19,127 @@ export default function useMessageNotification(userId) {
   const subscriptionRef = useRef(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState({
+    isConnected: false,
+    isConnecting: false,
+    subscriberCount: 0
+  });
   const router = useRouter();
 
   const { fetchChatList, onMessageReceived, onChatCreated, selectChat } = useAppStore();
 
+  // Initialize current user ID
   useEffect(() => {
     const uid = localStorage.getItem("userId");
     if (uid) setCurrentUserId(uid);
   }, []);
 
+  // Monitor connection status
+  useEffect(() => {
+    const updateConnectionStatus = () => {
+      setConnectionStatus({
+        isConnected: stompClientSingleton.isConnected(),
+        isConnecting: stompClientSingleton.isConnecting,
+        subscriberCount: stompClientSingleton.getSubscriberCount()
+      });
+    };
+
+    // Initial status
+    updateConnectionStatus();
+
+    // Update status periodically
+    const statusInterval = setInterval(updateConnectionStatus, 2000);
+
+    return () => clearInterval(statusInterval);
+  }, []);
+
+  // Kiểm tra và yêu cầu quyền thông báo
+  useEffect(() => {
+    const checkNotificationPermission = async () => {
+      console.log('🔍 Checking notification permission...');
+      
+      if (!('Notification' in window)) {
+        console.warn('⚠️ Browser does not support notifications');
+        setNotificationPermission('denied');
+        return;
+      }
+
+      console.log('📋 Current Notification.permission:', Notification.permission);
+      
+      if (Notification.permission === 'default') {
+        console.log('📋 Requesting notification permission...');
+        const permission = await Notification.requestPermission();
+        console.log('📋 Permission granted:', permission);
+        setNotificationPermission(permission);
+      } else {
+        setNotificationPermission(Notification.permission);
+      }
+    };
+
+    checkNotificationPermission();
+  }, []);
+
+  // Hàm hiển thị PWA notification
+  const showPWANotification = useCallback(async (title, options = {}) => {
+    try {
+      if (!('Notification' in window)) return false;
+
+      if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return false;
+      }
+
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        
+        if (registration.active) {
+          registration.active.postMessage({
+            type: 'SIMULATE_PUSH',
+            data: {
+              title,
+              ...options
+            }
+          });
+          return true;
+        } else {
+          console.warn('⚠️ No active service worker found');
+        }
+      }
+
+      // Fallback nếu không gửi được tới SW
+      new Notification(title, options);
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error showing notification:', error);
+      return false;
+    }
+  }, []);
+
+  // Hàm helper để xác định loại file
+  const getFileType = useCallback((attachment, attachmentName) => {
+    if (!attachment && !attachmentName) return 'file';
+    
+    const fileName = attachmentName || attachment;
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
+    
+    if (imageExtensions.includes(extension)) return 'ảnh';
+    if (videoExtensions.includes(extension)) return 'video';
+    return 'file';
+  }, []);
+
+  // Hàm helper để rút gọn nội dung tin nhắn
+  const truncateMessage = useCallback((content, maxLength = 30) => {
+    if (!content || content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  }, []);
+
   // Hàm helper để cập nhật chatList
-  const updateChatList = (newMessage, chatId) => {
+  const updateChatList = useCallback((newMessage, chatId) => {
     console.log("🔄 Processing message for chatList:", newMessage);
     const { chatList } = useAppStore.getState();
     console.log("📜 Current chatList:", chatList);
@@ -42,8 +159,6 @@ export default function useMessageNotification(userId) {
           deleted: newMessage.deleted || false,
         },
         updatedAt: newMessage.sentAt,
-        notReadMessageCount:
-          (foundChat.notReadMessageCount || 0) + (newMessage.isOwnMessage ? 0 : 1),
       };
       const otherChats = chatList.filter((c) => c.chatId !== chatId);
       const newChatList = [...otherChats, updatedChat].sort(
@@ -56,10 +171,10 @@ export default function useMessageNotification(userId) {
     } else {
       console.warn(`⚠️ Không tìm thấy chat với chatId: ${chatId}`);
     }
-  };
+  }, []);
 
   // Hàm xử lý tin nhắn nhận được
-  const handleMessage = async (messageData) => {
+  const handleMessage = useCallback(async (messageData) => {
     if (!messageData) return;
 
     console.log("📨 New message received:", messageData);
@@ -71,6 +186,17 @@ export default function useMessageNotification(userId) {
           duration: 3000,
           position: "top-right",
         });
+        
+        // PWA notification cho tin nhắn bị xóa
+        await showPWANotification('Tin nhắn đã bị xóa', {
+          body: 'Một tin nhắn vừa bị xóa khỏi cuộc trò chuyện',
+          tag: `delete-${messageData.chatId}`,
+          data: { 
+            type: 'delete', 
+            chatId: messageData.chatId 
+          }
+        });
+        
         return;
       }
 
@@ -80,6 +206,17 @@ export default function useMessageNotification(userId) {
           toast(`✏️ ${senderName} đã chỉnh sửa tin nhắn`, {
             duration: 3000,
             position: "top-right",
+          });
+          
+          // PWA notification cho tin nhắn được chỉnh sửa
+          await showPWANotification('Tin nhắn đã được chỉnh sửa', {
+            body: `${senderName} đã chỉnh sửa tin nhắn`,
+            tag: `edit-${messageData.chatId}`,
+            data: { 
+              type: 'edit', 
+              chatId: messageData.chatId,
+              senderId: messageData.sender?.id
+            }
           });
         }
         return;
@@ -97,23 +234,46 @@ export default function useMessageNotification(userId) {
         });
       }
 
-      // Toast thông báo kèm click handler
-      if (
-        messageData.sender &&
-        messageData.content &&
-        !newMessage.isOwnMessage
-      ) {
+      // Toast thông báo kèm click handler và PWA notification
+      if (messageData.sender && !newMessage.isOwnMessage) {
         const senderName = messageData.sender.username || messageData.sender.givenName || "ai đó";
+        
+        // Phát âm thanh
         try {
-              playSound("pocpoc.mp3", { 
-                loop: false, 
-                volume: 0.7, 
-                duration: 3000 
-              });
-              console.log("🔊 Playing notification sound for NEW_CHAT_CREATED");
-            } catch (soundError) {
-              console.warn("🔇 Failed to play notification sound:", soundError);
-            }
+          playSound("pocpoc.mp3", { 
+            loop: false, 
+            volume: 0.7, 
+            duration: 3000 
+          });
+          console.log("🔊 Playing notification sound for NEW_MESSAGE");
+        } catch (soundError) {
+          console.warn("🔇 Failed to play notification sound:", soundError);
+        }
+
+        // Xác định nội dung thông báo
+        let toastMessage = '';
+        let notificationBody = '';
+
+        if (messageData.content && messageData.content.trim()) {
+          // Tin nhắn có nội dung text - rút gọn nếu quá dài
+          const truncatedContent = truncateMessage(messageData.content.trim(), 30);
+          toastMessage = `💬 ${senderName}: ${truncatedContent}`;
+          
+          // Cho PWA notification có thể dài hơn một chút
+          const truncatedNotificationContent = truncateMessage(messageData.content.trim(), 50);
+          notificationBody = `${senderName}: ${truncatedNotificationContent}`;
+        } else if (messageData.attachment || messageData.attachmentName) {
+          // Tin nhắn có file đính kèm
+          const fileType = getFileType(messageData.attachment, messageData.attachmentName);
+          toastMessage = `📎 ${senderName} đã gửi một ${fileType}`;
+          notificationBody = `${senderName} đã gửi một ${fileType}`;
+        } else {
+          // Tin nhắn không có nội dung (fallback)
+          toastMessage = `💬 ${senderName} đã gửi một tin nhắn`;
+          notificationBody = `${senderName} đã gửi một tin nhắn`;
+        }
+
+        // Toast notification
         toast(
           (t) => (
             <div
@@ -124,7 +284,7 @@ export default function useMessageNotification(userId) {
               }}
               className="cursor-pointer"
             >
-              💬 {senderName}: {messageData.content}
+              {toastMessage}
             </div>
           ),
           {
@@ -132,6 +292,20 @@ export default function useMessageNotification(userId) {
             position: "top-right",
           }
         );
+
+        // PWA notification
+        const notificationResult = await showPWANotification('Tin nhắn mới', {
+          body: notificationBody,
+          tag: `message-${messageData.id}`,
+          data: { 
+            type: 'message', 
+            chatId: messageData.chatId,
+            messageId: messageData.id,
+            senderId: messageData.sender?.id
+          }
+        });
+        
+        console.log('📱 PWA notification result:', notificationResult);
       }
 
       if (onMessageReceived) {
@@ -146,13 +320,16 @@ export default function useMessageNotification(userId) {
     } catch (error) {
       console.error("❌ Failed to process message:", error);
     }
-  };
+  }, [currentUserId, showPWANotification, getFileType, truncateMessage, updateChatList, onMessageReceived, selectChat, router]);
 
-  // Setup subscription
+  // Setup subscription với singleton
   useEffect(() => {
     if (!userId || !currentUserId) return;
 
     let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 2000;
     
     const setupSubscription = async () => {
       try {
@@ -160,6 +337,12 @@ export default function useMessageNotification(userId) {
         
         console.log(`🔌 Setting up subscription for ${destination}...`);
         
+        // Đảm bảo có connection trước khi subscribe
+        const client = await getStompClient();
+        if (!client || !client.connected) {
+          throw new Error("STOMP client not connected");
+        }
+
         // Subscribe to messages
         const subscription = await subscribe(destination, (message) => {
           if (!isMounted) return;
@@ -176,10 +359,24 @@ export default function useMessageNotification(userId) {
           subscriptionRef.current = subscription;
           setIsSubscribed(true);
           console.log(`✅ Successfully subscribed to ${destination}`);
+          retryCount = 0; // Reset retry count on success
+        } else {
+          throw new Error("Failed to create subscription");
         }
       } catch (error) {
         console.error("❌ Error setting up subscription:", error);
         setIsSubscribed(false);
+        
+        // Retry logic
+        if (retryCount < maxRetries && isMounted) {
+          retryCount++;
+          console.log(`🔄 Retrying subscription (${retryCount}/${maxRetries}) in ${retryDelay}ms...`);
+          setTimeout(() => {
+            if (isMounted) setupSubscription();
+          }, retryDelay);
+        } else {
+          console.error("❌ Max retry attempts reached for subscription");
+        }
       }
     };
 
@@ -196,34 +393,85 @@ export default function useMessageNotification(userId) {
         console.log(`🔌 Unsubscribed from ${destination}`);
       }
     };
-  }, [userId, currentUserId, onMessageReceived, selectChat, router]);
+  }, [userId, currentUserId, handleMessage]);
 
-  // Method để gửi message qua STOMP client
-  const sendMessage = async (destination, message) => {
-    try {
-      const success = await sendStompMessage(destination, message);
-      if (!success) {
-        console.warn("⚠️ Failed to send message via STOMP");
+  // Xử lý click notification từ Service Worker
+  useEffect(() => {
+    const handleSWMessage = (event) => {
+      console.log('📱 Received SW message:', event.data);
+      
+      const { type, action, data } = event.data;
+      
+      if (type === 'NOTIFICATION_ACTION') {
+        if (action === 'view' || action === 'reply') {
+          if (data?.chatId) {
+            selectChat(data.chatId);
+            router.push("/chats");
+          }
+        }
       }
-      return success;
-    } catch (error) {
-      console.error("❌ Error sending message:", error);
-      return false;
-    }
-  };
+    };
 
-  // Debug status
-  const getConnectionStatus = () => ({
-    isConnected: isConnected(),
+    // Lắng nghe message từ Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    }
+    
+    return () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+      }
+    };
+  }, [selectChat, router]);
+
+
+  // Enhanced connection status
+  const getConnectionStatus = useCallback(() => ({
+    isConnected: stompClientSingleton.isConnected(),
+    isConnecting: stompClientSingleton.isConnecting,
     hasSubscription: isSubscribed,
+    subscriberCount: stompClientSingleton.getSubscriberCount(),
     userId,
     currentUserId,
     subscriptionDestination: userId ? `/message/${userId}` : null,
-  });
+    notificationPermission,
+    reconnectAttempts: stompClientSingleton.reconnectAttempts,
+    maxReconnectAttempts: stompClientSingleton.maxReconnectAttempts,
+  }), [isSubscribed, userId, currentUserId, notificationPermission]);
+
+  // Force reconnect method
+  const forceReconnect = useCallback(async () => {
+    console.log("🔄 Force reconnecting...");
+    try {
+      await stompClientSingleton.disconnect();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await getStompClient();
+      return true;
+    } catch (error) {
+      console.error("❌ Force reconnect failed:", error);
+      return false;
+    }
+  }, []);
+
+  // Update socket configuration
+  const updateSocketConfig = useCallback((config) => {
+    console.log("⚙️ Updating socket config:", config);
+    stompClientSingleton.updateConfig(config);
+  }, []);
 
   return {
-    sendMessage,
     getConnectionStatus,
+    forceReconnect,
+    updateSocketConfig,
     isSubscribed,
+    connectionStatus,
+    notificationPermission,
+    showPWANotification,
+    // Thêm các method debug
+    debug: {
+      getSocketInstance: () => stompClientSingleton,
+      getSubscriberCount: () => stompClientSingleton.getSubscriberCount(),
+      getSubscribers: () => Array.from(stompClientSingleton.subscribers.keys()),
+    }
   };
 }

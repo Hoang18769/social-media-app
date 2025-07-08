@@ -13,6 +13,8 @@ export const STORE_EVENTS = {
   NEWSFEED_LOAD: 'newsfeed_load',
   POST_CREATED: 'post_created',
   SEARCH_PERFORMED: 'search_performed',
+  UNREAD_MESSAGE_COUNT_UPDATED: 'unread_message_count_updated',
+  BLOCK_STATUS_UPDATED: 'block_status_updated',
 };
 
 const useAppStore = create(
@@ -22,8 +24,28 @@ const useAppStore = create(
     conversationMap: new Map(),
     isLoadingChats: false,
     error: null,
+    unreadMessageCount: 0, // ✅ NEW: Total unread messages from all chats
 
-    // ✅ FIXED: Return Promise and handle errors properly
+    // ✅ NEW: Helper function to calculate unread message count
+    calculateUnreadMessageCount: (chatList) => {
+      const total = chatList.reduce((sum, chat) => {
+        return sum + (chat.notReadMessageCount || 0);
+      }, 0);
+      return total;
+    },
+
+    // ✅ NEW: Update unread message count
+    updateUnreadMessageCount: () => {
+      const { chatList } = get();
+      const newCount = get().calculateUnreadMessageCount(chatList);
+      
+      set({ unreadMessageCount: newCount });
+      console.log(`✅ ${STORE_EVENTS.UNREAD_MESSAGE_COUNT_UPDATED} - Total unread messages: ${newCount}`);
+      
+      return newCount;
+    },
+
+    // ✅ UPDATED: Return Promise and handle errors properly + update unread count
     fetchChatList: async () => {
       set({ isLoadingChats: true, error: null });
       try {
@@ -46,14 +68,19 @@ const useAppStore = create(
         // ✅ Reverse the chat list when fetching
         const reversedData = [...data].reverse();
 
+        // ✅ Calculate unread message count
+        const unreadCount = get().calculateUnreadMessageCount(reversedData);
+
         set({ 
           chatList: reversedData, 
           conversationMap,
           isLoadingChats: false,
-          error: null
+          error: null,
+          unreadMessageCount: unreadCount // ✅ Update unread count
         });
 
         console.log(`✅ ${STORE_EVENTS.CHAT_LIST_LOAD} - ${reversedData.length} chats loaded`);
+        console.log(`✅ ${STORE_EVENTS.UNREAD_MESSAGE_COUNT_UPDATED} - Total unread messages: ${unreadCount}`);
         return reversedData; // ✅ Return data for component
       } catch (error) {
         console.error('❌ Error fetching chats:', error);
@@ -62,17 +89,18 @@ const useAppStore = create(
         set({ 
           isLoadingChats: false, 
           error: errorMessage,
-          chatList: [] // ✅ Reset on error
+          chatList: [], // ✅ Reset on error
+          unreadMessageCount: 0 // ✅ Reset unread count on error
         });
         
         throw error; // ✅ Re-throw for component to handle
       }
     },
 
-    // Thêm vào trong useAppStore create function, section CHAT STATE
+    // ✅ UPDATED: Update online status and recalculate unread count
     updateChatUserOnlineStatus: (userId, onlineStatusData) => {
-      set((state) => ({
-        chatList: state.chatList.map((chat) => {
+      set((state) => {
+        const updatedChatList = state.chatList.map((chat) => {
           if (chat.target && chat.target.id === userId) {
             return {
               ...chat,
@@ -84,8 +112,15 @@ const useAppStore = create(
             };
           }
           return chat;
-        })
-      }));
+        });
+
+        const unreadCount = get().calculateUnreadMessageCount(updatedChatList);
+
+        return {
+          chatList: updatedChatList,
+          unreadMessageCount: unreadCount
+        };
+      });
       console.log(`✅ Updated target online status for ${userId}`, onlineStatusData);
     },
 
@@ -111,14 +146,84 @@ const useAppStore = create(
       return null;
     },
 
-    // Bulk update online status cho nhiều users (khi khởi động app)
+    // ✅ NEW: Get block status by chat ID
+    getBlockStatusByChatId: (chatId) => {
+  const { chatList } = get();
+  const chat = chatList.find(c => (c.id === chatId || c.chatId === chatId));
+  
+  if (!chat) {
+    console.log(`❌ Chat not found for ID: ${chatId}`);
+    return "NORMAL"; // Default status if chat not found
+  }
+
+  console.log(`✅ Block status for chat ${chatId}:`, chat.blockStatus);
+  return chat.blockStatus || "NORMAL"; // Return the direct blockStatus value
+},
+
+// ✅ Update block status for a chat
+updateBlockStatus: (chatId, blockStatusData) => {
+  set((state) => {
+    const updatedChatList = state.chatList.map((chat) => {
+      if (chat.id === chatId || chat.chatId === chatId) {
+        return {
+          ...chat,
+          blockStatus: blockStatusData.blockStatus, // Update the main blockStatus field
+          blockedAt: blockStatusData.blockedAt,
+          blockReason: blockStatusData.blockReason,
+          target: chat.target ? {
+            ...chat.target,
+            hasBlocked: blockStatusData.blockStatus === "HAS_BEEN_BLOCKED",
+            isBlocked: blockStatusData.blockStatus === "BLOCKED"
+          } : chat.target
+        };
+      }
+      return chat;
+    });
+
+    return {
+      chatList: updatedChatList
+    };
+  });
+  
+  console.log(`✅ Block status updated for chat ${chatId}:`, blockStatusData);
+},
+
+    // ✅ NEW: Block/Unblock user in chat
+    toggleBlockUser: async (chatId, shouldBlock = true) => {
+      try {
+        const endpoint = shouldBlock ? '/v1/chat/block' : '/v1/chat/unblock';
+        const res = await api.post(endpoint, { chatId });
+        
+        if (res.data.code === 200) {
+          const currentUserId = getCurrentUserId();
+          const blockStatusData = {
+            hasBlocked: shouldBlock,
+            isBlockedByTarget: false, // We're doing the action, so we're not blocked by target
+            blockedAt: shouldBlock ? new Date().toISOString() : null,
+            blockReason: shouldBlock ? 'Blocked by user' : null
+          };
+          
+          get().updateBlockStatus(chatId, blockStatusData);
+          
+          console.log(`✅ ${shouldBlock ? 'Blocked' : 'Unblocked'} user in chat ${chatId}`);
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error(`❌ Error ${shouldBlock ? 'blocking' : 'unblocking'} user:`, error);
+        throw error;
+      }
+    },
+
+    // ✅ UPDATED: Bulk update online status và recalculate unread count
     bulkUpdateOnlineStatus: (userStatusList) => {
       if (!Array.isArray(userStatusList) || userStatusList.length === 0) {
         return;
       }
 
-      set(state => ({
-        chatList: state.chatList.map(chat => {
+      set(state => {
+        const updatedChatList = state.chatList.map(chat => {
           let updatedChat = { ...chat };
 
           // Update participants
@@ -157,13 +262,20 @@ const useAppStore = create(
           }
 
           return updatedChat;
-        })
-      }));
+        });
+
+        const unreadCount = get().calculateUnreadMessageCount(updatedChatList);
+
+        return {
+          chatList: updatedChatList,
+          unreadMessageCount: unreadCount
+        };
+      });
 
       console.log(`✅ Bulk updated online status for ${userStatusList.length} users`);
     },
 
-    // ✅ FIXED: Better update logic
+    // ✅ UPDATED: Better update logic + recalculate unread count
     updateChatListAfterMessage: (chatId, lastMessage) => {
       set((state) => {
         const updatedChatList = state.chatList.map(chat =>
@@ -181,8 +293,12 @@ const useAppStore = create(
         );
         
         // Đặt chat được chọn ở cuối, các chat khác giữ nguyên thứ tự
+        const finalChatList = [...otherChats, selectedChat];
+        const unreadCount = get().calculateUnreadMessageCount(finalChatList);
+
         return {
-          chatList: [...otherChats, selectedChat]
+          chatList: finalChatList,
+          unreadMessageCount: unreadCount
         };
       });
     },
@@ -192,18 +308,23 @@ const useAppStore = create(
       return chat ? chat.target : null;
     },
 
+    // ✅ UPDATED: Mark chat as read + recalculate unread count
     markChatAsRead: async (chatId) => {
-      try {
-        // ✅ Call API if needed
-        // await api.patch(`/v1/chat/${chatId}/read`);
-        
-        set(state => ({
-          chatList: state.chatList.map(chat => 
+      try {      
+        set(state => {
+          const updatedChatList = state.chatList.map(chat => 
             (chat.chatId === chatId || chat.id === chatId)
               ? { ...chat, notReadMessageCount: 0 }
               : chat
-          )
-        }));   
+          );
+
+          const unreadCount = get().calculateUnreadMessageCount(updatedChatList);
+
+          return {
+            chatList: updatedChatList,
+            unreadMessageCount: unreadCount
+          };
+        });   
         
         console.log(`✅ Marked chat ${chatId} as read`);
       } catch (error) {
@@ -211,6 +332,7 @@ const useAppStore = create(
       }
     },
 
+    // ✅ UPDATED: Handle received message + recalculate unread count
     onMessageReceived: (message, isCurrentChatOpen = false) => {
       set(state => {
         const updatedChats = state.chatList
@@ -229,23 +351,35 @@ const useAppStore = create(
           })
           .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
 
-        return { chatList: updatedChats };
+        const unreadCount = get().calculateUnreadMessageCount(updatedChats);
+
+        return { 
+          chatList: updatedChats,
+          unreadMessageCount: unreadCount
+        };
       });
 
       console.log(`📊 ${STORE_EVENTS.MESSAGE_RECEIVED} - ${message.chatId}`);
     },
 
+    // ✅ UPDATED: Handle new chat creation + recalculate unread count
     onChatCreated: (newChat) => {
       const currentUserId = getCurrentUserId();
       const otherUser = newChat.participants?.find(p => p.id !== currentUserId);
 
-      set(state => ({
-        // ✅ Add new chat at the beginning (most recent)
-        chatList: [newChat, ...state.chatList],
-        conversationMap: otherUser 
-          ? new Map(state.conversationMap).set(otherUser.id, newChat.id)
-          : state.conversationMap
-      }));
+      set(state => {
+        const updatedChatList = [newChat, ...state.chatList];
+        const unreadCount = get().calculateUnreadMessageCount(updatedChatList);
+
+        return {
+          // ✅ Add new chat at the beginning (most recent)
+          chatList: updatedChatList,
+          conversationMap: otherUser 
+            ? new Map(state.conversationMap).set(otherUser.id, newChat.id)
+            : state.conversationMap,
+          unreadMessageCount: unreadCount
+        };
+      });
 
       console.log(`📊 ${STORE_EVENTS.CHAT_CREATED} - ${newChat.id}`);
     },
@@ -496,6 +630,7 @@ const useAppStore = create(
         notifications: [],
         unreadNotificationCount: 0,
         unreadNotificationCountFromSocket: 0, // ✅ Reset socket count
+        unreadMessageCount: 0, // ✅ Reset message count
         error: null,
         isLoadingChats: false,
         isLoadingNotifications: false,
@@ -533,6 +668,17 @@ const useAppStore = create(
     refreshUnreadCount: async () => {
       console.log('🔄 Force refreshing unread count...');
       return get().fetchUnreadNotificationCount();
+    },
+
+    // ✅ NEW: Get total unread message count
+    getTotalUnreadMessageCount: () => {
+      const { unreadMessageCount } = get();
+      return unreadMessageCount;
+    },
+
+    // ✅ NEW: Manual recalculate unread message count (if needed)
+    recalculateUnreadMessageCount: () => {
+      return get().updateUnreadMessageCount();
     },
 
   }), {

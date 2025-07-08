@@ -50,6 +50,15 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const fetchChatList = useAppStore((state) => state.fetchChatList);
   const selectChat = useAppStore((state) => state.selectChat);
   const clearChatSelection = useAppStore((state) => state.clearChatSelection);
+  const getBlockStatusByChatId = useAppStore((state) => state.getBlockStatusByChatId);
+
+  // ✅ Get block status for current chat
+  const blockStatus = currentChatId ? getBlockStatusByChatId(currentChatId) : "NORMAL";
+  
+  // ✅ Determine if user can send messages based on block status
+  const canSendMessage = blockStatus === "NORMAL";
+  const isBlockedByOther = blockStatus === "HAS_BEEN_BLOCKED";
+  const hasBlockedOther = blockStatus === "BLOCKED";
 
   const { 
     messages, 
@@ -282,6 +291,12 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     const trimmed = input.trim();
     if (!trimmed) return;
 
+    // ✅ Check if user can send message (not blocked by other user)
+    if (!canSendMessage) {
+      toast.error("Không thể gửi tin nhắn do bạn đã bị chặn");
+      return;
+    }
+
     // ✅ Prevent spam clicking
     if (isSendingMessage || isCreatingChat) {
       console.log("🚫 Already sending message or creating chat, please wait");
@@ -322,6 +337,11 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      // ✅ Check block status before allowing any action
+      if (!canSendMessage) {
+        toast.error("Không thể gửi tin nhắn do bạn đã bị chặn");
+        return;
+      }
       if (selectedFile) handleSendFile();
       else if (editingMessage) handleSaveEdit();
       else handleSend();
@@ -335,6 +355,14 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // ✅ Check block status before allowing file selection
+    if (!canSendMessage) {
+      toast.error("Không thể gửi file do bạn đã bị chặn");
+      e.target.value = null;
+      return;
+    }
+    
     if (isNewChat) {
       toast.error("Vui lòng gửi tin nhắn đầu tiên trước khi gửi file");
       e.target.value = null;
@@ -355,6 +383,13 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
 
   const handleSendFile = async () => {
     if (!selectedFile || !currentChatId || !targetUser?.username) return;
+    
+    // ✅ Check block status before sending file
+    if (!canSendMessage) {
+      toast.error("Không thể gửi file do bạn đã bị chặn");
+      return;
+    }
+    
     try {
       setUploading(true);
       const formData = new FormData();
@@ -420,6 +455,40 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     } catch {
       toast.error("Có lỗi khi sửa tin nhắn");
     }
+  };
+
+  // ✅ Render blocked status message
+  const renderBlockedStatus = () => {
+    if (blockStatus === "NORMAL") return null;
+
+    let message = "";
+    let bgColor = "bg-red-50";
+    let textColor = "text-red-700";
+    let borderColor = "border-red-200";
+
+    if (isBlockedByOther) {
+      message = `Bạn đã bị ${targetUser?.displayName || targetUser?.username} chặn. Không thể gửi tin nhắn.`;
+    } else if (hasBlockedOther) {
+      message = `Bạn đã chặn ${targetUser?.displayName || targetUser?.username}. Bỏ chặn để có thể nhắn tin.`;
+      bgColor = "bg-yellow-50";
+      textColor = "text-yellow-700";
+      borderColor = "border-yellow-200";
+    }
+
+    return (
+      <div className={`mx-4 mb-3 p-3 rounded-lg border ${bgColor} ${borderColor}`}>
+        <div className="flex items-center gap-2">
+          <div className="flex-shrink-0">
+            <svg className={`w-5 h-5 ${textColor}`} fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <p className={`text-sm font-medium ${textColor}`}>
+            {message}
+          </p>
+        </div>
+      </div>
+    );
   };
 
   const renderMessages = () => {
@@ -494,15 +563,20 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     );
   };
 
-  // ✅ Tính toán trạng thái input disabled
-  const isInputDisabled = !isConnected || isSendingMessage || isCreatingChat || uploading;
-  const inputPlaceholder = isCreatingChat 
-    ? "Đang tạo cuộc trò chuyện..." 
-    : isSendingMessage 
-      ? "Đang gửi tin nhắn..."
-      : isNewChat
-        ? `Nhắn tin cho ${targetUser?.displayName || targetUser?.username}...`
-        : "Nhập tin nhắn...";
+  // ✅ Tính toán trạng thái input disabled - bao gồm cả block status
+  const isInputDisabled = !isConnected || isSendingMessage || isCreatingChat || uploading || !canSendMessage;
+  
+  const inputPlaceholder = !canSendMessage
+    ? isBlockedByOther 
+      ? "Bạn đã bị chặn, không thể gửi tin nhắn"
+      : "Bạn đã chặn người này"
+    : isCreatingChat 
+      ? "Đang tạo cuộc trò chuyện..." 
+      : isSendingMessage 
+        ? "Đang gửi tin nhắn..."
+        : isNewChat
+          ? `Nhắn tin cho ${targetUser?.displayName || targetUser?.username}...`
+          : "Nhập tin nhắn...";
 
   return (
     <>
@@ -529,32 +603,39 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
           {renderMessages()}
         </div>
 
-        {/* Preview file */}
-        <FilePreviewInChat
-          selectedFile={selectedFile}
-          filePreview={filePreview}
-          onCancel={handleCancelFile}
-        />
+        {/* ✅ Block status message */}
+        {renderBlockedStatus()}
 
-        {/* ✅ Input với loading states */}
-        <ChatInput
-          input={input}
-          setInput={setInput}
-          isConnected={!isInputDisabled} // ✅ Sử dụng computed disabled state
-          selectedFile={selectedFile}
-          editingMessage={editingMessage}
-          uploading={uploading}
-          disabled={isInputDisabled} // ✅ Pass disabled state
-          loading={isSendingMessage || isCreatingChat} // ✅ Pass loading state
-          onSend={handleSend}
-          onSendFile={handleSendFile}
-          onSaveEdit={handleSaveEdit}
-          onCancelEdit={handleCancelEdit}
-          onCancelFile={handleCancelFile}
-          onFileSelect={handleFileSelect}
-          onKeyDown={handleKeyDown}
-          placeholder={inputPlaceholder} // ✅ Dynamic placeholder
-        />
+        {/* Preview file */}
+        {canSendMessage && (
+          <FilePreviewInChat
+            selectedFile={selectedFile}
+            filePreview={filePreview}
+            onCancel={handleCancelFile}
+          />
+        )}
+
+        {/* ✅ Input với loading states và block status */}
+        {canSendMessage && (
+          <ChatInput
+            input={input}
+            setInput={setInput}
+            isConnected={!isInputDisabled}
+            selectedFile={selectedFile}
+            editingMessage={editingMessage}
+            uploading={uploading}
+            disabled={isInputDisabled}
+            loading={isSendingMessage || isCreatingChat}
+            onSend={handleSend}
+            onSendFile={handleSendFile}
+            onSaveEdit={handleSaveEdit}
+            onCancelEdit={handleCancelEdit}
+            onCancelFile={handleCancelFile}
+            onFileSelect={handleFileSelect}
+            onKeyDown={handleKeyDown}
+            placeholder={inputPlaceholder}
+          />
+        )}
       </div>
     </>
   );

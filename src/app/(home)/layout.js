@@ -230,53 +230,59 @@ function MainLayoutContent({ children }) {
   // ✅ Kiểm tra có đang trong cuộc gọi để điều chỉnh UI
   const isInCall = currentCall || isCallEnding;
 
-  const layoutContent = (
-    <>
-      <ProgressBar />
-      <Toaster 
-        position="top-right" 
-        toastOptions={{ 
-          duration: 4000,
-          style: {
-            background: 'var(--background)',
-            color: 'var(--foreground)',
-            border: '1px solid var(--border)',
-          },
-        }} 
-      />
+// ✅ Fixed layout - phần chính cần chỉnh sửa
+const layoutContent = (
+  <>
+    <ProgressBar />
+    <Toaster 
+      position="top-right" 
+      toastOptions={{ 
+        duration: 4000,
+        style: {
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+          border: '1px solid var(--border)',
+        },
+      }} 
+    />
 
-      {/* ✅ Main UI - ẩn khi đang trong cuộc gọi */}
-      <div className={`h-screen flex flex-col ${isInCall ? 'hidden' : ''}`}>
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 h-16 border-b transition-colors duration-500">
-          <Header />
-        </header>
+    {/* ✅ Main UI - ẩn khi đang trong cuộc gọi */}
+    <div className={`h-screen flex flex-col ${isInCall ? 'hidden' : ''}`}>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 h-12 border-b transition-colors duration-500">
+        <Header />
+      </header>
 
-        <div className="flex flex-1 pt-16 bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500">
-          {/* Left Sidebar */}
-          <aside className="md:w-[80px] h-[calc(100vh-64px)] overflow-y-auto">
-            <Sidebar />
-          </aside>
+      <div className="flex flex-1 pt-12 bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500">
+        {/* Left Sidebar - ẩn trên mobile, fixed trên desktop */}
+        <aside className="hidden md:block md:w-[80px] h-[calc(100vh-64px)] overflow-y-auto">
+          <Sidebar />
+        </aside>
 
-          {/* Main Content */}
-          <main className="flex-1 h-[calc(100vh-64px)] overflow-y-auto px-4">
-            <div
-              className={`${
-                hideRightSidebar ? "max-w-6xl" : "max-w-4xl"
-              } w-full mx-auto space-y-6 pb-[64px] md:pb-0`}
-            >
-              {children}
-            </div>
-          </main>
+        {/* Main Content - điều chỉnh height và padding */}
+        <main className="flex-1 h-[calc(100vh-64px)] overflow-y-auto px-4">
+          <div
+            className={`${
+              hideRightSidebar ? "max-w-6xl" : "max-w-4xl"
+            } w-full mx-auto space-y-6 pb-[72px] md:pb-0`}
+          >
+            {children}
+          </div>
+        </main>
 
-          {/* Right Sidebar */}
-          {renderRightSidebar()}
-        </div>
+        {/* Right Sidebar */}
+        {renderRightSidebar()}
       </div>
 
-      {/* ✅ Global Call Interface - luôn hiển thị */}
-      <GlobalCallInterface />
-    </>
-  );
+      {/* ✅ Bottom Navigation - Fixed position trên mobile */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t h-[72px]">
+        <Sidebar />
+      </div>
+    </div>
+
+    {/* ✅ Global Call Interface - luôn hiển thị */}
+    <GlobalCallInterface />
+  </>
+);
 
   return shouldAnimate ? (
     <AnimatePresence mode="wait">

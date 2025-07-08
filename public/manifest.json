@@ -1,0 +1,21 @@
+{
+  "name": "PocPoc",
+  "short_name": "PocPoc",
+  "description": "Mạng xã hội kết nối mọi người",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/pocpoc.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pocpoc.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

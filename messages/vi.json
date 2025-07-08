@@ -1,0 +1,52 @@
+{
+  "auth": {
+    "login": {
+      "title": "Đăng nhập",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "submit": "Đăng nhập",
+      "loading": "Đang tải...",
+      "success": "Đăng nhập thành công!",
+      "goToRegister": "Đăng ký",
+      "showPassword": "Hiển thị mật khẩu",
+      "hidePassword": "Ẩn mật khẩu"
+    },
+    "register": {
+      "title": "Đăng ký",
+      "hello": "Chào mừng bạn đến với trang đăng ký",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "confirmPassword": "Xác nhận mật khẩu",
+      "givenName": "Tên",
+      "familyName": "Họ",
+      "birthdate": "Ngày sinh",
+      "submit": "Đăng ký",
+      "loading": "Đang tải...",
+      "alreadyHaveAccount": "Đã có tài khoản?",
+      "loginHere": "Đăng nhập tại đây",
+      "goToLogin": "Đăng nhập",
+      "success": "Đăng ký thành công! Vui lòng kiểm tra email để xác thực.",
+      "emailVerificationSuccess": "Xác thực email thành công! Bạn có thể đăng nhập.",
+      "emailVerificationFailed": "Xác thực thất bại",
+      "emailVerifying": "Đang xác thực email...",
+      "showPassword": "Hiển thị mật khẩu",
+      "hidePassword": "Ẩn mật khẩu"
+    },
+    "common": {
+      "forgotPassword": "Quên mật khẩu?",
+      "createNewPassword": "Tạo mật khẩu mới",
+      "fillAllFields": "Vui lòng điền đầy đủ thông tin",
+      "passwordNotMatch": "Mật khẩu không khớp!",
+      "loginFailed": "Đăng nhập thất bại",
+      "registerFailed": "Đăng ký thất bại",
+      "networkError": "Không thể kết nối đến server. Vui lòng thử lại.",
+      "unknownError": "Lỗi không xác định",
+      "serverError": "Lỗi server"
+    }
+  },
+  "navigation": {
+    "home": "Trang chủ",
+    "profile": "Hồ sơ",
+    "settings": "Cài đặt"
+  }
+}

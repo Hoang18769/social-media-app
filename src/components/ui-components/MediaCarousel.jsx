@@ -18,7 +18,7 @@ export default function MediaCarousel({ media, page, setPage }) {
   // Validate media array and current index
   if (!media || !Array.isArray(media) || media.length === 0) {
     return (
-      <div className="relative bg-black overflow-hidden w-full flex items-center justify-center">
+      <div className="relative bg-black overflow-hidden w-full flex items-center justify-center min-h-[400px]">
         <p className="text-white">No media to display</p>
       </div>
     );
@@ -55,7 +55,7 @@ export default function MediaCarousel({ media, page, setPage }) {
   // Validate current media item
   if (!currentMedia) {
     return (
-      <div className="relative bg-black overflow-hidden w-full flex items-center justify-center">
+      <div className="relative bg-black overflow-hidden w-full flex items-center justify-center min-h-[400px]">
         <p className="text-white">Media not found</p>
       </div>
     );
@@ -66,14 +66,15 @@ export default function MediaCarousel({ media, page, setPage }) {
 
   return (
     <div
-      className="relative bg-black overflow-hidden w-full"
+      className="relative bg-black overflow-hidden w-full flex items-center justify-center"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      style={{ minHeight: '400px' }}
     >
       <AnimatePresence initial={false} custom={page.direction}>
         <motion.div
           key={currentIndex}
-          className="absolute inset-0"
+          className="flex items-center justify-center w-full h-full"
           custom={page.direction}
           variants={variants}
           initial="enter"
@@ -85,23 +86,39 @@ export default function MediaCarousel({ media, page, setPage }) {
             <video
               autoPlay
               controls
-              className="w-full h-full object-contain"
+              className="max-w-full max-h-full object-contain"
               src={currentMedia}
+              style={{ 
+                width: 'auto', 
+                height: 'auto',
+                maxWidth: '100%',
+                maxHeight: '100%'
+              }}
               onError={(e) => {
                 console.error("Video load error:", e);
               }}
             />
           ) : (
-            <Image
-              src={currentMedia}
-              alt={`Post media ${currentIndex + 1}`}
-              fill
-              unoptimized
-              className="object-contain"
-              onError={(e) => {
-                console.error("Image load error:", e);
-              }}
-            />
+            <div className="relative w-full h-full flex items-center justify-center">
+              <Image
+                src={currentMedia}
+                alt={`Post media ${currentIndex + 1}`}
+                width={0}
+                height={0}
+                sizes="100vw"
+                unoptimized
+                className="max-w-full max-h-full object-contain"
+                style={{ 
+                  width: 'auto', 
+                  height: 'auto',
+                  maxWidth: '100%',
+                  maxHeight: '100%'
+                }}
+                onError={(e) => {
+                  console.error("Image load error:", e);
+                }}
+              />
+            </div>
           )}
         </motion.div>
       </AnimatePresence>

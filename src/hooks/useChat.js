@@ -136,7 +136,7 @@ export default function useChat(chatId) {
       });
 
       // Cập nhật tổng số tin nhắn
-      setTotalMessages(prev => prev + 1);
+      // setTotalMessages(prev => prev + 1);
       
       // Cập nhật chatList ngay lập tức
       requestAnimationFrame(() => {

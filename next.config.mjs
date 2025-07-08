@@ -1,3 +1,7 @@
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Image optimization configuration
@@ -5,8 +9,8 @@ const nextConfig = {
   images: {
     // Vercel-friendly domains
     domains: [
-      'pngdownload.io', 
-      'picsum.photos', 
+      'pngdownload.io',
+      'picsum.photos',
       'localhost',
       'images.unsplash.com', // Common image source
       'via.placeholder.com',  // Placeholder images
@@ -20,34 +24,25 @@ const nextConfig = {
         port: '80',
         pathname: '/v1/files/**',
       },
-            {
+      {
         protocol: 'https',
         hostname: 'api.pocpoc.online',
         pathname: '/v1/files/**',
       },
     ],
-    // Optimize for performance
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 3600,
-    
   },
-
-  // Compiler optimizations
   compiler: {
-    // Remove console.log in production
     removeConsole: process.env.NODE_ENV === 'production',
   },
   // Experimental features - more stable options
   experimental: {
     esmExternals: true,
   },
-
-  // Output configuration for deploymen  
-  // Environment variables
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-
   // Webpack configuration
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Client-side fallbacks
@@ -72,7 +67,6 @@ const nextConfig = {
 
     return config;
   },
-
   // Headers for security and performance
   async headers() {
     return [
@@ -95,53 +89,16 @@ const nextConfig = {
       }
     ];
   },
-
-  // Redirects if needed
-  async redirects() {
-    return [
-      // Add any permanent redirects here
-      // {
-      //   source: '/old-page',
-      //   destination: '/new-page',
-      //   permanent: true,
-      // },
-    ];
-  },
-
-  // Rewrites for API routes or proxying
-  async rewrites() {
-    return [
-      // Add any URL rewrites here
-      // {
-      //   source: '/api/external/:path*',
-      //   destination: 'https://external-api.com/:path*',
-      // },
-    ];
-  },
-
-  // Performance optimizations
   swcMinify: true, // Use SWC for minification (faster than Terser)
-  
-  // TypeScript configuration
   typescript: {
-    // Dangerously allow production builds to successfully complete even if your project has type errors
     ignoreBuildErrors: false, // Set to true only if absolutely necessary
   },
-
-  // ESLint configuration
   eslint: {
-    // Disable ESLint during builds (not recommended for production)
     ignoreDuringBuilds: false, // Set to true only if absolutely necessary
   },
-
-  // Trailing slash configuration
   trailingSlash: false,
-
-  // Power-ups for production
   poweredByHeader: false, // Remove X-Powered-By header
-  
-  // Compression
   compress: true,
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

@@ -30,7 +30,7 @@ export default function SidebarNavigation() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [badgeCount, setBadgeCount] = useState(0);
   const [isMarkingAsRead, setIsMarkingAsRead] = useState(false);
-  const [notificationPosition, setNotificationPosition] = useState({ top: 10, right: 0 });
+  const [notificationPosition, setNotificationPosition] = useState({ top: 10, left: 0 });
   
   const dropdownRef = useRef(null);
   const moreButtonRef = useRef(null);
@@ -43,11 +43,14 @@ export default function SidebarNavigation() {
   const unreadNotificationCountFromSocket = useAppStore(state => state.unreadNotificationCountFromSocket);
   const resetSocketNotificationCount = useAppStore(state => state.resetSocketNotificationCount);
   const fetchNotifications = useAppStore(state => state.fetchNotifications);
+  
+  // ✅ Add unread message count from store
+  const unreadMessageCount = useAppStore(state => state.unreadMessageCount);
 
   const menuItems = [
     { id: "home", icon: Home, href: "/home" },
     { id: "search", icon: Search, href: "/search" },
-    { id: "message", icon: MessageCircle, href: "/chats" },
+    { id: "message", icon: MessageCircle, href: "/chats", showBadge: true }, // ✅ Add showBadge flag
     { id: "favorites", icon: Users, href: "/friends" },
     { id: "profile", icon: UserPen, href: username ? `/profile/${username}` : "#" },
   ];
@@ -89,16 +92,16 @@ export default function SidebarNavigation() {
       return;
     }
 
-    // ✅ Calculate position for notification dropdown
+    // ✅ Calculate position for notification dropdown - hiển thị bên trái sidebar
     if (notificationButtonRef.current) {
       const rect = notificationButtonRef.current.getBoundingClientRect();
       const isDesktop = window.innerWidth >= 768;
       
       if (isDesktop) {
-        // Desktop: show to the right of the button
+        // Desktop: show to the LEFT of the sidebar (80px from left + some padding)
         setNotificationPosition({
-          top: rect.top,
-          left: rect.right + 8,
+          top: 64, // 64px navbar height + 16px padding
+          left: 80 + 16, // 80px sidebar width + 16px padding
         });
       } else {
         // Mobile: show above the button
@@ -263,10 +266,13 @@ export default function SidebarNavigation() {
 
     return createPortal(
       <div
-  ref={notificationRef}
-  className="fixed z-[9999] w-80 max-h-[400px] overflow-y-auto rounded-xl shadow-lg bg-[var(--card)] border border-[var(--border)] top-16 right-4 md:top-[72px] md:right-6"
->
-
+        ref={notificationRef}
+        className="fixed z-[9999] w-80 max-h-[calc(100vh-64px-32px)] overflow-y-auto rounded-xl shadow-lg bg-[var(--card)] border border-[var(--border)]"
+        style={{
+          top: `${notificationPosition.top}px`,
+          left: `${notificationPosition.left}px`,
+        }}
+      >
         <NotificationList />
       </div>,
       document.body
@@ -280,7 +286,7 @@ export default function SidebarNavigation() {
         className={`
           z-50 fixed bottom-0 left-0 w-full flex justify-around
           md:static md:top-[64px] md:items-start md:h-full
-          w-auto md:flex md:px-2 md:py-6
+          w-auto md:flex md:px-2 md:py-4
         `}
       >
         <nav className="md:h-full bg-[var(--card)] p-4 md:rounded-xl flex flex-row md:flex-col items-center justify-around md:justify-center md:space-y-6 w-full md:w-full">
@@ -292,20 +298,26 @@ export default function SidebarNavigation() {
                 : pathname === item.href;
 
             return (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={`
-                  w-10 h-10 flex items-center justify-center rounded-full transition-colors
-                  ${
-                    isActive
-                      ? "text-black dark:bg-white"
-                      : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
-                  }
-                `}
-              >
-                <Icon size={24} strokeWidth={isActive ? 3 : 2} />
-              </Link>
+              <div key={item.id} className="relative">
+                <Link
+                  href={item.href}
+                  className={`
+                    w-10 h-10 flex items-center justify-center rounded-full transition-colors
+                    ${
+                      isActive
+                        ? "text-black dark:bg-white"
+                        : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
+                    }
+                  `}
+                >
+                  <Icon size={24} strokeWidth={isActive ? 3 : 2} />
+                </Link>
+                
+                {/* ✅ Show badge for message icon when there are unread messages */}
+                {item.showBadge && unreadMessageCount > 0 && (
+                  <Badge asNotification>{unreadMessageCount}</Badge>
+                )}
+              </div>
             );
           })}
           

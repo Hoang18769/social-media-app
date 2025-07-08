@@ -7,6 +7,7 @@ import Modal from "../ui-components/Modal";
 import FilePreviewInChat from "../ui-components/FilePreviewInChat";
 import MediaCarousel from "../ui-components/MediaCarousel";
 import { Comment } from "./Comment";
+import { useRouter } from "next/navigation";
 import { useComments, useForm } from "@/hooks/useComment";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
@@ -28,7 +29,8 @@ export default function PostModal({
   // Determine what content and media to display
   const isSharedPost = post?.sharedPost;
   const displayPost = isSharedPost ? post.originalPost : post;
-  
+    const router = useRouter()
+
   // Handle media from both regular posts and shared posts
   let media = [];
   if (isSharedPost && post.originalPost) {
@@ -52,7 +54,10 @@ export default function PostModal({
     console.log("Original post ID:", post.originalPost?.id);
   }
   const commentsManager = useComments(comments, post);
-
+ const handleProfileClick = (e, post) => {
+    e.stopPropagation() // Ngăn không cho bubble up tới card click
+    router.push(`/profile/${post.author?.username}`)
+  }
   // Function to detect and convert links in text
   const renderTextWithLinks = (text) => {
     if (!text) return text;
@@ -178,10 +183,14 @@ export default function PostModal({
 
   // Memoized components to prevent unnecessary re-renders
   const PostHeader = useMemo(() => (
-    <div className="flex flex-col gap-3 p-4 border-b border-[var(--border)]">
+    <div className="flex flex-col gap-3 p-4 border-b border-[var(--border)]"
+                onClick={handleProfileClick}
+>
+    
       {/* Show the person who shared the post first (if it's a shared post) */}
       {isSharedPost && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3"
+                  onClick={(e)=>handleProfileClick(e,post)}>
           <Avatar
             src={post.author?.profilePictureUrl}
             alt={post.author?.username}
@@ -229,7 +238,9 @@ export default function PostModal({
       )}
       
       {/* Show original post author */}
-      <div className={`flex items-center gap-3 ${isSharedPost ? 'ml-4 p-3 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`}>
+      <div className={`flex items-center gap-3 ${isSharedPost ? 'ml-4 p-3 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`}
+                  onClick={(e)=>handleProfileClick(e,displayPost)}
+>
         <Avatar
           src={displayPost.author?.profilePictureUrl}
           alt={displayPost.author?.username}

@@ -1,0 +1,52 @@
+{
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "loading": "Loading...",
+      "success": "Login successful!",
+      "goToRegister": "Register",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
+    },
+    "register": {
+      "title": "Create your account",
+      "hello": "Welcome to the registration page",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "givenName": "Given Name",
+      "familyName": "Family Name",
+      "birthdate": "Birthdate",
+      "submit": "Register",
+      "loading": "Loading...",
+      "alreadyHaveAccount": "Already have an account?",
+      "loginHere": "Login here",
+      "goToLogin": "Sign in",
+      "success": "Registration successful! Please check your email to verify.",
+      "emailVerificationSuccess": "Email verification successful! You can now login.",
+      "emailVerificationFailed": "Verification failed",
+      "emailVerifying": "Verifying email...",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
+    },
+    "common": {
+      "forgotPassword": "Forgot password?",
+      "createNewPassword": "Create new password",
+      "fillAllFields": "Please fill in all fields",
+      "passwordNotMatch": "Passwords do not match!",
+      "loginFailed": "Login failed",
+      "registerFailed": "Registration failed",
+      "networkError": "Cannot connect to server. Please try again.",
+      "unknownError": "Unknown error",
+      "serverError": "Server error"
+    }
+  },
+  "navigation": {
+    "home": "Home",
+    "profile": "Profile",
+    "settings": "Settings"
+  }
+}

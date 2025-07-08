@@ -14,17 +14,6 @@ import { getUserId } from "@/utils/axios";
 
 const isVideo = (url = "") => /\.(mp4|webm|ogg)$/i.test(url);
 
-// Admin check function
-const isAdmin = () => {
-  try {
-    const userRole = localStorage.getItem('userRole')
-    return userRole === 'ADMIN'
-  } catch (error) {
-    console.error('Error checking admin role:', error)
-    return false
-  }
-}
-
 // Media Display Component
 export const MediaDisplay = ({ url, alt, className = "" }) =>
   isVideo(url) ? (
@@ -52,6 +41,7 @@ export const CommentActions = ({
   showReplies,
   onDelete,
   canDeleteComment,
+  isReply = false,
 }) => {
   const handleLike = useCallback(() => {
     onLike(comment.id, comment.liked);
@@ -66,17 +56,19 @@ export const CommentActions = ({
   }, [comment.id, onToggleReplies]);
 
   const handleDelete = useCallback(() => {
-    onDelete(comment.id);
-  }, [comment.id, onDelete]);
+    if (window.confirm(isReply ? "Bạn có chắc muốn xóa phản hồi này?" : "Bạn có chắc muốn xóa bình luận này?")) {
+      onDelete(comment.id);
+    }
+  }, [comment.id, onDelete, isReply]);
 
   return (
-    <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
+    <div className={`flex items-center gap-4 text-xs text-[var(--muted-foreground)] ${isReply ? 'gap-2' : ''}`}>
       <button
         className="hover:underline flex items-center gap-1 transition-colors"
         onClick={handleLike}
       >
         <Heart
-          size={14}
+          size={isReply ? 12 : 14}
           className={
             comment.liked ? "fill-red-500 text-red-500" : "hover:text-red-500"
           }
@@ -84,15 +76,17 @@ export const CommentActions = ({
         {comment.likeCount || 0}
       </button>
 
-      <button
-        className="hover:underline flex items-center gap-1"
-        onClick={handleReply}
-      >
-        <MessageCircle size={14} />
-        Trả lời
-      </button>
+      {!isReply && (
+        <button
+          className="hover:underline flex items-center gap-1"
+          onClick={handleReply}
+        >
+          <MessageCircle size={14} />
+          Trả lời
+        </button>
+      )}
 
-      {(comment.replyCount || 0) > 0 && (
+      {!isReply && (comment.replyCount || 0) > 0 && (
         <button
           className="hover:underline flex items-center gap-1 text-blue-500"
           onClick={handleToggleReplies}
@@ -201,8 +195,8 @@ export const Comment = ({
   const currentUserId = getUserId();
   const isOwnComment = comment.author?.id === currentUserId;
   
-  // Kiểm tra quyền xóa comment: nếu là comment của bản thân hoặc bài viết của bản thân hoặc là admin
-  const canDeleteComment = isOwnComment || isOwnPost || isAdmin();
+  // Kiểm tra quyền xóa comment: nếu là comment của bản thân hoặc bài viết của bản thân
+  const canDeleteComment = isOwnComment || isOwnPost;
   
   const showReplies = comments.showReplies[comment.id];
   const isLoadingReplies = comments.loadingReplies[comment.id];
@@ -227,6 +221,74 @@ export const Comment = ({
       replyForm.isSubmitting = false;
     }
   }, [handleReplySubmit, replyForm]);
+
+  // Handle reply deletion
+  const handleDeleteReply = useCallback(async (replyId) => {
+    try {
+      // Sử dụng deleteComment với replyId - most APIs treat replies as comments
+      if (comments.deleteComment) {
+        await comments.deleteComment(replyId);
+      } else {
+        console.warn("deleteComment function not provided");
+        toast.error("Không thể xóa phản hồi");
+      }
+    } catch (error) {
+      console.error("Error deleting reply:", error);
+      toast.error("Có lỗi xảy ra khi xóa phản hồi");
+    }
+  }, [comments.deleteComment]);
+
+  // Handle reply like with optimistic update
+  const handleLikeReply = useCallback(async (replyId, isLiked) => {
+    // Optimistic update - update UI immediately
+    const updateRepliesOptimistically = (commentId, replyId, isLiked) => {
+      if (comments.setRepliesData) {
+        comments.setRepliesData(prev => ({
+          ...prev,
+          [commentId]: prev[commentId]?.map(reply => 
+            reply.id === replyId 
+              ? { 
+                  ...reply, 
+                  liked: !isLiked, 
+                  likeCount: reply.likeCount + (isLiked ? -1 : 1) 
+                }
+              : reply
+          ) || []
+        }));
+      }
+    };
+
+    // Find which comment this reply belongs to
+    const parentCommentId = Object.keys(comments.repliesData || {}).find(commentId => 
+      comments.repliesData[commentId]?.some(reply => reply.id === replyId)
+    );
+
+    if (parentCommentId) {
+      // Apply optimistic update
+      updateRepliesOptimistically(parentCommentId, replyId, isLiked);
+    }
+
+    try {
+      // Make API call
+      if (comments.likeComment) {
+        await comments.likeComment(replyId, isLiked);
+      } else {
+        console.warn("likeComment function not provided");
+        toast.error("Không thể thích phản hồi");
+        // Revert optimistic update on error
+        if (parentCommentId) {
+          updateRepliesOptimistically(parentCommentId, replyId, !isLiked);
+        }
+      }
+    } catch (error) {
+      console.error("Error liking reply:", error);
+      toast.error("Có lỗi xảy ra khi thích phản hồi");
+      // Revert optimistic update on error
+      if (parentCommentId) {
+        updateRepliesOptimistically(parentCommentId, replyId, !isLiked);
+      }
+    }
+  }, [comments.likeComment, comments.setRepliesData, comments.repliesData]);
 
   return (
     <div className="flex gap-3 text-sm">
@@ -260,6 +322,7 @@ export const Comment = ({
           showReplies={showReplies}
           onDelete={comments.deleteComment}
           canDeleteComment={canDeleteComment}
+          isReply={false}
         />
 
         {/* Replies */}
@@ -275,8 +338,8 @@ export const Comment = ({
                   // Kiểm tra xem reply có phải của user hiện tại không
                   const isOwnReply = reply.author?.id === currentUserId;
                   
-                  // Kiểm tra quyền xóa reply: nếu là reply của bản thân hoặc bài viết của bản thân hoặc là admin
-                  const canDeleteReply = isOwnReply || isOwnPost || isAdmin();
+                  // Kiểm tra quyền xóa reply: nếu là reply của bản thân hoặc bài viết của bản thân
+                  const canDeleteReply = isOwnReply || isOwnPost;
                   
                   return (
                     <div key={reply.id} className="flex gap-2 text-sm">
@@ -286,38 +349,36 @@ export const Comment = ({
                         size={24}
                       />
                       <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex justify-between">
-                              <p className="font-semibold text-xs">
-                                {reply.author?.givenName} {reply.author?.familyName}
-                              </p>
-                              <span className="text-xs text-[var(--muted-foreground)]">
-                                {dayjs(reply.createdAt).fromNow()}
-                              </span>
-                            </div>
-                            <p className="text-xs mb-1">{reply.content}</p>
-                            {reply.fileUrl && (
-                              <div className="mb-1">
-                                <MediaDisplay
-                                  url={reply.fileUrl}
-                                  alt="reply media"
-                                  className="max-h-40"
-                                />
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Nút xóa cho reply nếu có quyền xóa */}
-                          {canDeleteReply && (
-                            <button
-                              className="text-xs text-red-500 hover:underline ml-2"
-                              onClick={() => comments.deleteReply && comments.deleteReply(reply.id)}
-                            >
-                              Xóa
-                            </button>
-                          )}
+                        <div className="flex justify-between">
+                          <p className="font-semibold text-xs">
+                            {reply.author?.givenName} {reply.author?.familyName}
+                          </p>
+                          <span className="text-xs text-[var(--muted-foreground)]">
+                            {dayjs(reply.createdAt).fromNow()}
+                          </span>
                         </div>
+                        <p className="text-xs mb-1">{reply.content}</p>
+                        {reply.fileUrl && (
+                          <div className="mb-1">
+                            <MediaDisplay
+                              url={reply.fileUrl}
+                              alt="reply media"
+                              className="max-h-40"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Reply Actions - Thêm nút like và xóa cho reply */}
+                        <CommentActions
+                          comment={reply}
+                          onLike={handleLikeReply}
+                          onReply={() => {}} // Không cho phép reply trên reply
+                          onToggleReplies={() => {}} // Không có nested replies
+                          showReplies={false}
+                          onDelete={handleDeleteReply}
+                          canDeleteComment={canDeleteReply}
+                          isReply={true}
+                        />
                       </div>
                     </div>
                   );
