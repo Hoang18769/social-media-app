@@ -10,13 +10,14 @@ import useAppStore from "@/store/ZustandStore";
 import api from "@/utils/axios";
 
 import { useCall } from "@/context/CallContext";
-import useTypingNotification from "@/hooks/useTypingNotification"; // hoặc đường dẫn tương ứng
+import useTypingNotification from "@/hooks/useTypingNotification";
 
 // Các components đã tách
 import ChatHeader from "./ChatHeader";
 import MessageItem from "./MessageItem";
 import ChatInput from "./ChatInput";
 import FilePreviewInChat from "../ui-components/FilePreviewInChat";
+import TypingIndicator from "../ui-components/TypingIndicator";
 
 export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const pathname = usePathname();
@@ -31,11 +32,9 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const [currentChatId, setCurrentChatId] = useState(chatId);
   const [isNewChat, setIsNewChat] = useState(!chatId);
   
-  // ✅ Thêm state để track việc tạo chat
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   
-  // ✅ Refs để handle abort và prevent duplicate requests
   const abortControllerRef = useRef(null);
   const createChatPromiseRef = useRef(null);
   const lastMessageTimestampRef = useRef(0);
@@ -53,34 +52,33 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   const clearChatSelection = useAppStore((state) => state.clearChatSelection);
   const getBlockStatusByChatId = useAppStore((state) => state.getBlockStatusByChatId);
 
-  // ✅ Get block status for current chat
   const blockStatus = currentChatId ? getBlockStatusByChatId(currentChatId) : "NORMAL";
-  
-  // ✅ Determine if user can send messages based on block status
   const canSendMessage = blockStatus === "NORMAL";
   const isBlockedByOther = blockStatus === "HAS_BEEN_BLOCKED";
   const hasBlockedOther = blockStatus === "BLOCKED";
 
+  // ✅ Get typing states from useChat hook
   const { 
     messages, 
     loading, 
     loadingMore, 
     hasMore, 
     totalMessages,
-    loadMoreMessages 
+    loadMoreMessages,
+    isTyping,        // ✅ Thêm isTyping
+    typingUser       // ✅ Thêm typingUser
   } = useChat(currentChatId);
   
-const {
-  setupSubscription,
-  cleanupSubscription,
-} = useTypingNotification(currentChatId);
+  const {
+    setupSubscription,
+    cleanupSubscription,
+  } = useTypingNotification(currentChatId);
 
   const { sendMessage, isConnected } = useSendMessage({
     chatId: currentChatId,
     receiverUsername: targetUser?.username,
   });
 
-  // ✅ Sử dụng hook gọi điện
   const {
     isConnected: callConnected,
     makeCall,
@@ -102,10 +100,8 @@ const {
     if (chatId !== currentChatId) {
       setCurrentChatId(chatId);
       setIsNewChat(!chatId);
-      // ✅ Reset states khi chuyển chat
       setIsCreatingChat(false);
       setIsSendingMessage(false);
-      // Cancel pending requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
@@ -114,17 +110,33 @@ const {
     }
   }, [chatId]);
 
-  // ✅ Cleanup effect
+  const handleInputFocus = useCallback(() => {
+    console.log('🎯 Input focused - setting up subscription');
+    setupSubscription();
+  }, [setupSubscription]);
+
+  const handleInputBlur = useCallback(() => {
+    console.log('🎯 Input blurred - cleaning up subscription');
+    cleanupSubscription();
+  }, [cleanupSubscription]);
+
+  useEffect(() => {
+    console.log('🔄 setupSubscription function changed');
+  }, [setupSubscription]);
+
+  useEffect(() => {
+    console.log('🔄 cleanupSubscription function changed');
+  }, [cleanupSubscription]);
+
   useEffect(() => {
     return () => {
-      // Cleanup khi component unmount
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
   }, []);
 
-  // Infinity scroll using Intersection Observer thay vì scroll event
+  // Infinity scroll using Intersection Observer
   useEffect(() => {
     if (!bottomElementRef.current || !hasMore || loadingMore) return;
 
@@ -156,20 +168,33 @@ const {
     };
   }, [hasMore, loadingMore, loadMoreMessages, messages]);
 
-  // Auto scroll to bottom for new messages (only if user is near bottom)
+  // Auto scroll to bottom for new messages
   useEffect(() => {
     if (messages?.length > 0 && messagesContainerRef.current) {
       const container = messagesContainerRef.current;
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
       
-      // Only auto-scroll if user is near bottom or it's a new chat
       if (isNearBottom || messages.length === 1) {
         container.scrollTo({ top: 0, behavior: "smooth" });
       }
     }
   }, [messages]);
 
-  // Attach scroll listener - giữ lại cho auto-scroll behavior
+  // ✅ Auto scroll when typing indicator appears/disappears
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      
+      // Auto scroll if user is near bottom when typing indicator changes
+      if (isNearBottom) {
+        setTimeout(() => {
+          container.scrollTo({ top: 0, behavior: "smooth" });
+        }, 100);
+      }
+    }
+  }, [isTyping]); // ✅ Dependency on isTyping
+
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (container) {
@@ -199,9 +224,7 @@ const {
     };
   }, [filePreview]);
 
-  // ✅ Tối ưu hóa hàm createNewChat với abort controller và debounce
   const createNewChat = async (message) => {
-    // Prevent duplicate calls
     const currentTime = Date.now();
     if (currentTime - lastMessageTimestampRef.current < 1000) {
       console.log("🚫 Debouncing: Too fast, ignoring duplicate request");
@@ -209,7 +232,6 @@ const {
     }
     lastMessageTimestampRef.current = currentTime;
 
-    // If already creating chat, wait for the existing promise
     if (createChatPromiseRef.current) {
       console.log("⏳ Chat creation in progress, waiting...");
       try {
@@ -221,7 +243,6 @@ const {
       }
     }
 
-    // Cancel any existing request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -229,7 +250,6 @@ const {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    // Create the promise and store it
     const createChatPromise = (async () => {
       try {
         setIsCreatingChat(true);
@@ -239,8 +259,8 @@ const {
           username: targetUser?.username,
           text: message,
         }, {
-          signal: abortController.signal, // ✅ Add abort signal
-          timeout: 15000, // 15s timeout
+          signal: abortController.signal,
+          timeout: 15000,
         });
 
         if (abortController.signal.aborted) {
@@ -284,18 +304,15 @@ const {
     return await createChatPromise;
   };
 
-  // ✅ Tối ưu hóa hàm handleSend
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    // ✅ Check if user can send message (not blocked by other user)
     if (!canSendMessage) {
       toast.error("Không thể gửi tin nhắn do bạn đã bị chặn");
       return;
     }
 
-    // ✅ Prevent spam clicking
     if (isSendingMessage || isCreatingChat) {
       console.log("🚫 Already sending message or creating chat, please wait");
       return;
@@ -335,7 +352,6 @@ const {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      // ✅ Check block status before allowing any action
       if (!canSendMessage) {
         toast.error("Không thể gửi tin nhắn do bạn đã bị chặn");
         return;
@@ -354,7 +370,6 @@ const {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // ✅ Check block status before allowing file selection
     if (!canSendMessage) {
       toast.error("Không thể gửi file do bạn đã bị chặn");
       e.target.value = null;
@@ -382,7 +397,6 @@ const {
   const handleSendFile = async () => {
     if (!selectedFile || !currentChatId || !targetUser?.username) return;
     
-    // ✅ Check block status before sending file
     if (!canSendMessage) {
       toast.error("Không thể gửi file do bạn đã bị chặn");
       return;
@@ -455,7 +469,6 @@ const {
     }
   };
 
-  // ✅ Render blocked status message
   const renderBlockedStatus = () => {
     if (blockStatus === "NORMAL") return null;
 
@@ -520,6 +533,9 @@ const {
 
     return (
       <>
+        {/* ✅ Typing Indicator - hiển thị ở top (tin nhắn mới nhất) */}
+        <TypingIndicator isTyping={isTyping} typingUser={typingUser} />
+        
         {/* Load more indicator */}
         {loadingMore && (
           <div className="text-center py-2">
@@ -561,7 +577,6 @@ const {
     );
   };
 
-  // ✅ Tính toán trạng thái input disabled - bao gồm cả block status
   const isInputDisabled = !isConnected || isSendingMessage || isCreatingChat || uploading || !canSendMessage;
   
   const inputPlaceholder = !canSendMessage
@@ -585,8 +600,8 @@ const {
           isConnected={isNewChat ? true : isConnected}
           onBack={onBack}
           showBackButton={showBackButton}
-          onCall={() => makeCall(targetUser?.username, false)} // Voice call
-          onVideoCall={() => makeCall(targetUser?.username, true)} // Video call
+          onCall={() => makeCall(targetUser?.username, false)}
+          onVideoCall={() => makeCall(targetUser?.username, true)}
         />
 
         {/* Messages Container - with reverse flex direction */}
@@ -601,7 +616,7 @@ const {
           {renderMessages()}
         </div>
 
-        {/* ✅ Block status message */}
+        {/* Block status message */}
         {renderBlockedStatus()}
 
         {/* Preview file */}
@@ -613,7 +628,7 @@ const {
           />
         )}
 
-        {/* ✅ Input với loading states và block status */}
+        {/* Input với loading states và block status */}
         {canSendMessage && (
           <ChatInput
             input={input}
@@ -632,8 +647,8 @@ const {
             onFileSelect={handleFileSelect}
             onKeyDown={handleKeyDown}
             placeholder={inputPlaceholder}
-              onFocus={setupSubscription}
-  onBlur={cleanupSubscription}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
           />
         )}
       </div>

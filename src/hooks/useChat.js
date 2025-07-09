@@ -19,6 +19,11 @@ export default function useChat(chatId) {
   const [totalMessages, setTotalMessages] = useState(0);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  
+  // ✅ Thêm state cho typing notifications
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState(null);
+  const typingTimeoutRef = useRef(null);
 
   // Refs để track subscription
   const subscriptionRef = useRef(null);
@@ -94,12 +99,50 @@ export default function useChat(chatId) {
     }
   }, [chatId]);
 
+  // ✅ Xử lý typing notifications
+  const handleTypingNotification = useCallback((data) => {
+    console.log("💬 Typing notification received:", data);
+    
+    // Chỉ xử lý typing của người khác, không phải của mình
+    if (data.id === currentUserId) {
+      console.log("💬 Ignoring own typing notification");
+      return;
+    }
+
+    if (data.command === "TYPING") {
+      setIsTyping(true);
+      setTypingUser(data.sender);
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      
+      
+    } else if (data.command === "STOP_TYPING") {
+      setIsTyping(false);
+      setTypingUser(null);
+      
+      // Clear timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+    }
+  }, [currentUserId]);
+
   // Xử lý message nhận được từ WebSocket
   const handleMessage = useCallback((message) => {
-    
     try {
       const data = JSON.parse(message.body);
       console.log("📩 Received:", data);
+
+      // ✅ Xử lý typing notifications
+      if (data.command === "TYPING" || data.command === "STOP_TYPING") {
+        handleTypingNotification(data);
+        return;
+      }
 
       if (data.command === "DELETE") {
         setMessages((prev) =>
@@ -120,16 +163,22 @@ export default function useChat(chatId) {
         );
         return;
       }
-       if (data.command === "TYPING") {
-              console.log("💬 Typing notification received:", messageData);
-            }
-
 
       // NEW MESSAGE
       const newMessage = { ...data, isOwnMessage: data.sender?.id === currentUserId };
       console.log("📩 Processing new message:", newMessage);
       console.log("🆔 Current userId:", currentUserId);
       console.log("🆔 Sender ID:", data.sender?.id);
+      
+      // ✅ Khi nhận được tin nhắn mới, ẩn typing indicator
+      if (!newMessage.isOwnMessage) {
+        setIsTyping(false);
+        setTypingUser(null);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
+      }
       
       // Cập nhật messages state - thêm vào đầu mảng (tin nhắn mới nhất)
       setMessages((prev) => {
@@ -139,9 +188,6 @@ export default function useChat(chatId) {
         return newMessages;
       });
 
-      // Cập nhật tổng số tin nhắn
-      // setTotalMessages(prev => prev + 1);
-      
       // Cập nhật chatList ngay lập tức
       requestAnimationFrame(() => {
         updateChatList(newMessage);
@@ -150,7 +196,7 @@ export default function useChat(chatId) {
     } catch (err) {
       console.error("❌ Error parsing message:", err);
     }
-  }, [currentUserId, updateChatList]);
+  }, [currentUserId, updateChatList, handleTypingNotification]);
 
   // Load messages lần đầu khi chatId thay đổi
   useEffect(() => {
@@ -163,17 +209,22 @@ export default function useChat(chatId) {
         setHasMore(true);
         setTotalMessages(0);
         
+        // ✅ Reset typing state khi chuyển chat
+        setIsTyping(false);
+        setTypingUser(null);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
+        
         const limit = 20;
-        const skip = 0; // Bắt đầu từ 0
+        const skip = 0;
         
         const res = await api.get(`/v1/chat/messages/${chatId}?skip=${skip}&limit=${limit}`);
         const fetchedMessages = res.data.body || [];
         
-        // Tin nhắn trả về đã được sắp xếp từ mới nhất đến cũ nhất
         setMessages(fetchedMessages);
         setTotalMessages(fetchedMessages.length);
-        
-        // Nếu lấy được ít hơn limit, nghĩa là không còn tin nhắn nào
         setHasMore(fetchedMessages.length === limit);
         
         console.log(`📨 Loaded initial messages: ${fetchedMessages.length}, hasMore=${fetchedMessages.length === limit}`);
@@ -198,7 +249,7 @@ export default function useChat(chatId) {
       
       const limit = 20;
       const currentCount = messages.length;
-      const skip = currentCount; // Skip = số tin nhắn hiện tại
+      const skip = currentCount;
       
       console.log(`📨 Loading more messages: currentCount=${currentCount}, skip=${skip}`);
       
@@ -206,11 +257,8 @@ export default function useChat(chatId) {
       const olderMessages = res.data.body || [];
       
       if (olderMessages.length > 0) {
-        // Thêm tin nhắn cũ vào cuối mảng
         setMessages(prev => [...prev, ...olderMessages]);
         setTotalMessages(prev => prev + olderMessages.length);
-        
-        // Nếu lấy được ít hơn limit, nghĩa là không còn tin nhắn nào
         setHasMore(olderMessages.length === limit);
         
         console.log(`📨 Loaded ${olderMessages.length} more messages, hasMore=${olderMessages.length === limit}`);
@@ -230,13 +278,11 @@ export default function useChat(chatId) {
   useEffect(() => {
     if (!chatId || !currentUserId) return;
 
-    // Nếu đã subscribe cho chat này thì không làm gì
     if (subscribedChatIdRef.current === chatId && subscriptionRef.current) {
       console.log(`✅ Already subscribed to chat:${chatId}`);
       return;
     }
 
-    // Cleanup subscription cũ nếu có
     if (subscriptionRef.current && subscribedChatIdRef.current) {
       console.log(`🧹 Unsubscribing from previous chat:${subscribedChatIdRef.current}`);
       unsubscribe(`/chat/${subscribedChatIdRef.current}`);
@@ -244,16 +290,13 @@ export default function useChat(chatId) {
       subscribedChatIdRef.current = null;
     }
 
-    // Subscribe to new chat
     const subscribeToChat = async () => {
       try {
         console.log(`🔌 Subscribing to chat:${chatId}...`);
         setConnectionStatus('connecting');
 
-        // Đảm bảo client đã connected
         await getStompClient();
         
-        // Subscribe với singleton client
         const subscription = await subscribe(`/chat/${chatId}`, handleMessage);
         
         if (subscription) {
@@ -273,7 +316,6 @@ export default function useChat(chatId) {
 
     subscribeToChat();
 
-    // Health check interval - chỉ cần check connection status
     reconnectIntervalRef.current = setInterval(async () => {
       const connected = isConnected();
       
@@ -282,10 +324,8 @@ export default function useChat(chatId) {
         setConnectionStatus('reconnecting');
         
         try {
-          // Reconnect và resubscribe
           await connect();
           
-          // Resubscribe nếu connection thành công
           if (isConnected()) {
             const subscription = await subscribe(`/chat/${chatId}`, handleMessage);
             if (subscription) {
@@ -307,7 +347,6 @@ export default function useChat(chatId) {
       }
     }, 15000);
 
-    // Cleanup function
     return () => {
       console.log(`🧹 Cleaning up chat:${chatId} subscription...`);
       
@@ -320,6 +359,12 @@ export default function useChat(chatId) {
       if (reconnectIntervalRef.current) {
         clearInterval(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
+      }
+      
+      // ✅ Cleanup typing state
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
       }
       
       setConnectionStatus('disconnected');
@@ -337,6 +382,11 @@ export default function useChat(chatId) {
       if (reconnectIntervalRef.current) {
         clearInterval(reconnectIntervalRef.current);
       }
+      
+      // ✅ Cleanup typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -348,17 +398,14 @@ export default function useChat(chatId) {
     setConnectionStatus('connecting');
     
     try {
-      // Cleanup current subscription
       if (subscriptionRef.current) {
         unsubscribe(`/chat/${chatId}`);
         subscriptionRef.current = null;
         subscribedChatIdRef.current = null;
       }
       
-      // Reconnect
       await connect();
       
-      // Resubscribe
       const subscription = await subscribe(`/chat/${chatId}`, handleMessage);
       if (subscription) {
         subscriptionRef.current = subscription;
@@ -383,6 +430,9 @@ export default function useChat(chatId) {
     currentUserId,
     connectionStatus,
     loadMoreMessages,
-    forceReconnect
+    forceReconnect,
+    // ✅ Thêm typing states
+    isTyping,
+    typingUser
   };
 }

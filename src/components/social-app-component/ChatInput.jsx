@@ -59,6 +59,7 @@ export default function ChatInput({
 
   // ✅ Handle textarea focus với proper logging
   const handleTextareaFocus = (e) => {
+    console.log("📝 ChatInput: Textarea focused - calling typing focus handler")
     // Gọi typing notification focus handler từ useTypingNotification
     if (onFocus) {
       try {
