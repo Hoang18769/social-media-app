@@ -10,6 +10,7 @@ import useAppStore from "@/store/ZustandStore";
 import api from "@/utils/axios";
 
 import { useCall } from "@/context/CallContext";
+import useTypingNotification from "@/hooks/useTypingNotification"; // hoặc đường dẫn tương ứng
 
 // Các components đã tách
 import ChatHeader from "./ChatHeader";
@@ -68,7 +69,12 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     totalMessages,
     loadMoreMessages 
   } = useChat(currentChatId);
-  console.log(messages)
+  
+const {
+  setupSubscription,
+  cleanupSubscription,
+} = useTypingNotification(currentChatId);
+
   const { sendMessage, isConnected } = useSendMessage({
     chatId: currentChatId,
     receiverUsername: targetUser?.username,
@@ -77,15 +83,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   // ✅ Sử dụng hook gọi điện
   const {
     isConnected: callConnected,
-    callStatus,
-    currentCall,
     makeCall,
-    endCall,
-    incomingCaller,
-    acceptCall,
-    rejectCall,
-    remoteStream,
-    localStream,
     initializeCall,
   } = useCall();
 
@@ -634,6 +632,8 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
             onFileSelect={handleFileSelect}
             onKeyDown={handleKeyDown}
             placeholder={inputPlaceholder}
+              onFocus={setupSubscription}
+  onBlur={cleanupSubscription}
           />
         )}
       </div>

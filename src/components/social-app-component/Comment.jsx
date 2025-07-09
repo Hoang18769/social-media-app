@@ -238,59 +238,19 @@ export const Comment = ({
     }
   }, [comments.deleteComment]);
 
-  // Handle reply like with optimistic update
-  const handleLikeReply = useCallback(async (replyId, isLiked) => {
-    // Optimistic update - update UI immediately
-    const updateRepliesOptimistically = (commentId, replyId, isLiked) => {
-      if (comments.setRepliesData) {
-        comments.setRepliesData(prev => ({
-          ...prev,
-          [commentId]: prev[commentId]?.map(reply => 
-            reply.id === replyId 
-              ? { 
-                  ...reply, 
-                  liked: !isLiked, 
-                  likeCount: reply.likeCount + (isLiked ? -1 : 1) 
-                }
-              : reply
-          ) || []
-        }));
-      }
-    };
-
-    // Find which comment this reply belongs to
-    const parentCommentId = Object.keys(comments.repliesData || {}).find(commentId => 
-      comments.repliesData[commentId]?.some(reply => reply.id === replyId)
-    );
-
-    if (parentCommentId) {
-      // Apply optimistic update
-      updateRepliesOptimistically(parentCommentId, replyId, isLiked);
-    }
-
-    try {
-      // Make API call
-      if (comments.likeComment) {
-        await comments.likeComment(replyId, isLiked);
-      } else {
-        console.warn("likeComment function not provided");
-        toast.error("Không thể thích phản hồi");
-        // Revert optimistic update on error
-        if (parentCommentId) {
-          updateRepliesOptimistically(parentCommentId, replyId, !isLiked);
-        }
-      }
-    } catch (error) {
-      console.error("Error liking reply:", error);
-      toast.error("Có lỗi xảy ra khi thích phản hồi");
-      // Revert optimistic update on error
-      if (parentCommentId) {
-        updateRepliesOptimistically(parentCommentId, replyId, !isLiked);
-      }
-    }
-  }, [comments.likeComment, comments.setRepliesData, comments.repliesData]);
-
-  return (
+ // Handle reply like with proper optimistic update
+const handleLikeReply = useCallback(async (replyId, isLiked) => {
+  console.log("handleLikeReply called:", { replyId, isLiked });
+  try {
+    // Use the same likeComment function - it now handles both comments and replies
+    await comments.likeComment(replyId, isLiked);
+    console.log("Reply like successful");
+  } catch (error) {
+    console.error("Error liking reply:", error);
+    toast.error("Có lỗi xảy ra khi thích phản hồi");
+  }
+}, [comments.likeComment]);
+return (
     <div className="flex gap-3 text-sm">
       <Avatar
         src={comment.author?.profilePictureUrl}
@@ -368,7 +328,7 @@ export const Comment = ({
                           </div>
                         )}
                         
-                        {/* Reply Actions - Thêm nút like và xóa cho reply */}
+                        {/* Reply Actions - With proper optimistic updates */}
                         <CommentActions
                           comment={reply}
                           onLike={handleLikeReply}

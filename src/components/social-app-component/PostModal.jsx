@@ -417,7 +417,20 @@ export default function PostModal({
         {/* Layout for posts with media */}
         {hasMedia && (
           <>
-            {/* Desktop Layout */}
+            {/* Mobile Layout - Updated order */}
+            <div className="flex flex-col md:hidden w-full h-full">
+              {/* Scrollable content area */}
+              <div className="flex-1 overflow-y-auto">
+                {PostHeader}
+                {PostContent}
+                <MediaCarousel media={media} page={page} setPage={setPage} />
+                {PostActions}
+                {CommentsSection}
+              </div>
+              {CommentInput}
+            </div>
+
+            {/* Desktop Layout - Keep original order */}
             <div className="hidden md:flex md:w-3/5 md:h-full">
               <MediaCarousel media={media} page={page} setPage={setPage} />
             </div>

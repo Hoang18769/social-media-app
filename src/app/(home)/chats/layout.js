@@ -107,7 +107,7 @@ function ChatLayoutContent() {
   };
 
   return (
-    <div className="pt-16 flex h-[calc(100vh-64px)] bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500 p-2 sm:p-4 gap-4">
+    <div className="pt-16 flex h-[calc(100vh-64px-72px)] md:h-[calc(100vh-64px)] bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500 p-2 sm:p-4 gap-4">
       {/* ChatList - Logic hiển thị responsive */}
       {shouldShowChatList && (
         <aside className="w-full md:w-[40%] lg:w-[340px] h-full md:h-auto max-h-[calc(100vh-320px)] md:max-h-none rounded-2xl bg-[var(--card)] border border-[var(--border)] p-2 md:p-4 overflow-y-auto shadow-sm">
@@ -133,7 +133,7 @@ function ChatLayoutContent() {
 
       {/* Chat Skeleton - Hiển thị khi chưa chọn chat trên màn hình lớn */}
       {shouldShowChatSkeleton && (
-        <main className="w-full md:w-[60%] md:flex-1 rounded-2xl bg-[var(--card)] border border-[var(--border)] overflow-y-auto shadow-sm">
+        <main className="w-full md:h-full h-[80%] md:w-[60%] md:flex-1 rounded-2xl bg-[var(--card)] border border-[var(--border)] overflow-y-auto shadow-sm">
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
             <div className="mb-6">
               <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center">

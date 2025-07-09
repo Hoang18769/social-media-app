@@ -27,9 +27,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
   const [isSearching, setIsSearching] = useState(false);
   const [fetchAttempted, setFetchAttempted] = useState(false); // ✅ Track fetch attempts
   const listRef = useRef(null);
-  console.log(chatList)
   const isChatsPage = pathname === "/chats";
-  console.log(chatList)
   // Debug logging
   useEffect(() => {
     console.log("🔍 ChatList Debug:", {
@@ -244,7 +242,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
         className="w-full md:w-[300px] max-w-md mx-auto flex items-center justify-between p-2 md:p-3 bg-background border rounded-full cursor-pointer hover:bg-accent transition-colors"
       >
         <div className="flex -space-x-2">
-          {uniqueChats.slice(0, 3).map((chat, i) => (
+          {uniqueChats.reverse().slice(0, 3).map((chat, i) => (
             <div key={i} className="relative">
               <Avatar
                 src={chat.target?.profilePictureUrl}

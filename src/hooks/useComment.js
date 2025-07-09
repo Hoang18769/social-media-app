@@ -25,6 +25,7 @@ export const useComments = (initialComments, post) => {
         await api.post(endpoint);
       }
 
+      // Update main comments
       setLocalComments((prev) =>
         prev.map((comment) =>
           comment.id === commentId
@@ -38,6 +39,36 @@ export const useComments = (initialComments, post) => {
             : comment
         )
       );
+
+      // Update replies if the liked item is a reply
+      setRepliesData((prevReplies) => {
+        const updatedReplies = { ...prevReplies };
+        
+        // Check each comment's replies for the liked reply
+        Object.keys(updatedReplies).forEach(parentCommentId => {
+          const replies = updatedReplies[parentCommentId];
+          if (replies && Array.isArray(replies)) {
+            const updatedRepliesForComment = replies.map(reply =>
+              reply.id === commentId
+                ? {
+                    ...reply,
+                    liked: !isCurrentlyLiked,
+                    likeCount: isCurrentlyLiked
+                      ? reply.likeCount - 1
+                      : reply.likeCount + 1,
+                  }
+                : reply
+            );
+            
+            // Only update if there was a change
+            if (updatedRepliesForComment.some(reply => reply.id === commentId)) {
+              updatedReplies[parentCommentId] = updatedRepliesForComment;
+            }
+          }
+        });
+        
+        return updatedReplies;
+      });
     } catch (err) {
       console.error("Error liking comment:", err);
       toast.error("Lỗi khi thích bình luận");
@@ -72,9 +103,26 @@ export const useComments = (initialComments, post) => {
 
     try {
       await api.delete(`/v1/comments/${commentId}`);
+      
+      // Remove from main comments
       setLocalComments((prev) =>
         prev.filter((comment) => comment.id !== commentId)
       );
+
+      // Remove from replies
+      setRepliesData((prevReplies) => {
+        const updatedReplies = { ...prevReplies };
+        
+        Object.keys(updatedReplies).forEach(parentCommentId => {
+          const replies = updatedReplies[parentCommentId];
+          if (replies && Array.isArray(replies)) {
+            updatedReplies[parentCommentId] = replies.filter(reply => reply.id !== commentId);
+          }
+        });
+        
+        return updatedReplies;
+      });
+
       toast.success("Đã xóa bình luận");
     } catch (err) {
       console.error("Error deleting comment:", err);
@@ -101,6 +149,14 @@ export const useComments = (initialComments, post) => {
     }));
   }, []);
 
+  // Add updateRepliesData method for external use
+  const updateRepliesData = useCallback((commentId, newReplies) => {
+    setRepliesData(prev => ({
+      ...prev,
+      [commentId]: newReplies
+    }));
+  }, []);
+
   return {
     localComments,
     repliesData,
@@ -111,6 +167,8 @@ export const useComments = (initialComments, post) => {
     deleteComment,
     addComment,
     addReply,
+    updateRepliesData, // Export this for external use
+    setRepliesData,    // Export this as well
   };
 };
 

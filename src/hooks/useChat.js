@@ -120,6 +120,10 @@ export default function useChat(chatId) {
         );
         return;
       }
+       if (data.command === "TYPING") {
+              console.log("💬 Typing notification received:", messageData);
+            }
+
 
       // NEW MESSAGE
       const newMessage = { ...data, isOwnMessage: data.sender?.id === currentUserId };

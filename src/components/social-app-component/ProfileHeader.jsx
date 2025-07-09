@@ -30,6 +30,7 @@ export default function ProfileHeader({
   const router = useRouter();
 
   const username = profileData.username;
+  console.log(profileData)
   const navigateToChat = useAppStore((state) => state.navigateToChat);
   const selectChat = useAppStore((state) => state.selectChat);
   const showVirtualChat = useAppStore((state) => state.showVirtualChat);
@@ -138,18 +139,37 @@ export default function ProfileHeader({
   };
 
   const acceptFriendRequest = async () => {
+    // Optimistic update - cập nhật ngay lập tức
+    const optimisticData = {
+      ...profileData,
+      isFriend: true,
+      request: null,
+      friendCount: profileData.friendCount + 1
+    };
+    
+    onProfileUpdate(optimisticData);
+    toast.success("Đã chấp nhận kết bạn");
+    
     try {
       const res = await api.post(`/v1/friend-request/accept/${username}`);
-      if (res.data.code === 200) {
-        toast.success("Đã chấp nhận kết bạn");
+      if (res.data.code !== 200) {
+        // Nếu API thất bại, rollback lại trạng thái cũ
         onProfileUpdate({
           ...profileData,
-          friend: true,
-          request: null,
-          friendCount: profileData.friendCount + 1
+          isFriend: false,
+          request: "IN",
+          friendCount: profileData.friendCount
         });
+        toast.error("Có lỗi xảy ra khi chấp nhận kết bạn");
       }
     } catch (error) {
+      // Rollback nếu có lỗi
+      onProfileUpdate({
+        ...profileData,
+        isFriend: false,
+        request: "IN",
+        friendCount: profileData.friendCount
+      });
       toast.error("Lỗi khi chấp nhận kết bạn");
     }
   };
@@ -229,7 +249,7 @@ export default function ProfileHeader({
       return (
         <button
           onClick={unfriend}
-          className="px-4 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
         >
           Hủy kết bạn
         </button>
@@ -241,7 +261,7 @@ export default function ProfileHeader({
         return (
           <button
             onClick={cancelFriendRequest}
-            className="px-4 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
           >
             Hủy lời mời
           </button>
@@ -251,13 +271,13 @@ export default function ProfileHeader({
           <div className="flex gap-2">
             <button
               onClick={acceptFriendRequest}
-              className="px-4 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm"
+              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
             >
               Đồng ý
             </button>
             <button
               onClick={declineFriendRequest}
-              className="px-4 py-1 bg-gray-400 hover:bg-gray-500 text-white rounded text-sm"
+              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
             >
               Từ chối
             </button>
@@ -266,14 +286,19 @@ export default function ProfileHeader({
       }
     }
 
-    return (
-      <button
-        onClick={sendFriendRequest}
-        className="px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
-      >
-        Kết bạn
-      </button>
-    );
+    // Chỉ hiển thị nút "Kết bạn" khi không phải bạn bè và không có request nào
+    if (!profileData.isFriend && !profileData.request) {
+      return (
+        <button
+          onClick={sendFriendRequest}
+          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+        >
+          Kết bạn
+        </button>
+      );
+    }
+
+    return null;
   };
 
   const handleTabClick = (tabName) => {
@@ -288,39 +313,39 @@ export default function ProfileHeader({
         <Avatar
           src={avatar}
           alt="Avatar"
-          className="rounded-full object-cover md:w-28 md:h-28 sm:w-32 sm:h-32"
+          className="rounded-full object-cover md:w-42 md:h-42 sm:w-40 sm:h-40"
         />
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-xl font-semibold">
               {profileData?.givenName || ""} {profileData?.familyName || ""}
             </h2>
-            <div className="flex gap-2">
+            
+            {/* Gom tất cả các nút vào một nhóm */}
+            <div className="flex gap-2 flex-wrap">
               {isOwnProfile ? (
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="px-4 py-1 border rounded-full text-sm text-gray-600 hover:bg-gray-100"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   Chỉnh sửa hồ sơ
                 </button>
               ) : (
-                renderFriendButton()
-              )}
-              {!isOwnProfile && (
-                <div className="flex gap-2">
+                <>
+                  {renderFriendButton()}
                   <button
                     onClick={handleChatClick}
-                    className="px-4 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded text-sm"
+                    className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
                   >
                     Nhắn tin
                   </button>
                   <button
                     onClick={handleBlockUser}
-                    className="px-4 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
                   >
                     Chặn
                   </button>
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -334,18 +359,18 @@ export default function ProfileHeader({
             <button 
               onClick={handleGetListFriend}
               disabled={isLoadingFriends}
-              className="hover:text-blue-600 transition-colors disabled:opacity-50"
+              className="hover:text-blue-500 transition-colors duration-200 disabled:opacity-50 font-medium"
             >
               <strong>{profileData?.friendCount || 0}</strong> Bạn bè
-              {isLoadingFriends && <span className="ml-1">...</span>}
+              {isLoadingFriends && <span className="ml-1 animate-pulse">...</span>}
             </button>
             <button 
               onClick={handleGetMutualFriends}
               disabled={isLoadingFriends}
-              className="hover:text-blue-600 transition-colors disabled:opacity-50"
+              className="hover:text-blue-500 transition-colors duration-200 disabled:opacity-50 font-medium"
             >
               <strong>{profileData?.mutualFriendsCount || 0}</strong> Bạn chung
-              {isLoadingFriends && <span className="ml-1">...</span>}
+              {isLoadingFriends && <span className="ml-1 animate-pulse">...</span>}
             </button>
           </div>
 
@@ -355,29 +380,35 @@ export default function ProfileHeader({
         </div>
       </div>
 
-      <div className="flex justify-around text-sm border-t mt-4 pt-2">
+      <div className="flex justify-around text-sm border-t border-gray-200 dark:border-gray-700 mt-4 pt-3">
         <button
-          className={`flex items-center gap-1 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all duration-200 ${
             activeTab === "posts"
-              ? "text-blue-600 font-medium border-b-2 border-blue-600 pb-1"
-              : "text-gray-500 hover:text-black"
+              ? "bg-blue-500 text-white shadow-md hover:shadow-lg"
+              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
           }`}
           onClick={() => handleTabClick("posts")}
         >
-          🧱 Bài viết
+          <span>🧱</span>
+          <span>Bài viết</span>
         </button>
         <button
-          className={`flex items-center gap-1 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all duration-200 ${
             activeTab === "file"
-              ? "text-blue-600 font-medium border-b-2 border-blue-600 pb-1"
-              : "text-gray-500 hover:text-black"
+              ? "bg-blue-500 text-white shadow-md hover:shadow-lg"
+              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
           }`}
           onClick={() => handleTabClick("file")}
         >
-          🖼 Ảnh và video
+          <span>🖼</span>
+          <span>Ảnh và video</span>
         </button>
-        <button className="flex items-center gap-1 text-gray-400 cursor-not-allowed" disabled>
-          💾 Đã lưu
+        <button 
+          className="flex items-center gap-2 px-4 py-2 rounded-full font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50" 
+          disabled
+        >
+          <span>💾</span>
+          <span>Đã lưu</span>
         </button>
       </div>
 

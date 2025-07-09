@@ -221,7 +221,12 @@ export default function useMessageNotification(userId) {
         }
         return;
       }
+       if (messageData.command === "TYPING") {
+              console.log("💬 Typing notification received:", messageData);
+              return;
+            }
 
+           
       const newMessage = {
         ...messageData,
         isOwnMessage: messageData.sender?.id === currentUserId,

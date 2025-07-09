@@ -126,7 +126,7 @@ export default function ProfilePage() {
           `/v1/posts/of-user/${routeUsername}?skip=${skipValue}&limit=${LIMIT}`,
           { signal: abortControllerRef.current.signal }
         );
-
+        console.log(res)
         if (res.data.code === 200) {
           const newPosts = res.data.body || [];
 

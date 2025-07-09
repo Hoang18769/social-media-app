@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useEffect } from "react"
+import useTypingNotification from "@/hooks/useTypingNotification";
 
 export default function ChatInput({
   input,
@@ -18,17 +19,26 @@ export default function ChatInput({
   onCancelFile,
   onFileSelect,
   onKeyDown,
+  onFocus,  // ✅ Typing focus handler từ useTypingNotification
+  onBlur,   // ✅ Typing blur handler từ useTypingNotification
   placeholder,
 }) {
   const fileInputRef = useRef(null)
   const textareaRef = useRef(null)
-
   // Auto focus input when component mounts or editing mode changes
   useEffect(() => {
     if (textareaRef.current && !disabled) {
       textareaRef.current.focus()
     }
   }, [editingMessage, disabled])
+
+  useEffect(() => {
+  console.log("✅ useEffect chạy, textareaRef:", textareaRef.current, "disabled:", disabled);
+  if (textareaRef.current && !disabled) {
+    textareaRef.current.focus();
+    console.log("✅ textarea.focus() đã gọi");
+  }
+}, [editingMessage, disabled]);
 
   const handleSendClick = () => {
     if (disabled || loading) return
@@ -45,6 +55,47 @@ export default function ChatInput({
   const handleFileClick = () => {
     if (disabled || loading) return
     fileInputRef.current?.click()
+  }
+
+  // ✅ Handle textarea focus với proper logging
+  const handleTextareaFocus = (e) => {
+    // Gọi typing notification focus handler từ useTypingNotification
+    if (onFocus) {
+      try {
+        onFocus(e)
+        console.log("✅ Typing focus handler called successfully")
+      } catch (error) {
+        console.error("❌ Error calling typing focus handler:", error)
+      }
+    } else {
+      console.warn("⚠️ No onFocus handler provided to ChatInput")
+    }
+  }
+
+  // ✅ Handle textarea blur với proper logging
+  const handleTextareaBlur = (e) => {
+    console.log("📝 ChatInput: Textarea blurred - calling typing blur handler")
+    
+    // Gọi typing notification blur handler từ useTypingNotification
+    if (onBlur) {
+      try {
+        onBlur(e)
+        console.log("✅ Typing blur handler called successfully")
+      } catch (error) {
+        console.error("❌ Error calling typing blur handler:", error)
+      }
+    } else {
+      console.warn("⚠️ No onBlur handler provided to ChatInput")
+    }
+  }
+
+  // ✅ Handle input change
+  const handleInputChange = (e) => {
+    const value = e.target.value
+    setInput(value)
+    
+    // TODO: Có thể thêm logic gửi typing status qua socket
+    // console.log("📝 User is typing:", value.length > 0)
   }
 
   // Check if we can send - either has text content or has file
@@ -154,9 +205,11 @@ export default function ChatInput({
         <div className="flex-1 m-2">
           <textarea
             ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            value={input}       
+            onChange={handleInputChange}
             onKeyDown={onKeyDown}
+            onFocus={handleTextareaFocus}  // ✅ Gọi typing focus handler với logging
+            onBlur={handleTextareaBlur}    // ✅ Gọi typing blur handler với logging
             disabled={disabled}
             placeholder={selectedFile ? "Thêm mô tả cho file (tùy chọn)..." : placeholder}
             className={`w-full px-3 py-2 border border-[var(--border)] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[var(--background)] text-[var(--foreground)] transition-all text-sm ${
@@ -176,16 +229,6 @@ export default function ChatInput({
         {/* Hidden file input */}
         <input ref={fileInputRef} type="file" onChange={onFileSelect} className="hidden" accept="*/*" />
       </div>
-
-      {/* Connection status */}
-      {!isConnected && !loading && (
-        <div className="flex items-center justify-center py-1">
-          <div className="flex items-center space-x-2 px-2 py-1 bg-red-50 dark:bg-red-900/20 rounded-full">
-            <span className="text-red-500 text-sm">⚠️</span>
-            <span className="text-xs font-medium text-red-500">Mất kết nối đến server</span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
