@@ -76,6 +76,34 @@ function GlobalCallInterface() {
   );
 }
 
+// ✅ Hàm kiểm tra route có cần hiển thị header không
+function shouldShowHeader(pathname) {
+  // Các route cần hiển thị header
+  const showHeaderRoutes = [
+    '/',
+    '/home',
+    '/settings',
+    '/chats',
+  ];
+  
+  // Kiểm tra exact match
+  if (showHeaderRoutes.includes(pathname)) {
+    return true;
+  }
+  
+  // Kiểm tra profile route với pattern /profile/{abc}
+  if (pathname.startsWith('/profile/')) {
+    return true;
+  }
+  
+  // Kiểm tra settings route với sub-paths
+  if (pathname.startsWith('/settings')) {
+    return true;
+  }
+  
+  return false;
+}
+
 // ✅ Main Layout Content (tách ra để có thể sử dụng useCall)
 function MainLayoutContent({ children }) {
   const { resolvedTheme } = useTheme();
@@ -91,6 +119,9 @@ function MainLayoutContent({ children }) {
 
   // ✅ Sử dụng Call Hook
   const { initializeCall, currentCall, isCallEnding } = useCall();
+
+  // ✅ Kiểm tra có cần hiển thị header không
+  const showHeader = shouldShowHeader(pathname);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
@@ -230,6 +261,11 @@ function MainLayoutContent({ children }) {
   // ✅ Kiểm tra có đang trong cuộc gọi để điều chỉnh UI
   const isInCall = currentCall || isCallEnding;
 
+  // ✅ Tính toán header height và padding top
+  const headerHeight = showHeader ? "h-12" : "h-0";
+  const contentPaddingTop = showHeader ? "pt-12" : "pt-0";
+  const sidebarHeight = showHeader ? "h-[calc(100vh-64px)]" : "h-screen";
+
 // ✅ Fixed layout - phần chính cần chỉnh sửa
 const layoutContent = (
   <>
@@ -248,18 +284,22 @@ const layoutContent = (
 
     {/* ✅ Main UI - ẩn khi đang trong cuộc gọi */}
     <div className={`h-screen flex flex-col ${isInCall ? 'hidden' : ''}`}>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 h-12 border-b transition-colors duration-500">
-        <Header />
-      </header>
+      
+      {/* ✅ Header - chỉ hiển thị khi showHeader = true */}
+      {showHeader && (
+        <header className={`fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 ${headerHeight} border-b transition-colors duration-500`}>
+          <Header />
+        </header>
+      )}
 
-      <div className="flex flex-1 pt-12 bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500">
+      <div className={`flex flex-1 ${contentPaddingTop} bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500`}>
         {/* Left Sidebar - ẩn trên mobile, fixed trên desktop */}
-        <aside className="hidden md:block md:w-[80px] h-[calc(100vh-64px)] overflow-y-auto">
+        <aside className={`hidden md:block md:w-[80px] ${sidebarHeight} overflow-y-auto`}>
           <Sidebar />
         </aside>
 
         {/* Main Content - điều chỉnh height và padding */}
-        <main className="flex-1 h-[calc(100vh-64px)] overflow-y-auto px-4">
+        <main className={`flex-1 ${showHeader ? 'h-[calc(100vh-64px)]' : 'h-screen'} overflow-y-auto px-4`}>
           <div
             className={`${
               hideRightSidebar ? "max-w-6xl" : "max-w-4xl"

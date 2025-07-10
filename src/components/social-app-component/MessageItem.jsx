@@ -223,8 +223,8 @@ export default function MessageItem({
         {!isSelf && (
           <Avatar
             src={targetUser?.profilePictureUrl}
-            size="xs"
-            className="flex-shrink-0 mt-1"
+            className="flex-shrink-0 mt-1 "
+              
           />
         )}
 

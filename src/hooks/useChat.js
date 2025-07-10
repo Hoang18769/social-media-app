@@ -144,6 +144,15 @@ export default function useChat(chatId) {
         return;
       }
 
+      // ✅ Xử lý HAS_BEEN_BLOCKED command
+      if (data.command === "HAS_BEEN_BLOCKED") {
+        console.log("🚫 HAS_BEEN_BLOCKED received:", data);
+        return;
+      } if (data.command === "HAS_BEEN_UNBLOCKED") {
+        console.log("🚫 HAS_BEEN_UNBLOCKED received:", data);
+        return;
+      }
+
       if (data.command === "DELETE") {
         setMessages((prev) =>
           prev.map((msg) =>

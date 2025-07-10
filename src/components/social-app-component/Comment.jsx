@@ -238,19 +238,20 @@ export const Comment = ({
     }
   }, [comments.deleteComment]);
 
- // Handle reply like with proper optimistic update
-const handleLikeReply = useCallback(async (replyId, isLiked) => {
-  console.log("handleLikeReply called:", { replyId, isLiked });
-  try {
-    // Use the same likeComment function - it now handles both comments and replies
-    await comments.likeComment(replyId, isLiked);
-    console.log("Reply like successful");
-  } catch (error) {
-    console.error("Error liking reply:", error);
-    toast.error("Có lỗi xảy ra khi thích phản hồi");
-  }
-}, [comments.likeComment]);
-return (
+  // ✅ FIX: Handle reply like with proper optimistic update
+  const handleLikeReply = useCallback(async (replyId, isLiked) => {
+    console.log("handleLikeReply called:", { replyId, isLiked });
+    try {
+      // ✅ Use the same likeComment function - it now handles both comments and replies
+      await comments.likeComment(replyId, isLiked);
+      console.log("Reply like successful");
+    } catch (error) {
+      console.error("Error liking reply:", error);
+      toast.error("Có lỗi xảy ra khi thích phản hồi");
+    }
+  }, [comments.likeComment]);
+
+  return (
     <div className="flex gap-3 text-sm">
       <Avatar
         src={comment.author?.profilePictureUrl}
@@ -274,6 +275,7 @@ return (
           </div>
         )}
 
+        {/* ✅ FIX: Main comment actions with optimistic updates */}
         <CommentActions
           comment={comment}
           onLike={comments.likeComment}
@@ -328,7 +330,7 @@ return (
                           </div>
                         )}
                         
-                        {/* Reply Actions - With proper optimistic updates */}
+                        {/* ✅ FIX: Reply Actions with proper optimistic updates */}
                         <CommentActions
                           comment={reply}
                           onLike={handleLikeReply}

@@ -32,11 +32,11 @@ export default function UserHeader({
           {familyName} {givenName}
         </h4>
 
-        {showLastOnline && (
+        {/* {showLastOnline && (
           <p className="text-xs text-[var(--muted-foreground)] truncate">
             {lastOnline}
           </p>
-        )}
+        )} */}
 
         {/* Mutual friends */}
         {mutualFriendsCount > 0 ? (

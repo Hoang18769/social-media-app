@@ -29,7 +29,7 @@ export default function PostModal({
   // Determine what content and media to display
   const isSharedPost = post?.sharedPost;
   const displayPost = isSharedPost ? post.originalPost : post;
-    const router = useRouter()
+  const router = useRouter();
 
   // Handle media from both regular posts and shared posts
   let media = [];
@@ -45,26 +45,19 @@ export default function PostModal({
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   const [isSharedContentExpanded, setIsSharedContentExpanded] = useState(false);
   
-  console.log("PostModal initialized with post:", post);
-  console.log("Media found:", media);
-  console.log("Comments received:", comments);
-  console.log("Post ID for comments:", post.id);
-  console.log("Is shared post:", isSharedPost);
-  if (isSharedPost) {
-    console.log("Original post ID:", post.originalPost?.id);
-  }
+  // ✅ Initialize comments manager with optimistic updates
   const commentsManager = useComments(comments, post);
- const handleProfileClick = (e, post) => {
-    e.stopPropagation() // Ngăn không cho bubble up tới card click
-    router.push(`/profile/${post.author?.username}`)
-  }
+  
+  const handleProfileClick = (e, post) => {
+    e.stopPropagation();
+    router.push(`/profile/${post.author?.username}`);
+  };
+
   // Function to detect and convert links in text
   const renderTextWithLinks = (text) => {
     if (!text) return text;
     
-    // Regex to match URLs (including domain.extension pattern)
     const urlRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
-    
     const parts = text.split(urlRegex);
     const matches = text.match(urlRegex) || [];
     
@@ -104,7 +97,7 @@ export default function PostModal({
     return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
   };
 
-  // Handle reply submission
+  // ✅ Handle reply submission with optimistic updates
   const handleReplySubmit = useCallback(async (content, file, commentId) => {
     try {
       console.log("Submitting reply:", { content, file, commentId });
@@ -125,7 +118,7 @@ export default function PostModal({
       console.log("Reply response:", res.data);
       const newReply = res.data.body;
       
-      // Add reply to local state
+      // ✅ Add reply to local state with optimistic update
       commentsManager.addReply(commentId, newReply);
       
       // Close reply form
@@ -135,11 +128,11 @@ export default function PostModal({
     } catch (error) {
       console.error("Error submitting reply:", error);
       toast.error("Lỗi khi gửi phản hồi");
-      throw error; // Re-throw so form can handle it
+      throw error;
     }
   }, [commentsManager]);
 
-  // Memoize the onSubmit function to prevent form re-creation
+  // ✅ Handle main comment submission with optimistic updates
   const handleMainCommentSubmit = useCallback(async (content, file) => {
     try {
       const formData = new FormData();
@@ -155,22 +148,23 @@ export default function PostModal({
       
       const newComment = res.data.body;
 
-      // Call the parent callback if provided
+      // ✅ Call the parent callback if provided
       if (onCommentSubmit) onCommentSubmit(newComment);
       
-      // Add to local comments state
+      // ✅ Add to local comments state with optimistic update
       commentsManager.addComment(newComment);
       
       toast.success("Đã gửi bình luận");
     } catch (error) {
       console.error("Error submitting comment:", error);
       toast.error("Lỗi khi gửi bình luận");
-      throw error; // Re-throw to be handled by the form hook
+      throw error;
     }
   }, [post.id, onCommentSubmit, commentsManager]);
 
   const mainCommentForm = useForm(handleMainCommentSubmit);
 
+  // ✅ Handle reply actions
   const handleReply = useCallback((commentId) => {
     console.log("Starting reply to comment:", commentId);
     setReplyingTo(commentId);
@@ -181,16 +175,44 @@ export default function PostModal({
     setReplyingTo(null);
   }, []);
 
+  // ✅ Handle comment like with optimistic updates
+  const handleCommentLike = useCallback(async (commentId, isLiked) => {
+    console.log("Handling comment like:", { commentId, isLiked });
+    try {
+      // ✅ This will handle optimistic updates automatically
+      await commentsManager.likeComment(commentId, isLiked);
+      
+      // ✅ Optional: Update parent component if needed
+      if (onCommentUpdate) {
+        onCommentUpdate(commentId, 'like', !isLiked);
+      }
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      // Error handling is already done in the hook
+    }
+  }, [commentsManager, onCommentUpdate]);
+
+  // ✅ Handle comment deletion with optimistic updates
+  const handleCommentDelete = useCallback(async (commentId) => {
+    try {
+      await commentsManager.deleteComment(commentId);
+      
+      // ✅ Optional: Update parent component if needed
+      if (onCommentUpdate) {
+        onCommentUpdate(commentId, 'delete');
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      // Error handling is already done in the hook
+    }
+  }, [commentsManager, onCommentUpdate]);
+
   // Memoized components to prevent unnecessary re-renders
   const PostHeader = useMemo(() => (
-    <div className="flex flex-col gap-3 p-4 border-b border-[var(--border)]"
-                onClick={handleProfileClick}
->
-    
+    <div className="flex flex-col gap-3 p-4 border-b border-[var(--border)]">
       {/* Show the person who shared the post first (if it's a shared post) */}
       {isSharedPost && (
-        <div className="flex items-center gap-3"
-                  onClick={(e)=>handleProfileClick(e,post)}>
+        <div className="flex items-center gap-3" onClick={(e) => handleProfileClick(e, post)}>
           <Avatar
             src={post.author?.profilePictureUrl}
             alt={post.author?.username}
@@ -238,9 +260,7 @@ export default function PostModal({
       )}
       
       {/* Show original post author */}
-      <div className={`flex items-center gap-3 ${isSharedPost ? 'ml-4 p-3 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`}
-                  onClick={(e)=>handleProfileClick(e,displayPost)}
->
+      <div className={`flex items-center gap-3 ${isSharedPost ? 'ml-4 p-3 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`} onClick={(e) => handleProfileClick(e, displayPost)}>
         <Avatar
           src={displayPost.author?.profilePictureUrl}
           alt={displayPost.author?.username}
@@ -255,7 +275,7 @@ export default function PostModal({
         </div>
       </div>
     </div>
-  ), [post, displayPost, isSharedPost, isSharedContentExpanded]);
+  ), [post, displayPost, isSharedPost, isSharedContentExpanded, handleProfileClick]);
 
   const PostContent = useMemo(() => {
     if (!displayPost?.content) return null;
@@ -289,7 +309,7 @@ export default function PostModal({
         </div>
       </div>
     );
-  }, [displayPost?.content, isSharedPost, isContentExpanded]);
+  }, [displayPost?.content, isSharedPost, isContentExpanded, renderTextWithLinks]);
 
   const PostActions = useMemo(() => (
     <div className="border-b border-[var(--border)]">
@@ -312,7 +332,7 @@ export default function PostModal({
     </div>
   ), [liked, likeCount, onLikeToggle]);
 
-  // Memoized comments section
+  // ✅ Memoized comments section with optimistic updates
   const CommentsSection = useMemo(() => (
     <div className="p-4 space-y-2">
       <p className="text-sm font-semibold">Bình luận ({commentsManager.localComments.length})</p>
@@ -339,9 +359,19 @@ export default function PostModal({
         </div>
       )}
     </div>
-  ), [loadingComments, commentsManager.localComments, post, commentsManager, handleReply, replyingTo, handleCancelReply, handleReplySubmit]);
+  ), [
+    loadingComments, 
+    commentsManager.localComments, 
+    post, 
+    commentsManager, 
+    handleReply, 
+    replyingTo, 
+    handleCancelReply, 
+    handleReplySubmit,
+    isOwnPost
+  ]);
 
-  // Memoized comment input
+  // ✅ Memoized comment input with optimistic updates
   const CommentInput = useMemo(() => (
     <div className="flex-shrink-0 bg-[var(--card)] border-t border-[var(--border)]">
       {mainCommentForm.file && (
@@ -399,17 +429,15 @@ export default function PostModal({
           hasMedia ? "md:flex-row h-[90vh]" : "h-[80vh]"
         } bg-[var(--card)] text-[var(--card-foreground)] rounded-xl overflow-hidden`}
       >
-        {/* Layout for posts without media - Updated for full scrollable content */}
+        {/* Layout for posts without media */}
         {!hasMedia && (
           <div className="flex flex-col w-full h-full">
-            {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto">
               {PostHeader}
               {PostContent}
               {PostActions}
               {CommentsSection}
             </div>
-            {/* Fixed comment input at bottom */}
             {CommentInput}
           </div>
         )}
@@ -417,9 +445,8 @@ export default function PostModal({
         {/* Layout for posts with media */}
         {hasMedia && (
           <>
-            {/* Mobile Layout - Updated order */}
+            {/* Mobile Layout */}
             <div className="flex flex-col md:hidden w-full h-full">
-              {/* Scrollable content area */}
               <div className="flex-1 overflow-y-auto">
                 {PostHeader}
                 {PostContent}
@@ -430,12 +457,11 @@ export default function PostModal({
               {CommentInput}
             </div>
 
-            {/* Desktop Layout - Keep original order */}
+            {/* Desktop Layout */}
             <div className="hidden md:flex md:w-3/5 md:h-full">
               <MediaCarousel media={media} page={page} setPage={setPage} />
             </div>
 
-            {/* Sidebar - Desktop */}
             <div className="hidden md:flex md:flex-col md:w-2/5 md:h-full md:border-l md:border-[var(--border)]">
               <div className="flex-1 overflow-y-auto">
                 {PostHeader}

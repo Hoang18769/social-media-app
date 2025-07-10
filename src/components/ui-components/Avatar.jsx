@@ -1,11 +1,12 @@
 import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
+import clsx from "clsx";
 
 export default function Avatar({
   src,
   alt = "User avatar",
-  width = 48,
-  height = 48,
+  width,
+  height,
   className = "",
   ...props
 }) {
@@ -16,22 +17,30 @@ export default function Avatar({
 
   const defaultSrc = "/defaultAvatar.png";
   const imageSrc = !src || hasError ? defaultSrc : src;
+  const isExternalUrl = imageSrc.startsWith("http://") || imageSrc.startsWith("https://");
+
+  const finalWidth = width ?? 48;
+  const finalHeight = height ?? 48;
+  const hasExplicitSize = width !== undefined && height !== undefined;
+
+  // Add fallback class if no size provided via className
+  const shouldApplyDefaultSize =
+    !className.includes("w-") && !className.includes("h-") && !hasExplicitSize;
 
   useEffect(() => {
-    // Only reset states if src actually changed
     if (previousSrcRef.current !== src) {
       setHasError(false);
       setImageLoaded(false);
-      
+
       if (src && src !== defaultSrc) {
         setIsLoading(true);
       } else {
         setIsLoading(false);
       }
-      
+
       previousSrcRef.current = src;
     }
-  }, [src, defaultSrc]);
+  }, [src]);
 
   const handleError = useCallback(() => {
     setHasError(true);
@@ -44,45 +53,43 @@ export default function Avatar({
     setImageLoaded(true);
   }, []);
 
-  const isExternalUrl = imageSrc.startsWith("http://") || imageSrc.startsWith("https://");
-
   return (
     <div
-      className={`relative inline-block rounded-full overflow-hidden bg-gray-100 ${className}`}
-      style={{ width, height }}
+      className={clsx(
+        "relative inline-block rounded-full overflow-hidden bg-gray-100",
+        shouldApplyDefaultSize && "w-12 h-12",
+        className
+      )}
+      style={hasExplicitSize ? { width: finalWidth, height: finalHeight } : undefined}
       {...props}
     >
-      {/* Loading spinner */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-full">
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
         </div>
       )}
 
-      {/* Image */}
       <Image
         src={imageSrc}
         alt={alt}
-        width={width}
-        height={height}
-        className={`
-          object-cover object-center
-          transition-opacity duration-200
-          ${imageLoaded ? 'opacity-100' : 'opacity-0'}
-        `}
+        width={finalWidth}
+        height={finalHeight}
+        className={clsx(
+          "object-cover object-center transition-opacity duration-200",
+          imageLoaded ? "opacity-100" : "opacity-0"
+        )}
         style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center'
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center",
         }}
         onError={handleError}
         onLoad={handleLoad}
         unoptimized={isExternalUrl}
-        priority={width > 100}
+        priority={finalWidth > 100}
       />
 
-      {/* Fallback for very slow loading */}
       {!imageLoaded && !isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded-full">
           <svg

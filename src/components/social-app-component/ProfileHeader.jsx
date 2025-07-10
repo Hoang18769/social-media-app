@@ -287,7 +287,7 @@ export default function ProfileHeader({
     }
 
     // Chỉ hiển thị nút "Kết bạn" khi không phải bạn bè và không có request nào
-    if (!profileData.isFriend && !profileData.request) {
+    if (!profileData.isFriend && profileData.request==="NONE") {
       return (
         <button
           onClick={sendFriendRequest}
@@ -313,7 +313,7 @@ export default function ProfileHeader({
         <Avatar
           src={avatar}
           alt="Avatar"
-          className="rounded-full object-cover md:w-42 md:h-42 sm:w-40 sm:h-40"
+          className="rounded-full object-cover w-24 h-24 sm:w-32 sm:h-32 shadow-md"
         />
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">

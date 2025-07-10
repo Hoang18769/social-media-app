@@ -5,12 +5,23 @@ import UserHeader from "@/components/social-app-component/UserHeader";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { 
+  UserMinus, 
+  UserCheck, 
+  UserX, 
+  UserPlus, 
+  X, 
+  Shield,
+  Loader2,
+  MoreVertical
+} from "lucide-react";
 
 export default function FriendPage() {
   const [activeTab, setActiveTab] = useState("friends");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
+  const [openDropdown, setOpenDropdown] = useState(null);
   const userName = typeof window !== 'undefined' ? localStorage.getItem("userName") : null;
 
   const tabConfig = {
@@ -75,10 +86,25 @@ export default function FriendPage() {
     fetchData();
   }, [activeTab]);
 
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown && !event.target.closest('.relative')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdown]);
+
   const handleAction = async (userId, actionType) => {
     console.log("username", userId);
     const previousUsers = [...users];
     setActionLoading(prev => ({ ...prev, [userId]: true }));
+    setOpenDropdown(null); // Đóng dropdown khi thực hiện action
 
     try {
       let endpoint, method = "post", data = {};
@@ -130,17 +156,43 @@ export default function FriendPage() {
 
   const renderActionButton = (user) => {
     const isLoading = actionLoading[user.username];
-    const baseClass = "px-3 py-1 text-sm rounded-md transition-colors flex items-center justify-center min-w-[100px]";
+    const baseClass = "px-3 py-2 text-sm rounded-md transition-colors flex items-center justify-center min-w-[40px] min-h-[36px]";
 
     const buttonConfig = {
-      friends: { text: "Hủy kết bạn", style: "bg-red-50 text-red-600 hover:bg-red-100" },
+      friends: { 
+        icon: UserMinus, 
+        style: "bg-red-50 text-red-600 hover:bg-red-100",
+        tooltip: "Hủy kết bạn"
+      },
       requests: [
-        { text: "Chấp nhận", style: "bg-blue-50 text-blue-600 hover:bg-blue-100", action: "accept" },
-        { text: "Từ chối", style: "bg-gray-50 text-gray-600 hover:bg-gray-100", action: "reject", minWidth: "min-w-[80px]" }
+        { 
+          icon: UserCheck, 
+          style: "bg-blue-50 text-blue-600 hover:bg-blue-100", 
+          action: "accept",
+          tooltip: "Chấp nhận"
+        },
+        { 
+          icon: UserX, 
+          style: "bg-gray-50 text-gray-600 hover:bg-gray-100", 
+          action: "reject",
+          tooltip: "Từ chối"
+        }
       ],
-      sent: { text: "Hủy yêu cầu", style: "bg-gray-50 text-gray-600 hover:bg-gray-100" },
-      suggestions: { text: "Thêm bạn", style: "bg-green-50 text-green-600 hover:bg-green-100" },
-      blocked: { text: "Bỏ chặn", style: "bg-gray-50 text-gray-600 hover:bg-gray-100" }
+      sent: { 
+        icon: X, 
+        style: "bg-gray-50 text-gray-600 hover:bg-gray-100",
+        tooltip: "Hủy yêu cầu"
+      },
+      suggestions: { 
+        icon: UserPlus, 
+        style: "bg-green-50 text-green-600 hover:bg-green-100",
+        tooltip: "Thêm bạn"
+      },
+      blocked: { 
+        icon: Shield, 
+        style: "bg-gray-50 text-gray-600 hover:bg-gray-100",
+        tooltip: "Bỏ chặn"
+      }
     };
 
     const currentConfig = buttonConfig[activeTab];
@@ -148,20 +200,29 @@ export default function FriendPage() {
     if (Array.isArray(currentConfig)) {
       return (
         <div className="flex gap-2">
-          {currentConfig.map((btn) => (
-            <button
-              key={btn.action}
-              onClick={() => handleAction(user.username, btn.action)}
-              disabled={isLoading}
-              className={`${baseClass} ${btn.style} ${btn.minWidth || ""}`}
-            >
-              {isLoading ? "..." : btn.text}
-            </button>
-          ))}
+          {currentConfig.map((btn) => {
+            const IconComponent = btn.icon;
+            return (
+              <button
+                key={btn.action}
+                onClick={() => handleAction(user.username, btn.action)}
+                disabled={isLoading}
+                className={`${baseClass} ${btn.style}`}
+                title={btn.tooltip}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <IconComponent className="h-4 w-4" />
+                )}
+              </button>
+            );
+          })}
         </div>
       );
     }
 
+    const IconComponent = currentConfig.icon;
     return (
       <button
         onClick={() => handleAction(user.username, activeTab === "friends" ? "unfriend" : 
@@ -169,8 +230,13 @@ export default function FriendPage() {
                                   activeTab === "suggestions" ? "add" : "unblock")}
         disabled={isLoading}
         className={`${baseClass} ${currentConfig.style}`}
+        title={currentConfig.tooltip}
       >
-        {isLoading ? "..." : currentConfig.text}
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <IconComponent className="h-4 w-4" />
+        )}
       </button>
     );
   };
@@ -211,17 +277,16 @@ export default function FriendPage() {
           <ul className="divide-y divide-[var(--border)]">
             {users.map((user) => (
               <li key={user.username} className="p-4 hover:bg-[var(--accent)] transition-colors">
-                  <div className="flex items-center justify-between gap-4">
-                <Link href={`/profile/${user.username}`} className="flex items-center justify-between">
-                  <UserHeader
-                  key={user.username}
-                    user={user} 
-                    showLastOnline={activeTab === "friends"}
-                    className="flex-grow min-w-0"
-                  />
-                  
-                </Link>
-                  <div className="ml-4 flex-shrink-0">
+                <div className="flex items-center justify-between gap-4">
+                  <Link href={`/profile/${user.username}`} className="flex-grow min-w-0">
+                    <UserHeader
+                      key={user.username}
+                      user={user} 
+                      showLastOnline={activeTab === "friends"}
+                      className="flex-grow min-w-0"
+                    />
+                  </Link>
+                  <div className="flex-shrink-0">
                     {renderActionButton(user)}
                   </div>
                 </div>

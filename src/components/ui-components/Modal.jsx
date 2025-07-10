@@ -64,7 +64,7 @@ export default function Modal({
 
       {/* Nội dung modal */}
       <div
-        className={`relative z-10 ${getWidthClass()} max-h-[90vh] rounded-xl bg-[var(--card)] text-[var(--card-foreground)] shadow-xl flex flex-col pointer-events-auto`}
+        className={`relative z-10 ${getWidthClass()} h-[90vh] max-h-[90vh] rounded-xl bg-[var(--card)] text-[var(--card-foreground)] shadow-xl flex flex-col pointer-events-auto`}
         onClick={(e) => e.stopPropagation()} // ⛔ Chặn lan click
       >
         {/* Nội dung có thể cuộn */}

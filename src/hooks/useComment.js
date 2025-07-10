@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
 
@@ -8,43 +8,105 @@ export const useComments = (initialComments, post) => {
   const [repliesData, setRepliesData] = useState({});
   const [showReplies, setShowReplies] = useState({});
   const [loadingReplies, setLoadingReplies] = useState({});
+  
+  // Ref để chặn multiple clicks
+  const isLikingRef = useRef({});
 
   useEffect(() => {
     setLocalComments(initialComments);
   }, [initialComments]);
 
   const likeComment = useCallback(async (commentId, isCurrentlyLiked) => {
+    // Chặn multiple clicks
+    if (isLikingRef.current[commentId]) return;
+    
+    // Lưu trạng thái ban đầu
+    const wasLiked = isCurrentlyLiked;
+    
+    // ✅ OPTIMISTIC UPDATE - Cập nhật UI ngay lập tức
+    // Update main comments
+    setLocalComments((prev) =>
+      prev.map((comment) =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              liked: !isCurrentlyLiked,
+              likeCount: isCurrentlyLiked
+                ? comment.likeCount - 1
+                : comment.likeCount + 1,
+            }
+          : comment
+      )
+    );
+
+    // Update replies
+    setRepliesData((prevReplies) => {
+      const updatedReplies = { ...prevReplies };
+      
+      Object.keys(updatedReplies).forEach(parentCommentId => {
+        const replies = updatedReplies[parentCommentId];
+        if (replies && Array.isArray(replies)) {
+          const updatedRepliesForComment = replies.map(reply =>
+            reply.id === commentId
+              ? {
+                  ...reply,
+                  liked: !isCurrentlyLiked,
+                  likeCount: isCurrentlyLiked
+                    ? reply.likeCount - 1
+                    : reply.likeCount + 1,
+                }
+              : reply
+          );
+          
+          if (updatedRepliesForComment.some(reply => reply.id === commentId)) {
+            updatedReplies[parentCommentId] = updatedRepliesForComment;
+          }
+        }
+      });
+      
+      return updatedReplies;
+    });
+
+    // Đánh dấu đang xử lý
+    isLikingRef.current[commentId] = true;
+
+    // 🔄 API CALL trong background
     try {
-      const endpoint = isCurrentlyLiked
+      const endpoint = wasLiked
         ? `/v1/comments/unlike/${commentId}`
         : `/v1/comments/like/${commentId}`;
 
-      if (isCurrentlyLiked) {
-        await api.delete(endpoint);
+      if (wasLiked) {
+        const res = await api.delete(endpoint);
+        console.log("✅ Unlike comment successful", res);
       } else {
-        await api.post(endpoint);
+        const res = await api.post(endpoint);
+        console.log("✅ Like comment successful", res);
       }
-
-      // Update main comments
+    } catch (err) {
+      console.error("❌ Toggle comment like failed:", err);
+      toast.error("Lỗi khi thích bình luận");
+      
+      // 🔄 ROLLBACK - Khôi phục trạng thái ban đầu
+      // Rollback main comments
       setLocalComments((prev) =>
         prev.map((comment) =>
           comment.id === commentId
             ? {
                 ...comment,
-                liked: !isCurrentlyLiked,
-                likeCount: isCurrentlyLiked
-                  ? comment.likeCount - 1
-                  : comment.likeCount + 1,
+                liked: wasLiked, // Khôi phục trạng thái ban đầu
+                likeCount: wasLiked
+                  ? comment.likeCount + 1 // Rollback: từ giảm về tăng
+                  : comment.likeCount - 1, // Rollback: từ tăng về giảm
               }
             : comment
         )
       );
 
-      // Update replies if the liked item is a reply
+      // Rollback replies
       setRepliesData((prevReplies) => {
         const updatedReplies = { ...prevReplies };
         
-        // Check each comment's replies for the liked reply
         Object.keys(updatedReplies).forEach(parentCommentId => {
           const replies = updatedReplies[parentCommentId];
           if (replies && Array.isArray(replies)) {
@@ -52,15 +114,14 @@ export const useComments = (initialComments, post) => {
               reply.id === commentId
                 ? {
                     ...reply,
-                    liked: !isCurrentlyLiked,
-                    likeCount: isCurrentlyLiked
-                      ? reply.likeCount - 1
-                      : reply.likeCount + 1,
+                    liked: wasLiked, // Khôi phục trạng thái ban đầu
+                    likeCount: wasLiked
+                      ? reply.likeCount + 1 // Rollback
+                      : reply.likeCount - 1, // Rollback
                   }
                 : reply
             );
             
-            // Only update if there was a change
             if (updatedRepliesForComment.some(reply => reply.id === commentId)) {
               updatedReplies[parentCommentId] = updatedRepliesForComment;
             }
@@ -69,9 +130,9 @@ export const useComments = (initialComments, post) => {
         
         return updatedReplies;
       });
-    } catch (err) {
-      console.error("Error liking comment:", err);
-      toast.error("Lỗi khi thích bình luận");
+    } finally {
+      // Bỏ đánh dấu đang xử lý
+      isLikingRef.current[commentId] = false;
     }
   }, []);
 

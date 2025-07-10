@@ -175,7 +175,7 @@ export default function AdminLoginPage() {
 
           // Redirect to admin dashboard
           setTimeout(() => {
-            router.push('/admin/dashboard');
+            router.push('/admin/dashboard/posts');
           }, REDIRECT_DELAYS.SUCCESS);
 
         } else {

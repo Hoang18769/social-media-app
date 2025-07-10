@@ -92,7 +92,7 @@ export default function SidebarNavigation() {
       return;
     }
 
-    // ✅ Calculate position for notification dropdown - hiển thị bên trái sidebar
+    // ✅ Calculate position for notification dropdown
     if (notificationButtonRef.current) {
       const rect = notificationButtonRef.current.getBoundingClientRect();
       const isDesktop = window.innerWidth >= 768;
@@ -104,10 +104,10 @@ export default function SidebarNavigation() {
           left: 80 + 16, // 80px sidebar width + 16px padding
         });
       } else {
-        // Mobile: show above the button
+        // Mobile: full width, positioned from bottom
         setNotificationPosition({
-          top: rect.top - 400, // Adjust based on dropdown height
-          left: rect.left - 150, // Center the dropdown
+          top: 0, // Will be overridden by CSS
+          left: 0, // Will be overridden by CSS
         });
       }
     }
@@ -267,10 +267,24 @@ export default function SidebarNavigation() {
     return createPortal(
       <div
         ref={notificationRef}
-        className="fixed z-[9999] w-80 max-h-[calc(100vh-64px-32px)] overflow-y-auto rounded-xl shadow-lg bg-[var(--card)] border border-[var(--border)]"
+        className={`
+          fixed z-[9999] overflow-y-auto rounded-xl shadow-lg bg-[var(--card)] border border-[var(--border)]
+          md:w-80 md:max-h-[calc(100vh-64px-32px)]
+          w-full max-h-[calc(90vh-72px-32px)] left-0 right-0
+          md:left-auto md:right-auto md:w-80
+        `}
         style={{
-          top: `${notificationPosition.top}px`,
-          left: `${notificationPosition.left}px`,
+          // Desktop positioning
+          ...(window.innerWidth >= 768 ? {
+            top: `${notificationPosition.top}px`,
+            left: `${notificationPosition.left}px`,
+          } : {
+            // Mobile positioning - from bottom
+            bottom: `${72 + 32}px`, // 72px sidebar height + 32px padding
+            top: 'auto',
+            left: '0',
+            right: '0',
+          })
         }}
       >
         <NotificationList />
