@@ -181,13 +181,13 @@ export default function ResetPasswordPage() {
         {/* Left Side */}
         <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
           <Image
-            src={Connectimg}
-            alt="Network illustration"
-            width={400}
-            height={400}
-            className="max-w-full h-auto object-contain"
-            priority
-          />
+                      src="/Connect.jpg"
+                      alt="Network illustration"
+                      width={400}
+                      height={400}
+                      className="max-w-full h-auto object-contain"
+                      priority
+                    />
         </div>
 
         {/* Right Side with Suspense */}

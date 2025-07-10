@@ -212,31 +212,81 @@ export default function PostModal({
     <div className="flex flex-col gap-3 p-4 border-b border-[var(--border)]">
       {/* Show the person who shared the post first (if it's a shared post) */}
       {isSharedPost && (
-        <div className="flex items-center gap-3" onClick={(e) => handleProfileClick(e, post)}>
+        <>
+          <div className="flex items-center gap-3" onClick={(e) => handleProfileClick(e, post)}>
+            <Avatar
+              src={post.author?.profilePictureUrl}
+              alt={post.author?.username}
+            />
+            <div>
+              <p className="font-semibold text-sm">
+                {post.author?.givenName} {post.author?.familyName}
+              </p>
+              <p className="text-xs text-[var(--muted-foreground)]">
+                Đã chia sẻ • {new Date(post.createdAt).toLocaleString()}
+              </p>
+            </div>
+          </div>
+          
+          {/* Show shared post content if exists */}
+          {post.content && (
+            <div className="ml-12">
+              <div className="text-sm">
+                {shouldTruncateContent(post.content) && !isSharedContentExpanded ? (
+                  <>
+                    {renderTextWithLinks(getTruncatedContent(post.content))}
+                    <button
+                      onClick={() => setIsSharedContentExpanded(true)}
+                      className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                    >
+                      Xem thêm
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {renderTextWithLinks(post.content)}
+                    {shouldTruncateContent(post.content) && (
+                      <button
+                        onClick={() => setIsSharedContentExpanded(false)}
+                        className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                      >
+                        Thu gọn
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+      
+      {/* Original post in a rounded container */}
+      <div className={`${isSharedPost ? 'p-4 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`}>
+        {/* Original post author */}
+        <div className="flex items-center gap-3 mb-3" onClick={(e) => handleProfileClick(e, displayPost)}>
           <Avatar
-            src={post.author?.profilePictureUrl}
-            alt={post.author?.username}
+            src={displayPost.author?.profilePictureUrl}
+            alt={displayPost.author?.username}
           />
           <div>
             <p className="font-semibold text-sm">
-              {post.author?.givenName} {post.author?.familyName}
+              {displayPost.author?.givenName} {displayPost.author?.familyName}
             </p>
             <p className="text-xs text-[var(--muted-foreground)]">
-              Đã chia sẻ • {new Date(post.createdAt).toLocaleString()}
+              {new Date(displayPost.createdAt).toLocaleString()}
             </p>
           </div>
         </div>
-      )}
-      
-      {/* Show shared post content if exists */}
-      {isSharedPost && post.content && (
-        <div className="ml-12">
+        
+        {/* Original post content */}
+        {displayPost?.content && (
           <div className="text-sm">
-            {shouldTruncateContent(post.content) && !isSharedContentExpanded ? (
+            {shouldTruncateContent(displayPost.content) && !isContentExpanded ? (
               <>
-                {renderTextWithLinks(getTruncatedContent(post.content))}
+                {renderTextWithLinks(getTruncatedContent(displayPost.content))}
                 <button
-                  onClick={() => setIsSharedContentExpanded(true)}
+                  onClick={() => setIsContentExpanded(true)}
                   className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
                 >
                   Xem thêm
@@ -244,10 +294,10 @@ export default function PostModal({
               </>
             ) : (
               <>
-                {renderTextWithLinks(post.content)}
-                {shouldTruncateContent(post.content) && (
+                {renderTextWithLinks(displayPost.content)}
+                {shouldTruncateContent(displayPost.content) && (
                   <button
-                    onClick={() => setIsSharedContentExpanded(false)}
+                    onClick={() => setIsContentExpanded(false)}
                     className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
                   >
                     Thu gọn
@@ -256,60 +306,10 @@ export default function PostModal({
               </>
             )}
           </div>
-        </div>
-      )}
-      
-      {/* Show original post author */}
-      <div className={`flex items-center gap-3 ${isSharedPost ? 'ml-4 p-3 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`} onClick={(e) => handleProfileClick(e, displayPost)}>
-        <Avatar
-          src={displayPost.author?.profilePictureUrl}
-          alt={displayPost.author?.username}
-        />
-        <div>
-          <p className="font-semibold text-sm">
-            {displayPost.author?.givenName} {displayPost.author?.familyName}
-          </p>
-          <p className="text-xs text-[var(--muted-foreground)]">
-            {new Date(displayPost.createdAt).toLocaleString()}
-          </p>
-        </div>
+        )}
       </div>
     </div>
-  ), [post, displayPost, isSharedPost, isSharedContentExpanded, handleProfileClick]);
-
-  const PostContent = useMemo(() => {
-    if (!displayPost?.content) return null;
-    
-    return (
-      <div className={`p-4 border-b border-[var(--border)] ${isSharedPost ? 'ml-4 mr-4 p-3 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`}>
-        <div className="text-sm mb-4">
-          {shouldTruncateContent(displayPost.content) && !isContentExpanded ? (
-            <>
-              {renderTextWithLinks(getTruncatedContent(displayPost.content))}
-              <button
-                onClick={() => setIsContentExpanded(true)}
-                className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
-              >
-                Xem thêm
-              </button>
-            </>
-          ) : (
-            <>
-              {renderTextWithLinks(displayPost.content)}
-              {shouldTruncateContent(displayPost.content) && (
-                <button
-                  onClick={() => setIsContentExpanded(false)}
-                  className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
-                >
-                  Thu gọn
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }, [displayPost?.content, isSharedPost, isContentExpanded, renderTextWithLinks]);
+  ), [post, displayPost, isSharedPost, isContentExpanded, isSharedContentExpanded, handleProfileClick, renderTextWithLinks]);
 
   const PostActions = useMemo(() => (
     <div className="border-b border-[var(--border)]">
@@ -434,7 +434,6 @@ export default function PostModal({
           <div className="flex flex-col w-full h-full">
             <div className="flex-1 overflow-y-auto">
               {PostHeader}
-              {PostContent}
               {PostActions}
               {CommentsSection}
             </div>
@@ -449,7 +448,6 @@ export default function PostModal({
             <div className="flex flex-col md:hidden w-full h-full">
               <div className="flex-1 overflow-y-auto">
                 {PostHeader}
-                {PostContent}
                 <MediaCarousel media={media} page={page} setPage={setPage} />
                 {PostActions}
                 {CommentsSection}
@@ -465,7 +463,6 @@ export default function PostModal({
             <div className="hidden md:flex md:flex-col md:w-2/5 md:h-full md:border-l md:border-[var(--border)]">
               <div className="flex-1 overflow-y-auto">
                 {PostHeader}
-                {PostContent}
                 {PostActions}
                 {CommentsSection}
               </div>

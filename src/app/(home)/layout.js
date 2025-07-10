@@ -83,7 +83,6 @@ function shouldShowHeader(pathname) {
     '/',
     '/home',
     '/settings',
-    '/chats',
   ];
   
   // Kiểm tra exact match

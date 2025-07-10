@@ -168,7 +168,7 @@ export default function NotificationList() {
                     className={`
                       bg-[var(--card)] border border-[var(--border)] p-3 rounded-xl shadow-sm
                       cursor-pointer hover:bg-[var(--accent)] transition-colors
-                      ${!n.isRead ? 'ring-2 ring-blue-500/20 bg-blue-50/50' : ''}
+                    
                       ${isLoadingPost ? 'opacity-50 cursor-wait' : ''}
                     `}
                   >
@@ -184,10 +184,10 @@ export default function NotificationList() {
                         </p>
                       </div>
 
-                      {!n.isRead && (
+                      {/* {!n.isRead && (
                         <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1">
                         </div>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 ))}

@@ -22,7 +22,6 @@ export default function useChat(chatId) {
   
   // ✅ Thêm state cho typing notifications
   const [isTyping, setIsTyping] = useState(false);
-  const [typingUser, setTypingUser] = useState(null);
   const typingTimeoutRef = useRef(null);
 
   // Refs để track subscription
@@ -111,32 +110,47 @@ export default function useChat(chatId) {
 
     if (data.command === "TYPING") {
       setIsTyping(true);
-      setTypingUser(data.sender);
       
-      // Clear existing timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
       
       
       
     } else if (data.command === "STOP_TYPING") {
       setIsTyping(false);
-      setTypingUser(null);
       
       // Clear timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = null;
-      }
+      
     }
   }, [currentUserId]);
+
+  // ✅ NEW: Xử lý block/unblock notifications
+  const handleBlockNotification = useCallback((data) => {
+    console.log("🚫 Block notification received:", data);
+    
+    // Cập nhật blockStatus trong store
+    const { updateBlockStatus } = useAppStore.getState();
+    
+    if (data.command === "HAS_BEEN_BLOCKED") {
+      updateBlockStatus(chatId, {
+        blockStatus: "HAS_BEEN_BLOCKED",
+        blockedAt: data.blockedAt || new Date().toISOString(),
+        blockReason: data.blockReason || "Blocked by user"
+      });
+      console.log(`🚫 Updated blockStatus to HAS_BEEN_BLOCKED for chat ${chatId}`);
+    } else if (data.command === "HAS_BEEN_UNBLOCKED") {
+      updateBlockStatus(chatId, {
+        blockStatus: "NORMAL",
+        blockedAt: null,
+        blockReason: null
+      });
+      console.log(`✅ Updated blockStatus to NORMAL for chat ${chatId}`);
+    }
+  }, [chatId]);
 
   // Xử lý message nhận được từ WebSocket
   const handleMessage = useCallback((message) => {
     try {
       const data = JSON.parse(message.body);
-      console.log("📩 Received:", data);
+      // console.log("📩 Received:", data);
 
       // ✅ Xử lý typing notifications
       if (data.command === "TYPING" || data.command === "STOP_TYPING") {
@@ -144,12 +158,15 @@ export default function useChat(chatId) {
         return;
       }
 
-      // ✅ Xử lý HAS_BEEN_BLOCKED command
-      if (data.command === "HAS_BEEN_BLOCKED") {
-        console.log("🚫 HAS_BEEN_BLOCKED received:", data);
+      // ✅ UPDATED: Xử lý block/unblock notifications
+      if (data.command === "HAS_BEEN_BLOCKED" || data.command === "HAS_BEEN_UNBLOCKED") {
+        handleBlockNotification(data);
         return;
-      } if (data.command === "HAS_BEEN_UNBLOCKED") {
-        console.log("🚫 HAS_BEEN_UNBLOCKED received:", data);
+      }
+
+      // ✅ Xử lý READING command
+      if (data.command === "READING") {
+        console.log("👁️ READING received:", data);
         return;
       }
 
@@ -182,11 +199,6 @@ export default function useChat(chatId) {
       // ✅ Khi nhận được tin nhắn mới, ẩn typing indicator
       if (!newMessage.isOwnMessage) {
         setIsTyping(false);
-        setTypingUser(null);
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = null;
-        }
       }
       
       // Cập nhật messages state - thêm vào đầu mảng (tin nhắn mới nhất)
@@ -205,7 +217,7 @@ export default function useChat(chatId) {
     } catch (err) {
       console.error("❌ Error parsing message:", err);
     }
-  }, [currentUserId, updateChatList, handleTypingNotification]);
+  }, [currentUserId, updateChatList, handleTypingNotification, handleBlockNotification]);
 
   // Load messages lần đầu khi chatId thay đổi
   useEffect(() => {
@@ -220,11 +232,6 @@ export default function useChat(chatId) {
         
         // ✅ Reset typing state khi chuyển chat
         setIsTyping(false);
-        setTypingUser(null);
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = null;
-        }
         
         const limit = 20;
         const skip = 0;
@@ -442,6 +449,5 @@ export default function useChat(chatId) {
     forceReconnect,
     // ✅ Thêm typing states
     isTyping,
-    typingUser
   };
 }

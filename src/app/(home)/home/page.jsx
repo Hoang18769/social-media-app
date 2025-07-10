@@ -12,29 +12,30 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [skip, setSkip] = useState(0)
+  const [currentUser, setCurrentUser] = useState(null)
   const containerRef = useRef(null)
   const abortControllerRef = useRef(null)
+  const isInitialLoadRef = useRef(true)
   
   const LIMIT = 20
   const { toggleLike } = usePostActions({ posts, setPosts })
 
-  // Memoize current user để tránh re-calculation
-  const currentUser = useMemo(() => {
-    if (typeof window === 'undefined') return null
-    
-    const storedUsername = localStorage.getItem("userName")
-    const storedUserId = localStorage.getItem("userId")
-    
-    if (storedUsername && storedUserId) {
-      return {
-        username: storedUsername,
-        id: storedUserId
+  // Lấy thông tin user một lần khi component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUsername = localStorage.getItem("userName")
+      const storedUserId = localStorage.getItem("userId")
+      
+      if (storedUsername && storedUserId) {
+        setCurrentUser({
+          username: storedUsername,
+          id: storedUserId
+        })
       }
     }
-    return null
-  }, []) // Chỉ calculate một lần khi component mount
+  }, [])
 
-  // Memoize filtered posts để tránh re-filtering không cần thiết
+  // Memoize filtered posts
   const filteredPosts = useMemo(() => {
     if (!posts.length || !currentUser) {
       return []
@@ -59,13 +60,14 @@ export default function HomePage() {
           return true
       }
     })
-  }, [posts, currentUser]) // Chỉ re-calculate khi posts hoặc currentUser thay đổi
+  }, [posts, currentUser])
 
-  // Fetch posts function với abort controller để cancel requests
+  // Fetch posts function với cải thiện abort controller handling
   const fetchPosts = useCallback(async (skipValue = 0, isLoadMore = false) => {
     try {
-      // Cancel previous request if still pending
-      if (abortControllerRef.current) {
+      // Chỉ cancel request cũ nếu đây không phải là initial load
+      // và nếu có request đang pending
+      if (abortControllerRef.current && !isInitialLoadRef.current) {
         abortControllerRef.current.abort()
       }
 
@@ -105,11 +107,19 @@ export default function HomePage() {
       }
       
       console.log(`Loaded ${newPosts.length} posts, skip: ${skipValue}`)
+      
+      // Đánh dấu initial load đã hoàn thành
+      if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false
+      }
     } catch (err) {
-      // Ignore abort errors
+      // Ignore abort errors và chỉ show toast nếu không phải abort error
       if (err.name !== 'AbortError') {
         console.error("Failed to fetch newsfeed:", err)
-        toast.error("Failed to load posts.")
+        // Chỉ show toast error nếu không phải là initial load hoặc theme change
+        if (!isInitialLoadRef.current) {
+          toast.error("Failed to load posts.")
+        }
       }
     } finally {
       setLoading(false)
@@ -117,7 +127,7 @@ export default function HomePage() {
     }
   }, [])
 
-  // Throttled scroll handler để giảm số lần gọi
+  // Throttled scroll handler
   const throttledScrollHandler = useMemo(
     () => throttle(() => {
       const scrollContainer = document.querySelector('main')
@@ -138,7 +148,7 @@ export default function HomePage() {
     [loadingMore, hasMore, skip, fetchPosts]
   )
 
-  // Add scroll event listener với cleanup
+  // Add scroll event listener
   useEffect(() => {
     const scrollContainer = document.querySelector('main')
     
@@ -158,21 +168,23 @@ export default function HomePage() {
     
     return () => {
       scrollContainer.removeEventListener('scroll', throttledScrollHandler)
-      throttledScrollHandler.cancel() // Cancel any pending throttled calls
+      throttledScrollHandler.cancel()
     }
   }, [throttledScrollHandler])
 
-  // Initial load với cleanup
+  // Initial load - chỉ load khi có currentUser
   useEffect(() => {
-    fetchPosts(0, false)
+    if (currentUser && isInitialLoadRef.current) {
+      fetchPosts(0, false)
+    }
     
-    // Cleanup function
     return () => {
-      if (abortControllerRef.current) {
+      // Cleanup: chỉ abort nếu component unmount hoàn toàn
+      if (abortControllerRef.current && !document.body.contains(containerRef.current)) {
         abortControllerRef.current.abort()
       }
     }
-  }, [fetchPosts])
+  }, [currentUser, fetchPosts])
 
   // Memoized skeleton component
   const PostSkeleton = useMemo(() => () => (
@@ -220,6 +232,15 @@ export default function HomePage() {
 
   // Memoized render logic
   const renderContent = useMemo(() => {
+    // Không render gì nếu chưa có currentUser
+    if (!currentUser) {
+      return (
+        <div className="p-6 space-y-6 flex flex-col items-center">
+          {loadingSkeletons}
+        </div>
+      )
+    }
+
     if (loading) {
       return (
         <div className="p-6 space-y-6 flex flex-col items-center">
@@ -306,11 +327,8 @@ export default function HomePage() {
   }, [loading, filteredPosts, posts.length, loadingMore, hasMore, currentUser, loadingSkeletons, loadingMoreSkeletons, toggleLike])
 
   return (
-    <>
     <div ref={containerRef} className="p-6 space-y-6 flex flex-col items-center">
       {renderContent}
     </div>
-
-    </>
   )
 }

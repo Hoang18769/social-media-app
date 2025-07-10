@@ -30,6 +30,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
   const isChatsPage = pathname === "/chats";
   // Debug logging
   useEffect(() => {
+    console.log(chatList)
     console.log("🔍 ChatList Debug:", {
       chatListLength: chatList.length,
       isAuthenticated,

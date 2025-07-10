@@ -155,8 +155,7 @@ export default function PWAManager({ children }) {
       {/* Main app content */}
       {children}
 
-      {/* PWA UI Elements */}
-      <div className="fixed bottom-4 right-4 z-50">
+      {/* <div className="fixed bottom-4 right-4 z-50">
         {notificationPermission === 'default' && (
           <div className="bg-blue-500 text-white p-1 rounded-lg mb-2 max-w-sm shadow-lg">
             <p className="text-sm mb-2">
@@ -170,15 +169,6 @@ export default function PWAManager({ children }) {
             </button>
           </div>
         )}
-
-        {/* Offline indicator */}
-        {!isOnline && (
-          <div className="bg-orange-500 text-white p-3 rounded-lg mb-2 shadow-lg">
-            <p className="text-sm">📱 Đang offline - App vẫn hoạt động!</p>
-          </div>
-        )}
-
-        {/* Update available */}
         {updateAvailable && (
           <div className="bg-green-500 text-white p-3 rounded-lg mb-2 shadow-lg">
             <p className="text-sm mb-2">🔄 Có bản cập nhật mới</p>
@@ -190,8 +180,7 @@ export default function PWAManager({ children }) {
             </button>
           </div>
         )}
-        {/* Test notification button (development only) */}  
-      </div>
+      </div> */}
     </>
   );
 }

@@ -66,7 +66,6 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     totalMessages,
     loadMoreMessages,
     isTyping,        // ✅ Thêm isTyping
-    typingUser       // ✅ Thêm typingUser
   } = useChat(currentChatId);
   
   const {
@@ -534,7 +533,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     return (
       <>
         {/* ✅ Typing Indicator - hiển thị ở top (tin nhắn mới nhất) */}
-        <TypingIndicator isTyping={isTyping} typingUser={typingUser} />
+        <TypingIndicator isTyping={isTyping} />
         
         {/* Load more indicator */}
         {loadingMore && (

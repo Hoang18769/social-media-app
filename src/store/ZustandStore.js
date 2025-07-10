@@ -390,7 +390,6 @@ updateBlockStatus: (chatId, blockStatusData) => {
     unreadNotificationCount: 0, // ✅ From REST API (only set once during init)
     unreadNotificationCountFromSocket: 0, // ✅ NEW: From socket notifications
 
-    // ✅ FIXED: Fetch unread notification count từ API (chỉ set 1 lần)
     fetchUnreadNotificationCount: async () => {
       try {
         const res = await api.get('/v1/notifications/unread-count');

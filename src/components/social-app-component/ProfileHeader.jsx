@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Edit, MessageCircle, UserPlus, UserMinus, UserCheck, UserX, Shield, MoreVertical, FileText, FileImage, Bookmark } from "lucide-react";
 import Avatar from "../ui-components/Avatar";
 import Modal from "../ui-components/Modal";
 import EditProfileModal from "./EditProfile";
@@ -24,6 +25,7 @@ export default function ProfileHeader({
   const [friendsList, setFriendsList] = useState([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(false);
   const [initialModalTab, setInitialModalTab] = useState("friends");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   const avatar = profileData.profilePictureUrl;
   const { username: routeUsername } = useParams();
@@ -44,6 +46,7 @@ export default function ProfileHeader({
       const res = await api.post(`/v1/blocks/${routeUsername}`);
       if (res.data.code === 200) {
         alert(`Đã chặn ${routeUsername}`);
+        setIsDropdownOpen(false);
       } else {
         console.warn("Chặn thất bại:", res.data.message);
       }
@@ -183,6 +186,7 @@ export default function ProfileHeader({
         isFriend: false,
         friendCount: profileData.friendCount - 1
       });
+      setIsDropdownOpen(false);
     } catch (error) {
       toast.error("Lỗi khi hủy kết bạn");
     }
@@ -244,14 +248,16 @@ export default function ProfileHeader({
     }
   };
 
-  const renderFriendButton = () => {
+  const renderActionButtons = () => {
     if (profileData.isFriend) {
+      // Nếu đã là bạn bè: hiển thị nút nhắn tin
       return (
         <button
-          onClick={unfriend}
-          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+          onClick={handleChatClick}
+          className="flex items-center gap-2 px-4 py-2 bg-[#7a7d81] hover:bg-[#6b7280] text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
         >
-          Hủy kết bạn
+          <MessageCircle size={16} />
+          <span>Nhắn tin</span>
         </button>
       );
     }
@@ -261,9 +267,10 @@ export default function ProfileHeader({
         return (
           <button
             onClick={cancelFriendRequest}
-            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
           >
-            Hủy lời mời
+            <UserMinus size={16} />
+            <span>Hủy lời mời</span>
           </button>
         );
       } else if (profileData.request === "IN") {
@@ -271,34 +278,71 @@ export default function ProfileHeader({
           <div className="flex gap-2">
             <button
               onClick={acceptFriendRequest}
-              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
             >
-              Đồng ý
+              <UserCheck size={16} />
+              <span>Đồng ý</span>
             </button>
             <button
               onClick={declineFriendRequest}
-              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
             >
-              Từ chối
+              <UserX size={16} />
+              <span>Từ chối</span>
             </button>
           </div>
         );
       }
     }
 
-    // Chỉ hiển thị nút "Kết bạn" khi không phải bạn bè và không có request nào
-    if (!profileData.isFriend && profileData.request==="NONE") {
+    // Nếu chưa là bạn bè và không có request nào: hiển thị nút kết bạn và nhắn tin
+    if (!profileData.isFriend && profileData.request === "NONE") {
       return (
-        <button
-          onClick={sendFriendRequest}
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
-        >
-          Kết bạn
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={sendFriendRequest}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <UserPlus size={16} />
+            <span>Kết bạn</span>
+          </button>
+          <button
+            onClick={handleChatClick}
+            className="flex items-center gap-2 px-4 py-2 bg-[#7a7d81] hover:bg-[#6b7280] text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <MessageCircle size={16} />
+            <span>Nhắn tin</span>
+          </button>
+        </div>
       );
     }
 
     return null;
+  };
+
+  const renderDropdownMenu = () => {
+    if (!isDropdownOpen) return null;
+
+    return (
+      <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--card)] rounded-lg shadow-lg border border-[var(--border)] z-50">
+        {profileData.isFriend && (
+          <button
+            onClick={unfriend}
+            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 rounded-t-lg"
+          >
+            <UserMinus size={16} />
+            <span>Hủy kết bạn</span>
+          </button>
+        )}
+        <button
+          onClick={handleBlockUser}
+          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 rounded-b-lg"
+        >
+          <Shield size={16} />
+          <span>Chặn</span>
+        </button>
+      </div>
+    );
   };
 
   const handleTabClick = (tabName) => {
@@ -316,50 +360,52 @@ export default function ProfileHeader({
           className="rounded-full object-cover w-24 h-24 sm:w-32 sm:h-32 shadow-md"
         />
         <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-xl font-semibold">
-              {profileData?.givenName || ""} {profileData?.familyName || ""}
-            </h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-[var(--foreground)]">
+                {profileData?.givenName || ""} {profileData?.familyName || ""}
+              </h2>
+            </div>
             
-            {/* Gom tất cả các nút vào một nhóm */}
-            <div className="flex gap-2 flex-wrap">
+            {/* Các nút action luôn ở cùng vị trí */}
+         
+          </div>
+          <div className="flex gap-4 py-2 items-center">
+          <p className="text-[var(--muted-foreground)] text-sm mt-1">@{profileData?.username}</p>
+   <div className="flex gap-2 items-center">
               {isOwnProfile ? (
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                  className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--muted)] text-[var(--foreground)] rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  Chỉnh sửa hồ sơ
+                  <Edit size={16} />
+                  <span>Chỉnh sửa hồ sơ</span>
                 </button>
               ) : (
                 <>
-                  {renderFriendButton()}
-                  <button
-                    onClick={handleChatClick}
-                    className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
-                  >
-                    Nhắn tin
-                  </button>
-                  <button
-                    onClick={handleBlockUser}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
-                  >
-                    Chặn
-                  </button>
+                  {renderActionButtons()}
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="flex items-center justify-center w-10 h-10 bg-[var(--muted)] hover:bg-[var(--accent)] rounded-full text-[var(--foreground)] shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                    {renderDropdownMenu()}
+                  </div>
                 </>
               )}
             </div>
           </div>
 
-          <p className="text-gray-500 text-sm">@{profileData?.username}</p>
-
-          <div className="flex gap-4 mt-1 text-sm">
-            <span>
+          <div className="flex gap-4 mt-2 text-sm">
+            <span className="text-[var(--foreground)]">
               <strong>{profileData.postCount || 0}</strong> Bài viết
             </span>
             <button 
               onClick={handleGetListFriend}
               disabled={isLoadingFriends}
-              className="hover:text-blue-500 transition-colors duration-200 disabled:opacity-50 font-medium"
+              className="hover:text-blue-500 transition-colors duration-200 disabled:opacity-50 font-medium text-[var(--foreground)]"
             >
               <strong>{profileData?.friendCount || 0}</strong> Bạn bè
               {isLoadingFriends && <span className="ml-1 animate-pulse">...</span>}
@@ -367,50 +413,58 @@ export default function ProfileHeader({
             <button 
               onClick={handleGetMutualFriends}
               disabled={isLoadingFriends}
-              className="hover:text-blue-500 transition-colors duration-200 disabled:opacity-50 font-medium"
+              className="hover:text-blue-500 transition-colors duration-200 disabled:opacity-50 font-medium text-[var(--foreground)]"
             >
               <strong>{profileData?.mutualFriendsCount || 0}</strong> Bạn chung
               {isLoadingFriends && <span className="ml-1 animate-pulse">...</span>}
             </button>
           </div>
 
-          <p className="text-sm mt-2 text-gray-700">
+          <p className="text-sm mt-2 text-[var(--muted-foreground)]">
             {profileData?.bio || "Chưa có mô tả cá nhân."}
           </p>
         </div>
       </div>
 
-      <div className="flex justify-around text-sm border-t border-gray-200 dark:border-gray-700 mt-4 pt-3">
+      <div className="flex justify-around text-sm border-t border-[var(--border)] mt-4 pt-3">
         <button
           className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all duration-200 ${
             activeTab === "posts"
-              ? "bg-blue-500 text-white shadow-md hover:shadow-lg"
-              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+              ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-md hover:shadow-lg"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
           }`}
           onClick={() => handleTabClick("posts")}
         >
-          <span>🧱</span>
+          <FileText size={16} />
           <span>Bài viết</span>
         </button>
         <button
           className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all duration-200 ${
             activeTab === "file"
-              ? "bg-blue-500 text-white shadow-md hover:shadow-lg"
-              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+              ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-md hover:shadow-lg"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
           }`}
           onClick={() => handleTabClick("file")}
         >
-          <span>🖼</span>
+          <FileImage size={16} />
           <span>Ảnh và video</span>
         </button>
         <button 
-          className="flex items-center gap-2 px-4 py-2 rounded-full font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50" 
+          className="flex items-center gap-2 px-4 py-2 rounded-full font-medium text-[var(--muted-foreground)] cursor-not-allowed opacity-50" 
           disabled
         >
-          <span>💾</span>
+          <Bookmark size={16} />
           <span>Đã lưu</span>
         </button>
       </div>
+
+      {/* Overlay để đóng dropdown khi click outside */}
+      {isDropdownOpen && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setIsDropdownOpen(false)}
+        />
+      )}
 
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
         <EditProfileModal profileData={profileData} onSave={handleSaveProfile} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import UserHeader from "@/components/social-app-component/UserHeader";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
@@ -23,6 +23,10 @@ export default function FriendPage() {
   const [actionLoading, setActionLoading] = useState({});
   const [openDropdown, setOpenDropdown] = useState(null);
   const userName = typeof window !== 'undefined' ? localStorage.getItem("userName") : null;
+  
+  // Refs cho auto-scroll
+  const tabContainerRef = useRef(null);
+  const tabRefs = useRef({});
 
   const tabConfig = {
     friends: {
@@ -67,6 +71,57 @@ export default function FriendPage() {
       }
     }
   };
+
+  // Function để scroll tab vào view
+  const scrollTabIntoView = (tabKey) => {
+    const tabElement = tabRefs.current[tabKey];
+    const container = tabContainerRef.current;
+    
+    if (!tabElement || !container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = tabElement.getBoundingClientRect();
+    const tabs = Object.keys(tabConfig);
+    const currentIndex = tabs.indexOf(tabKey);
+    const isFirstTab = currentIndex === 0;
+    const isLastTab = currentIndex === tabs.length - 1;
+    
+    // Kiểm tra nếu tab không nằm hoàn toàn trong container
+    const isTabVisible = (
+      tabRect.left >= containerRect.left &&
+      tabRect.right <= containerRect.right
+    );
+    
+    if (!isTabVisible || (!isFirstTab && !isLastTab)) {
+      let scrollLeft;
+      
+      if (isFirstTab) {
+        // Tab đầu tiên - scroll về đầu
+        scrollLeft = 0;
+      } else if (isLastTab) {
+        // Tab cuối cùng - scroll về cuối
+        scrollLeft = container.scrollWidth - container.offsetWidth;
+      } else {
+        // Tab ở giữa - scroll để tab nằm chính giữa container
+        scrollLeft = tabElement.offsetLeft - (container.offsetWidth / 2) + (tabElement.offsetWidth / 2);
+      }
+      
+      container.scrollTo({
+        left: Math.max(0, Math.min(scrollLeft, container.scrollWidth - container.offsetWidth)),
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Effect để scroll khi activeTab thay đổi
+  useEffect(() => {
+    // Delay nhỏ để đảm bảo DOM đã render
+    const timer = setTimeout(() => {
+      scrollTabIntoView(activeTab);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [activeTab]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -245,11 +300,16 @@ export default function FriendPage() {
     <div className="container mx-auto px-4 py-6 max-w-4xl">
       <h1 className="text-2xl font-bold mb-6 text-[var(--foreground)]">{tabConfig[activeTab].title}</h1>
       
-      <div className="flex justify-between border-b border-[var(--border)] mb-6 overflow-x-auto">
+      <div 
+        ref={tabContainerRef}
+        className="flex justify-between border-b border-[var(--border)] mb-6 overflow-x-auto scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {Object.keys(tabConfig).map((tab) => (
           <button
             key={tab}
-            className={`px-4 py-2 whitespace-nowrap transition-all duration-200 ${
+            ref={el => tabRefs.current[tab] = el}
+            className={`px-4 py-2 whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
               activeTab === tab
                 ? "text-[var(--foreground)] font-bold border-b border-[var(--foreground)]"
                 : "text-[var(--muted-foreground)] font-medium hover:text-[var(--foreground)]"
