@@ -249,18 +249,6 @@ export default function ProfileHeader({
   };
 
   const renderActionButtons = () => {
-    if (profileData.isFriend) {
-      // Nếu đã là bạn bè: hiển thị nút nhắn tin
-      return (
-        <button
-          onClick={handleChatClick}
-          className="flex items-center gap-2 px-4 py-2 bg-[#7a7d81] hover:bg-[#6b7280] text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
-        >
-          <MessageCircle size={16} />
-          <span>Nhắn tin</span>
-        </button>
-      );
-    }
 
     if (profileData.request) {
       if (profileData.request === "OUT") {
@@ -316,6 +304,7 @@ export default function ProfileHeader({
         </div>
       );
     }
+    
 
     return null;
   };
@@ -384,6 +373,13 @@ export default function ProfileHeader({
               ) : (
                 <>
                   {renderActionButtons()}
+                  <button
+          onClick={handleChatClick}
+          className="flex items-center gap-2 px-4 py-2 bg-[#7a7d81] hover:bg-[#6b7280] text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+        >
+          <MessageCircle size={16} />
+          <span>Nhắn tin</span>
+        </button>
                   <div className="relative">
                     <button
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}

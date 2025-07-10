@@ -146,6 +146,26 @@ export default function useChat(chatId) {
     }
   }, [chatId]);
 
+  // ✅ UPDATED: Xử lý READING notifications
+  const handleReadingNotification = useCallback((data) => {
+    console.log("👁️ Reading notification received:", data);
+    
+    // Nếu là tin nhắn đọc của chính mình thì không xử lý
+    if (data.id === currentUserId) {
+      console.log("👁️ Ignoring own reading notification");
+      return;
+    }
+
+    // Nếu là người khác đọc tin nhắn, đánh dấu tất cả messages là đã đọc
+    console.log("👁️ Marking all messages as read");
+    setMessages((prevMessages) => {
+      return prevMessages.map((message) => ({
+        ...message,
+        isRead: true
+      }));
+    });
+  }, [currentUserId]);
+
   // Xử lý message nhận được từ WebSocket
   const handleMessage = useCallback((message) => {
     try {
@@ -164,9 +184,10 @@ export default function useChat(chatId) {
         return;
       }
 
-      // ✅ Xử lý READING command
+      // ✅ UPDATED: Xử lý READING command
       if (data.command === "READING") {
         console.log("👁️ READING received:", data);
+        handleReadingNotification(data);
         return;
       }
 
@@ -217,7 +238,7 @@ export default function useChat(chatId) {
     } catch (err) {
       console.error("❌ Error parsing message:", err);
     }
-  }, [currentUserId, updateChatList, handleTypingNotification, handleBlockNotification]);
+  }, [currentUserId, updateChatList, handleTypingNotification, handleBlockNotification, handleReadingNotification]);
 
   // Load messages lần đầu khi chatId thay đổi
   useEffect(() => {

@@ -107,7 +107,7 @@ function ChatLayoutContent() {
   };
 
   return (
-    <div className="pt-16 flex h-[calc(100vh-64px-72px)] md:h-[calc(100vh-64px)] bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500 p-2 sm:p-4 gap-4">
+    <div className=" md:mt-16 flex h-[calc(100vh-64px)] bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500 p-2 sm:p-4 gap-4">
       {/* ChatList - Logic hiển thị responsive */}
       {shouldShowChatList && (
         <aside className="w-full md:w-[40%] lg:w-[340px] h-full md:h-auto max-h-[calc(100vh-72px)] md:max-h-none rounded-2xl bg-[var(--card)] border border-[var(--border)] p-2 md:p-4 overflow-y-auto shadow-sm">

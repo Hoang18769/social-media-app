@@ -368,7 +368,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
 
         {/* Original post content with truncation */}
         {currentPost.originalPost.content && (
-          <div className="text-sm text-[var(--card-foreground)] mb-3">
+          <pre className="text-sm text-[var(--card-foreground)] mb-3 whitespace-pre-wrap break-all">
             {shouldTruncateContent(currentPost.originalPost.content) && !isOriginalContentExpanded ? (
               <>
                 {renderTextWithLinks(getTruncatedContent(currentPost.originalPost.content))}
@@ -398,7 +398,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                 )}
               </>
             )}
-          </div>
+          </pre>
         )}
 
         {/* Original post images */}
@@ -516,7 +516,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
             e.stopPropagation()
             openModal()
           }}>
-            <div className={`${textSizes.content} ${spacing}`}>
+            <pre className={`${textSizes.content} ${spacing} break-all whitespace-pre-wrap`}>
               {shouldTruncateContent(currentPost.content) && !isContentExpanded ? (
                 <>
                   {renderTextWithLinks(getTruncatedContent(currentPost.content))}
@@ -546,7 +546,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                   )}
                 </>
               )}
-            </div>
+            </pre>
           </div>
         )}
         

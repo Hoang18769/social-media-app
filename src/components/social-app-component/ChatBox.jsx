@@ -67,7 +67,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     loadMoreMessages,
     isTyping,        // ✅ Thêm isTyping
   } = useChat(currentChatId);
-  
+  console.log(messages)
   const {
     setupSubscription,
     cleanupSubscription,

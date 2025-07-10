@@ -44,7 +44,6 @@ export default function Header({ className = "" }) {
         className="w-full px-6 flex items-center justify-between bg-[var(--background)]"
         style={{ height: "64px", paddingTop: "0.5rem", paddingBottom: "0.5rem" }}
       >
-        <div className="w-1/3"></div>
 
         {/* Center - Logo */}
         <div className="sm:block w-1/3 flex justify-center">
@@ -63,34 +62,17 @@ export default function Header({ className = "" }) {
               type="button"
               aria-label="Add"
               onClick={() => setShowPostModal(true)}
-              className="w-12 h-12 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition rounded-l-full"
+              className="w-32 h-12 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition rounded-l-full px-2"
               disabled={isLoggingOut} // ✅ Disable during logout
             >
-              <Plus size={20} className="text-[var(--foreground)]" />
+              <Plus size={24} className="text-[var(--foreground)] " />
+              <span className="pl-2">Đăng bài</span>
             </button>
 
-            <div className="h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
+            <div className="h-6  w-px bg-gray-300 dark:bg-gray-700"></div>
 
             <ThemeToggle />
           </div>
-
-          {/* <button
-            type="button"
-            aria-label="Logout"
-            onClick={handleLogout}
-            disabled={isLoggingOut} // ✅ Disable during logout
-            className={`w-12 h-12 bg-[var(--card)] rounded-full flex items-center justify-center transition ${
-              isLoggingOut 
-                ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:bg-red-200 dark:hover:bg-red-700'
-            }`}
-          >
-            {isLoggingOut ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-500" />
-            ) : (
-              <LogOut size={20} className="text-red-500" />
-            )}
-          </button> */}
         </div>
       </header>
 

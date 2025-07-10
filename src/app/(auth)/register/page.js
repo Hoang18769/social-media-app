@@ -141,7 +141,7 @@ const FormFields = ({
         <div className="space-y-4">
           <div className="flex space-x-4">
             <div className="space-y-2 flex-1">
-              <h4 className="text-sm font-medium text-muted-foreground">Given Name</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">Tên</h4>
               <input
                 type="text"
                 value={formData.givenName}
@@ -152,7 +152,7 @@ const FormFields = ({
               />
             </div>
             <div className="space-y-2 flex-1">
-              <h4 className="text-sm font-medium text-muted-foreground">Family Name</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">Họ</h4>
               <input
                 type="text"
                 value={formData.familyName}
@@ -164,7 +164,7 @@ const FormFields = ({
             </div>
           </div>
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">Birthdate</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">Ngày sinh</h4>
             <input
               type="date"
               value={formData.birthdate}
@@ -179,7 +179,7 @@ const FormFields = ({
 
       {/* Password */}
       <div className="space-y-2 relative">
-        <h4 className="text-sm font-medium text-muted-foreground">Password</h4>
+        <h4 className="text-sm font-medium text-muted-foreground">Mật khẩu</h4>
         <input
           type={showPassword ? "text" : "password"}
           value={formData.password}
@@ -188,7 +188,11 @@ const FormFields = ({
           required
           minLength={6}
           disabled={isDisabled}
+          placeholder=""
         />
+        <p className="text-gray-500 text-sm">
+        Mật khẩu phải có tối thiểu 8 kí tự, bao gồm ít nhất 1 chữ cái thường, 1 chữ cái hoa, 1 chữ số và kí tự đặc biệt
+        </p>
         <button
           type="button"
           className="absolute right-0 top-7 p-1 text-muted-foreground hover:text-foreground"
@@ -204,7 +208,7 @@ const FormFields = ({
       {/* Confirm password */}
       {mode === "register" && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">Confirm Password</h4>
+          <h4 className="text-sm font-medium text-muted-foreground">Nhập lại mật khẩu</h4>
           <input
             type="password"
             value={formData.confirmPassword}
@@ -481,14 +485,14 @@ function AuthFormWithParams() {
           >
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold">
-                {mode === "login" ? "Sign in" : "Create your account"}
+                {mode === "login" ? "Đăng nhập" : "Tạo tài khoản mới"}
               </h1>
               <button
                 onClick={toggleMode}
                 className="text-sm text-muted-foreground hover:text-foreground transition"
               >
                 <ArrowLeftRight className="inline-block w-4 h-4 mr-1" />
-                {mode === "login" ? "Register" : "Sign in"}
+                {mode === "login" ? "Đăng ký" : "Đăng nhập"}
               </button>
             </div>
 
@@ -522,7 +526,7 @@ function AuthFormWithParams() {
                         disabled={isProcessing}
                         className="w-full py-2"
                       >
-                        {status.loading ? "Loading..." : mode === "login" ? "Sign in" : "Register"}
+                        {status.loading ? "Loading..." : mode === "login" ? " Đăng nhập" : "Đăng ký"}
                       </Button>
                       
                       <div className="mt-6 text-center text-sm text-muted-foreground">

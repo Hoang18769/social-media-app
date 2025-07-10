@@ -6,7 +6,8 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import {
   MoreVertical, Edit, Trash2, Download, Eye,
-  FileText, Image, Film, Music, X
+  FileText, Image, Film, Music, X,
+  Check
 } from "lucide-react";
 import Avatar from "../ui-components/Avatar";
 
@@ -98,7 +99,7 @@ export default function MessageItem({
   const timeSent = dayjs(msg.sentAt).fromNow();
   const isDeleted = msg.deleted === true;
   const isUpdated = msg.updated === true;
-
+  const isReading = msg.isRead === true;
   // Calculate popup position based on message position in viewport
   useEffect(() => {
     if (isSelected && buttonRef.current) {
@@ -224,7 +225,6 @@ export default function MessageItem({
           <Avatar
             src={targetUser?.profilePictureUrl}
             className="flex-shrink-0 mt-1 "
-              
           />
         )}
 
@@ -303,6 +303,12 @@ export default function MessageItem({
                   </span>
                 )}
                 <span className="ml-auto">{timeSent}</span>
+                {isSelf && !isDeleted && isReading && (
+                  <>
+
+                  <Check size={12}/>
+                  </>
+                )}
               </div>
             </div>
           </div>

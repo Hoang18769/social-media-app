@@ -83,6 +83,8 @@ function shouldShowHeader(pathname) {
     '/',
     '/home',
     '/settings',
+    '/search',
+    '/friends',
   ];
   
   // Kiểm tra exact match
@@ -298,7 +300,7 @@ const layoutContent = (
         </aside>
 
         {/* Main Content - điều chỉnh height và padding */}
-        <main className={`flex-1 ${showHeader ? 'h-[calc(100vh-64px)]' : 'h-screen'} overflow-y-auto px-4`}>
+        <main className={`flex-1 ${showHeader ? 'h-[calc(100vh-64px)]' : 'h-screen'} overflow-y-auto`}>
           <div
             className={`${
               hideRightSidebar ? "max-w-6xl" : "max-w-4xl"
