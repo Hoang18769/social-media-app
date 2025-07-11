@@ -71,9 +71,7 @@ const validateForm = (mode, formData) => {
 
   return null;
 };
-const handleResend =()=>{
-  
-}
+
 // Hàm format thời gian lockout
 const formatLockoutTime = (timeString) => {
   try {
@@ -149,6 +147,8 @@ const FormFields = ({
   setShowPassword,
   loading,
   verifying,
+  showResendButton,
+  onResend,
 }) => {
   const handleInputChange = useCallback(
     (field) => (e) => {
@@ -176,10 +176,17 @@ const FormFields = ({
           required
           disabled={isDisabled}
         />
-        <button
-        onClick={handleResend}>
-          Gửi lại
-        </button>
+        {/* Hiển thị nút gửi lại chỉ khi ở mode register và showResendButton = true */}
+        {mode === "register" && showResendButton && (
+          <button
+            type="button"
+            onClick={onResend}
+            className="text-sm text-blue-500 dark:text-blue-400 hover:underline mt-1"
+            disabled={isDisabled}
+          >
+            Gửi lại email xác thực
+          </button>
+        )}
       </div>
 
       {/* Register fields */}
@@ -284,6 +291,7 @@ function AuthFormWithParams() {
   // States - Combine related states
   const [mode, setMode] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [showResendButton, setShowResendButton] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -323,7 +331,42 @@ function AuthFormWithParams() {
       familyName: "",
       birthdate: "",
     });
+    setShowResendButton(false); // Reset resend button state
   }, []);
+
+  // Handle resend email function
+  const handleResend = useCallback(async () => {
+    if (!formData.email) {
+      setMessages((prev) => ({
+        ...prev,
+        general: "❌ Vui lòng nhập email trước khi gửi lại",
+      }));
+      return;
+    }
+
+    setStatus((prev) => ({ ...prev, loading: true }));
+
+    try {
+      const res = await api.post('/v1/register/resend-verification', {
+        email: formData.email,
+      });
+
+      if (res.data.code === 200) {
+        setMessages((prev) => ({
+          ...prev,
+          general: "✅ Đã gửi lại email xác thực! Vui lòng kiểm tra hộp thư.",
+        }));
+        setShowResendButton(false);
+      }
+    } catch (error) {
+      setMessages((prev) => ({
+        ...prev,
+        general: `❌ Gửi lại email thất bại: ${parseApiError(error)}`,
+      }));
+    } finally {
+      setStatus((prev) => ({ ...prev, loading: false }));
+    }
+  }, [formData.email]);
 
   // Email verification effect - Optimized
   useEffect(() => {
@@ -397,23 +440,26 @@ function AuthFormWithParams() {
         }));
         setMode("login");
         clearForm();
-
       }
     } catch (error) {
-      // setMessages((prev) => ({
-      //   ...prev,
-      //   general: `❌ Đăng ký thất bại: ${parseApiError(error)}`,
-      // }));
-      if(error.code===2009){
-setMessages((prev) => ({
+      if(error.response?.data?.code === 2009){
+        setMessages((prev) => ({
           ...prev,
           general: "❌ Email chưa xác thực, vui lòng kiểm tra email của bạn",
         }));
-      }if(error.code===1012){
-setMessages((prev) => ({
+        setShowResendButton(true); // Hiển thị nút gửi lại
+      } else if(error.response?.data?.code === 1012){
+        setMessages((prev) => ({
           ...prev,
           general: "❌ Email này đã được đăng ký",
         }));
+        setShowResendButton(false); // Ẩn nút gửi lại
+      } else {
+        setMessages((prev) => ({
+          ...prev,
+          general: `❌ Đăng ký thất bại: ${parseApiError(error)}`,
+        }));
+        setShowResendButton(false); // Ẩn nút gửi lại
       }
     } finally {
       setStatus((prev) => ({ ...prev, loading: false }));
@@ -421,125 +467,124 @@ setMessages((prev) => ({
   }, [formData, clearForm]);
 
   // Handle login - Optimized with attempts tracking
-// Handle login - Optimized with attempts tracking
-const handleLogin = useCallback(async () => {
-  setStatus((prev) => ({ ...prev, loading: true }));
+  const handleLogin = useCallback(async () => {
+    setStatus((prev) => ({ ...prev, loading: true }));
 
-  try {
-    const res = await api.post(`/v1/auth/login`, {
-      email: formData.email,
-      password: formData.password,
-    });
-
-    console.log("Login response:", res.data);
-
-    if (res.data.code === 200 && res.data.body.token) {
-      const token = res.data.body.token;
-      console.log("🔐 Login success, token:", token.substring(0, 20) + "...");
-
-      const decoded = jwtDecode(token);
-      console.log("🔓 Decoded token:", decoded);
-
-      // Batch localStorage operations
-      const authData = {
-        role: decoded.role,
-        accessToken: token,
-        userId: decoded.sub,
-        userName: decoded.username,
-      };
-
-      Object.entries(authData).forEach(([key, value]) => {
-        localStorage.setItem(key, value);
+    try {
+      const res = await api.post(`/v1/auth/login`, {
+        email: formData.email,
+        password: formData.password,
       });
 
-      // Sync cookies
-      console.log("📝 Syncing to cookies...");
-      const syncSuccess = setAuthToken(token, decoded.sub, decoded.username);
+      console.log("Login response:", res.data);
 
-      if (syncSuccess) {
-        console.log("✅ Cookies synced successfully");
-        setMessages((prev) => ({
-          ...prev,
-          general: "✅ Đăng nhập thành công!",
-        }));
+      if (res.data.code === 200 && res.data.body.token) {
+        const token = res.data.body.token;
+        console.log("🔐 Login success, token:", token.substring(0, 20) + "...");
 
-        // Clear form
-        setFormData((prev) => ({ ...prev, email: "", password: "" }));
+        const decoded = jwtDecode(token);
+        console.log("🔓 Decoded token:", decoded);
 
-        // Redirect
-        setTimeout(() => {
-          window.location.href = "/home";
-        }, REDIRECT_DELAYS.SUCCESS);
-      } else {
-        console.error("❌ Failed to sync cookies");
-        setMessages((prev) => ({
-          ...prev,
-          general:
-            "⚠️ Đăng nhập thành công nhưng có lỗi khi đồng bộ hóa phiên làm việc",
-        }));
+        // Batch localStorage operations
+        const authData = {
+          role: decoded.role,
+          accessToken: token,
+          userId: decoded.sub,
+          userName: decoded.username,
+        };
 
-        setTimeout(() => {
-          router.push("/index");
-        }, REDIRECT_DELAYS.FALLBACK);
-      }
-    } else if (res.data.code === 1003) {
-      // Sai thông tin đăng nhập - hiển thị số lần thử còn lại
-      const remainingAttempts = res.data.body?.remainingAttempts || 0;
-      setMessages((prev) => ({
-        ...prev,
-        general: `❌ Thông tin đăng nhập không chính xác. Còn lại ${remainingAttempts} lần thử.`,
-      }));
-    } else if (res.data.code === 1002) {
-      // Tài khoản bị khóa - hiển thị thời gian mở khóa
-      const lockoutTime = formatLockoutTime(res.data.body?.time);
-      setMessages((prev) => ({
-        ...prev,
-        general: `🔒 Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Thời gian mở khóa: ${lockoutTime}`,
-      }));
-    } else {
-      // Các lỗi khác
-      const errorMessage = res.data.message || "Đăng nhập thất bại";
-      setMessages((prev) => ({
-        ...prev,
-        general: `❌ ${errorMessage}`,
-      }));
-    }
-  } catch (error) {
-    console.error("Login error:", error);
-    
-    // Xử lý lỗi từ response
-    if (error.response?.data) {
-      const errorData = error.response.data;
-      
-      if (errorData.code === 1003) {
-        const remainingAttempts = errorData.body?.remainingAttempts || 0;
+        Object.entries(authData).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+        });
+
+        // Sync cookies
+        console.log("📝 Syncing to cookies...");
+        const syncSuccess = setAuthToken(token, decoded.sub, decoded.username);
+
+        if (syncSuccess) {
+          console.log("✅ Cookies synced successfully");
+          setMessages((prev) => ({
+            ...prev,
+            general: "✅ Đăng nhập thành công!",
+          }));
+
+          // Clear form
+          setFormData((prev) => ({ ...prev, email: "", password: "" }));
+
+          // Redirect
+          setTimeout(() => {
+            window.location.href = "/home";
+          }, REDIRECT_DELAYS.SUCCESS);
+        } else {
+          console.error("❌ Failed to sync cookies");
+          setMessages((prev) => ({
+            ...prev,
+            general:
+              "⚠️ Đăng nhập thành công nhưng có lỗi khi đồng bộ hóa phiên làm việc",
+          }));
+
+          setTimeout(() => {
+            router.push("/index");
+          }, REDIRECT_DELAYS.FALLBACK);
+        }
+      } else if (res.data.code === 1003) {
+        // Sai thông tin đăng nhập - hiển thị số lần thử còn lại
+        const remainingAttempts = res.data.body?.remainingAttempts || 0;
         setMessages((prev) => ({
           ...prev,
           general: `❌ Thông tin đăng nhập không chính xác. Còn lại ${remainingAttempts} lần thử.`,
         }));
-      } else if (errorData.code === 1002) {
-        const lockoutTime = formatLockoutTime(errorData.body?.time);
+      } else if (res.data.code === 1002) {
+        // Tài khoản bị khóa - hiển thị thời gian mở khóa
+        const lockoutTime = formatLockoutTime(res.data.body?.time);
         setMessages((prev) => ({
           ...prev,
           general: `🔒 Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Thời gian mở khóa: ${lockoutTime}`,
         }));
       } else {
+        // Các lỗi khác
+        const errorMessage = res.data.message || "Đăng nhập thất bại";
+        setMessages((prev) => ({
+          ...prev,
+          general: `❌ ${errorMessage}`,
+        }));
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      
+      // Xử lý lỗi từ response
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        if (errorData.code === 1003) {
+          const remainingAttempts = errorData.body?.remainingAttempts || 0;
+          setMessages((prev) => ({
+            ...prev,
+            general: `❌ Thông tin đăng nhập không chính xác. Còn lại ${remainingAttempts} lần thử.`,
+          }));
+        } else if (errorData.code === 1002) {
+          const lockoutTime = formatLockoutTime(errorData.body?.time);
+          setMessages((prev) => ({
+            ...prev,
+            general: `🔒 Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần. Thời gian mở khóa: ${lockoutTime}`,
+          }));
+        } else {
+          setMessages((prev) => ({
+            ...prev,
+            general: `❌ Đăng nhập thất bại: ${parseApiError(error)}`,
+          }));
+        }
+      } else {
+        // Lỗi network hoặc lỗi khác
         setMessages((prev) => ({
           ...prev,
           general: `❌ Đăng nhập thất bại: ${parseApiError(error)}`,
         }));
       }
-    } else {
-      // Lỗi network hoặc lỗi khác
-      setMessages((prev) => ({
-        ...prev,
-        general: `❌ Đăng nhập thất bại: ${parseApiError(error)}`,
-      }));
+    } finally {
+      setStatus((prev) => ({ ...prev, loading: false }));
     }
-  } finally {
-    setStatus((prev) => ({ ...prev, loading: false }));
-  }
-}, [formData.email, formData.password, router]);
+  }, [formData.email, formData.password, router]);
 
   // Handle submit - Optimized
   const handleSubmit = useCallback(
@@ -571,6 +616,7 @@ const handleLogin = useCallback(async () => {
   const toggleMode = useCallback(() => {
     setMode((prev) => (prev === "login" ? "register" : "login"));
     setMessages({ verify: "", general: "" }); // Clear messages when switching
+    setShowResendButton(false); // Reset resend button state
   }, []);
 
   return (
@@ -644,6 +690,8 @@ const handleLogin = useCallback(async () => {
                         setShowPassword={setShowPassword}
                         loading={status.loading}
                         verifying={status.verifying}
+                        showResendButton={showResendButton}
+                        onResend={handleResend}
                       />
 
                       <Button
