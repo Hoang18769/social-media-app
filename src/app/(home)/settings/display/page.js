@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ThemeToggle from "@/components/ui-components/ThemeToggle"; // Đảm bảo đường dẫn đúng
+import ThemeToggle from "@/components/ui-components/Themetoggle";
 
 export default function DisplaySettings() {
   return (
