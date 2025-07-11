@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { usePathname } from "next/navigation";
 import toast from "react-hot-toast";
 
 import useChat from "@/hooks/useChat";
@@ -20,8 +19,6 @@ import FilePreviewInChat from "../ui-components/FilePreviewInChat";
 import TypingIndicator from "../ui-components/TypingIndicator";
 
 export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
-  const pathname = usePathname();
-  const showBackButton = pathname !== "/chats";
 
   const [input, setInput] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -598,7 +595,6 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
           targetUser={targetUser}
           isConnected={isNewChat ? true : isConnected}
           onBack={onBack}
-          showBackButton={showBackButton}
           onCall={() => makeCall(targetUser?.username, false)}
           onVideoCall={() => makeCall(targetUser?.username, true)}
         />

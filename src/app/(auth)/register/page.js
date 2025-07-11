@@ -89,7 +89,7 @@ const formatLockoutTime = (timeString) => {
   }
 };
 
-// 3. LOADING COMPONENT - Tối ưu
+//  LOADING COMPONENT - Tối ưu
 const AuthPageLoading = () => (
   <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
     <div className="text-center">
@@ -99,7 +99,7 @@ const AuthPageLoading = () => (
   </div>
 );
 
-// 4. MESSAGE COMPONENT - Tách để tránh re-render
+//  MESSAGE COMPONENT - Tách để tránh re-render
 const MessageDisplay = ({ message, verifyMessage, verifying }) => {
   const getMessageClass = useCallback((msg) => {
     if (msg?.includes("✅"))
@@ -241,7 +241,7 @@ const FormFields = ({
           onChange={handleInputChange("password")}
           className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary pr-10 text-foreground"
           required
-          minLength={6}
+          minLength={8}
           disabled={isDisabled}
           placeholder=""
         />
@@ -286,7 +286,7 @@ const FormFields = ({
   );
 };
 
-// 6. MAIN FORM COMPONENT
+//  MAIN FORM COMPONENT
 function AuthFormWithParams() {
   // States - Combine related states
   const [mode, setMode] = useState("login");
@@ -310,7 +310,6 @@ function AuthFormWithParams() {
   });
 
   const formRef = useRef(null);
-  const { theme } = useTheme();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [formBoundsRef, { height }] = useMeasure();

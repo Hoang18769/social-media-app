@@ -9,9 +9,7 @@ import { useRouter } from "next/navigation"
 dayjs.extend(relativeTime)
 export default function ChatHeader({
   targetUser,
-  isConnected,
   onBack,
-  showBackButton,
   onCall,
   onVideoCall,
   onMoreOptions,

@@ -39,16 +39,15 @@ function GlobalCallInterface() {
   const router=useRouter();
   // ✅ State để control việc hiển thị CallVideo
   const [showCallVideo, setShowCallVideo] = useState(false);
-const authInfo=getAuthInfo();
-useEffect(()=>{
+  useEffect(()=>{
+  const authInfo=getAuthInfo();
   if(!authInfo){
         router.push("/register")
         return;
   }
   if(!authInfo.token || !authInfo.userId || !authInfo.userName)
     router.push("/register")
-},[])
-console.log(authInfo);
+},[router])
   // ✅ Hiển thị CallVideo khi có cuộc gọi active hoặc đang ending
   useEffect(() => {
     const shouldShow = currentCall || isCallEnding;

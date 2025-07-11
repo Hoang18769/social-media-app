@@ -5,18 +5,31 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/social-media-app.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(auth)/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/layout.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(auth)/register/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/register/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/posts/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/dashboard/posts/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/users/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/dashboard/users/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/viewpost/page.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatInput.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatInput.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ProfileHeader.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ProfileHeader.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/layout.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/head.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatHeader.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatHeader.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui-components/PageTransitionLoader.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui-components/SearchBar.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui-components/Switch.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hooks/useMinLoading.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/pageTittle.js" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings">
+    <execution />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -45,11 +58,43 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "8634e6da",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "js.debugger.nextJs.config.created.client": "true",
+    "js.debugger.nextJs.config.created.server": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "F:/LVTN2025/BE/social-network"
+    "last_opened_file_path": "F:/LVTN2025/BE/social-network",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RunManager" selected="npm.Next.js: server-side">
+    <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
+      <method v="2" />
+    </configuration>
+    <configuration name="Next.js: server-side" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.26927.53" />
+        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-IU-251.26927.53" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -58,8 +103,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1752160851919</updated>
+      <workItem from="1752247441691" duration="4155000" />
     </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">

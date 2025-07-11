@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import ChatList from "@/components/social-app-component/ChatList";
 import ChatBox from "@/components/social-app-component/ChatBox";
 import useAppStore from "@/store/ZustandStore";
@@ -9,7 +8,6 @@ import useIsMobile from "@/hooks/useIsMobile";
 
 // Tách component sử dụng useSearchParams
 function ChatLayoutContent() {
-  const searchParams = useSearchParams();
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [targetUser, setTargetUser] = useState(null);
   const [chatListKey, setChatListKey] = useState(0);
@@ -26,64 +24,37 @@ function ChatLayoutContent() {
   const fetchChatList = useAppStore((state) => state.fetchChatList);
   const clearChatSelection = useAppStore((state) => state.clearChatSelection);
 
-  useEffect(() => {
-    console.log("🔍 ChatLayout useEffect:");
-    console.log("📊 Store selectedChatId:", selectedChatId_Store);
-    console.log("📊 Store virtualChatUser:", virtualChatUser_Store);
+  // useEffect(() => {
+  //   console.log("🔍 ChatLayout useEffect:");
+  //   console.log("📊 Store selectedChatId:", selectedChatId_Store);
+  //   console.log("📊 Store virtualChatUser:", virtualChatUser_Store);
 
-    if (selectedChatId_Store) {
-      console.log("✅ Using selectedChatId from store");
-      const selectedChat = chatList.find(chat =>
-        chat.chatId === selectedChatId_Store || chat.id === selectedChatId_Store
-      );
-      if (selectedChat) {
-        setSelectedChatId(selectedChatId_Store);
-        setTargetUser(selectedChat.target);
-        return;
-      }
-    }
+  //   if (selectedChatId_Store) {
+  //     console.log("✅ Using selectedChatId from store");
+  //     const selectedChat = chatList.find(chat =>
+  //       chat.chatId === selectedChatId_Store || chat.id === selectedChatId_Store
+  //     );
+  //     if (selectedChat) {
+  //       setSelectedChatId(selectedChatId_Store);
+  //       setTargetUser(selectedChat.target);
+  //       return;
+  //     }
+  //   }
 
-    if (virtualChatUser_Store) {
-      console.log("✅ Using virtualChatUser from store");
-      setSelectedChatId(null);
-      setTargetUser(virtualChatUser_Store);
-      return;
-    }
+  //   if (virtualChatUser_Store) {
+  //     console.log("✅ Using virtualChatUser from store");
+  //     setSelectedChatId(null);
+  //     setTargetUser(virtualChatUser_Store);
+  //     return;
+  //   }
 
-    const chatId = searchParams.get("chatId");
-    const newChat = searchParams.get("newChat");
-    const userId = searchParams.get("userId");
-    const username = searchParams.get("username");
-    const displayName = searchParams.get("displayName");
-
-    if (chatId && userId) {
-      console.log("✅ Using query params for existing chat");
-      setSelectedChatId(chatId);
-      setTargetUser({
-        id: userId,
-        username: username || "",
-        displayName: displayName ? decodeURIComponent(displayName) : username || ""
-      });
-    } else if (newChat === "true" && userId && username) {
-      console.log("✅ Using query params for new chat");
-      setSelectedChatId(null);
-      setTargetUser({
-        id: userId,
-        username,
-        displayName: displayName ? decodeURIComponent(displayName) : username
-      });
-    } else {
-      console.log("❌ No valid data found");
-    }
-  }, [searchParams, selectedChatId_Store, virtualChatUser_Store, chatList]);
+  //   else {
+  //     console.log("❌ No valid data found");
+  //   }
+  // }, [ selectedChatId_Store, virtualChatUser_Store, chatList]);
 
   const handleSelectChat = (chatId, user) => {
     setSelectedChatId(chatId);
-    setTargetUser(user);
-  };
-
-  const handleStartNewChat = (user) => {
-    setSelectedChatId(null);
     setTargetUser(user);
   };
 
