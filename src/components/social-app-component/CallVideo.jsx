@@ -85,8 +85,8 @@ const CallVideo = ({ onCallEnd }) => {
     // const newCameraState = !isCameraOn;
     // console.log("[DEBUG] Camera toggled:", newCameraState);
     // Sử dụng toggleLocalVideo từ context với logic mới (!enabled)
-    toggleLocalVideo(!newCameraState);
-    setIsCameraOn(newCameraState);
+    // toggleLocalVideo(!newCameraState);
+    // setIsCameraOn(newCameraState);
     const videoTrack=localStream.getVideoTracks()[0];
     if (videoTrack) {
                 videoTrack.enabled = !videoTrack.enabled;
