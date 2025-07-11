@@ -191,6 +191,91 @@ export const useComments = (initialComments, post) => {
     }
   }, []);
 
+  const editComment = useCallback(async (commentId, newContent) => {
+    // Lưu nội dung cũ để rollback nếu cần
+    let originalContent = '';
+    
+    // ✅ OPTIMISTIC UPDATE - Cập nhật UI ngay lập tức
+    // Update main comments
+    setLocalComments((prev) =>
+      prev.map((comment) => {
+        if (comment.id === commentId) {
+          originalContent = comment.content; // Lưu nội dung cũ
+          return { ...comment, content: newContent };
+        }
+        return comment;
+      })
+    );
+
+    // Update replies
+    setRepliesData((prevReplies) => {
+      const updatedReplies = { ...prevReplies };
+      
+      Object.keys(updatedReplies).forEach(parentCommentId => {
+        const replies = updatedReplies[parentCommentId];
+        if (replies && Array.isArray(replies)) {
+          const updatedRepliesForComment = replies.map(reply => {
+            if (reply.id === commentId) {
+              if (!originalContent) originalContent = reply.content; // Lưu nội dung cũ
+              return { ...reply, content: newContent };
+            }
+            return reply;
+          });
+          
+          if (updatedRepliesForComment.some(reply => reply.id === commentId)) {
+            updatedReplies[parentCommentId] = updatedRepliesForComment;
+          }
+        }
+      });
+      
+      return updatedReplies;
+    });
+
+    // 🔄 API CALL trong background
+    try {
+      const res = await api.patch(`/v1/comments/${commentId}`, {
+        content: newContent
+      });
+      console.log("✅ Edit comment successful", res);
+      toast.success("Đã cập nhật bình luận");
+    } catch (err) {
+      console.error("❌ Edit comment failed:", err);
+      toast.error("Lỗi khi sửa bình luận");
+      
+      // 🔄 ROLLBACK - Khôi phục nội dung ban đầu
+      // Rollback main comments
+      setLocalComments((prev) =>
+        prev.map((comment) =>
+          comment.id === commentId
+            ? { ...comment, content: originalContent }
+            : comment
+        )
+      );
+
+      // Rollback replies
+      setRepliesData((prevReplies) => {
+        const updatedReplies = { ...prevReplies };
+        
+        Object.keys(updatedReplies).forEach(parentCommentId => {
+          const replies = updatedReplies[parentCommentId];
+          if (replies && Array.isArray(replies)) {
+            const updatedRepliesForComment = replies.map(reply =>
+              reply.id === commentId
+                ? { ...reply, content: originalContent }
+                : reply
+            );
+            
+            if (updatedRepliesForComment.some(reply => reply.id === commentId)) {
+              updatedReplies[parentCommentId] = updatedRepliesForComment;
+            }
+          }
+        });
+        
+        return updatedReplies;
+      });
+    }
+  }, []);
+
   const addComment = useCallback((comment) => {
     setLocalComments((prev) => [comment, ...prev]);
   }, []);
@@ -226,6 +311,7 @@ export const useComments = (initialComments, post) => {
     likeComment,
     toggleReplies,
     deleteComment,
+    editComment,       // 🆕 New edit method
     addComment,
     addReply,
     updateRepliesData, // Export this for external use

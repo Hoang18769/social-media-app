@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Plus, LogOut } from "lucide-react";
-import ThemeToggle from "./Themetoggle";
+import { useState } from "react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import api, { clearSession } from "@/utils/axios";
 import NewPostModal from "../social-app-component/CreatePostForm";
@@ -52,7 +51,7 @@ export default function Header({ className = "" }) {
           </Link>
         </div>
 
-        <div className="flex justify-end space-x-2 items-center relative">
+        <div className="flex justify-end space-x-2 items-center  px-4">
           <div
             role="group"
             aria-label="Add and Messages"
@@ -69,9 +68,7 @@ export default function Header({ className = "" }) {
               <span className="pl-2">Đăng bài</span>
             </button>
 
-            <div className="h-6  w-px bg-gray-300 dark:bg-gray-700"></div>
 
-            <ThemeToggle />
           </div>
         </div>
       </header>

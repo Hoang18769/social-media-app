@@ -121,7 +121,6 @@ export default function RootLayout({ children }) {
                 <PWAManager>
           {children}
                 </PWAManager>
-
         </ThemeProvider>
       </body>
     </html>

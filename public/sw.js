@@ -1,13 +1,13 @@
-// public/sw.js - Fixed version with proper asset handling
+// public/sw.js - Fixed version that allows middleware to work
 const CACHE_NAME = 'pocpoc-v1';
 const urlsToCache = [
-  '/home',
   '/offline.html',
   '/pocpoc.png',
   '/manifest.json'
+  // Removed '/home' from here - let middleware handle routing
 ];
 
-// Install - Cache static files
+// Install - Cache static files only
 self.addEventListener('install', (event) => {
   console.log('SW: Installing...');
   
@@ -66,7 +66,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch - với logic exclude root path và external URLs
+// Fetch - CRITICAL: Skip ALL navigation requests to allow middleware
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
@@ -76,84 +76,46 @@ self.addEventListener('fetch', (event) => {
   
   const url = new URL(event.request.url);
   
-  // IMPORTANT: Skip root path để server middleware xử lý redirect
-  if (url.pathname === '/') {
-    console.log('SW: Skipping root path, let server handle redirect');
-    return; // Không intercept, để browser fetch bình thường
+  // CRITICAL: Skip ALL navigation requests (HTML pages)
+  // This allows Next.js middleware to handle routing and redirects
+  if (event.request.mode === 'navigate') {
+    console.log('SW: Skipping navigation request for middleware:', url.pathname);
+    return; // Don't intercept ANY navigation requests
   }
   
-  // IMPORTANT: Skip external URLs (like image uploads from other domains)
+  // Skip external URLs
   if (url.origin !== self.location.origin) {
     console.log('SW: Skipping external URL:', url.href);
-    return; // Không intercept external URLs
+    return;
   }
   
-  // IMPORTANT: Skip URLs có chứa upload path hoặc attachment
+  // Skip file/upload URLs
   if (url.pathname.includes('/uploads/') || 
       url.pathname.includes('/attachments/') ||
       url.pathname.includes('/files/') ||
       url.searchParams.has('attachment') ||
       url.searchParams.has('file')) {
     console.log('SW: Skipping file/upload URL:', url.href);
-    return; // Không intercept file URLs
+    return;
   }
   
-  // Handle other requests
-  if (event.request.mode === 'navigate') {
-    // HTML pages - Network first
-    event.respondWith(handleNavigateRequest(event.request));
-  } else if (url.pathname.match(/\.(js|css|woff|woff2|ico)$/)) {
-    // Static assets (chỉ JS, CSS, fonts) - Network first for better reliability
+  // Only handle static assets (CSS, JS, fonts, images from _next/static)
+  if (url.pathname.startsWith('/_next/static/') || 
+      url.pathname.match(/\.(js|css|woff|woff2|ico|png|jpg|jpeg|gif|svg|webp)$/) ||
+      url.pathname === '/manifest.json' ||
+      url.pathname === '/pocpoc.png') {
     event.respondWith(handleAssetRequest(event.request));
-  } else {
-    // API requests - Network first
+  } else if (url.pathname.startsWith('/api/')) {
+    // Handle API requests
     event.respondWith(handleApiRequest(event.request));
   }
+  // For everything else, let browser handle naturally (including middleware)
 });
 
-// Handle navigation requests (HTML pages) - không bao gồm root
-async function handleNavigateRequest(request) {
-  try {
-    // Try network first
-    const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      // Cache successful response
-      if (networkResponse.status === 200) {
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(request, networkResponse.clone());
-      }
-      return networkResponse;
-    }
-    
-    throw new Error('Network response not ok');
-  } catch (error) {
-    console.log('SW: Network failed, trying cache:', error);
-    
-    // Try cache
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    // Fallback to offline page
-    const offlineResponse = await caches.match('/offline.html');
-    if (offlineResponse) {
-      return offlineResponse;
-    }
-    
-    // Last resort
-    return new Response('Offline', {
-      status: 503,
-      statusText: 'Service Unavailable'
-    });
-  }
-}
-
-// Handle asset requests (CSS, JS, fonts ONLY) - KHÔNG bao gồm hình ảnh
+// Handle asset requests only
 async function handleAssetRequest(request) {
   try {
-    // Try network first for assets to ensure fresh content
+    // Try network first
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
@@ -170,20 +132,16 @@ async function handleAssetRequest(request) {
       return cachedResponse;
     }
     
-    // If both fail, let the request fail naturally
-    throw new Error('Asset not found in network or cache');
+    throw new Error('Asset not found');
     
   } catch (error) {
     console.log('SW: Asset request failed, trying cache:', error);
     
-    // Try cache as fallback
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
-      console.log('SW: Serving asset from cache after network failure:', request.url);
       return cachedResponse;
     }
     
-    // If asset not found anywhere, let browser handle naturally
     return fetch(request);
   }
 }
@@ -196,12 +154,6 @@ async function handleApiRequest(request) {
     return networkResponse;
   } catch (error) {
     console.log('SW: API request failed:', error);
-    
-    // Try cache as fallback
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
     
     return new Response(JSON.stringify({
       error: 'Network unavailable'
@@ -321,4 +273,4 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-console.log('SW: Service Worker loaded - Root path và image URLs excluded');
+console.log('SW: Service Worker loaded - All navigation requests skipped for middleware');

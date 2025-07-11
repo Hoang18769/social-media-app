@@ -580,7 +580,7 @@ const handleLogin = useCallback(async () => {
         {/* Left Side (Image) */}
         <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
           <Image
-            src="/Connect.jpg"
+            src="/Connect.png"
             alt="Network illustration"
             width={400}
             height={400}

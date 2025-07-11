@@ -5,8 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import MotionContainer from "@/components/ui-components/MotionContainer";
 import {
-  UserCircle, Lock, ShieldCheck, Users, Ban, Flag,
+  UserCircle, Lock, Ban, Flag,
   FileText, Database, MessageCircle, MessageSquare, Mail,
+  Sun,
 } from "lucide-react";
 
 const groupedMenuItems = [
@@ -28,8 +29,7 @@ const groupedMenuItems = [
   {
     title: "Ngôn ngữ và hiển thị",
     items: [
-      { id: "Messages", icon: MessageCircle, label: "Tin nhắn" },
-      { id: "GroupChatActivity", icon: MessageSquare, label: "Hoạt động Chat nhóm" },
+      { id: "display", icon: Sun, label: "Hiển thị" },
     ]
   }
 ];

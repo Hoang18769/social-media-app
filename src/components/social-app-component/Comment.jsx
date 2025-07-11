@@ -1,10 +1,13 @@
 import Image from "next/image";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   Heart,
   MessageCircle,
   ChevronDown,
   ChevronUp,
+  Edit,
+  Check,
+  X,
 } from "lucide-react";
 import Avatar from "../ui-components/Avatar";
 import FilePreviewInChat from "../ui-components/FilePreviewInChat";
@@ -32,15 +35,79 @@ export const MediaDisplay = ({ url, alt, className = "" }) =>
     />
   );
 
-// Comment Actions Component - Memoized to prevent re-render
+// Edit Comment Form Component
+export const EditCommentForm = ({
+  comment,
+  onSave,
+  onCancel,
+  isReply = false,
+}) => {
+  const [editContent, setEditContent] = useState(comment.content);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    if (!editContent.trim()) {
+      toast.error("Nội dung không được để trống");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSave(comment.id, editContent);
+    } catch (error) {
+      console.error("Error saving edit:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [editContent, comment.id, onSave]);
+
+  return (
+    <div className="mt-2">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <textarea
+          value={editContent}
+          onChange={(e) => setEditContent(e.target.value)}
+          className={`bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 outline-none focus:border-blue-500 resize-none ${
+            isReply ? 'text-xs' : 'text-sm'
+          }`}
+          rows={2}
+          autoFocus
+        />
+        <div className="flex items-center gap-2 justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1"
+          >
+            <X size={12} />
+            Hủy
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting || !editContent.trim()}
+            className="text-xs text-blue-500 font-semibold hover:opacity-80 disabled:opacity-50 flex items-center gap-1"
+          >
+            <Check size={12} />
+            {isSubmitting ? "Đang lưu..." : "Lưu"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+// Comment Actions Component - Updated with Edit button
 export const CommentActions = ({
   comment,
   onLike,
   onReply,
   onToggleReplies,
+  onEdit,
   showReplies,
   onDelete,
   canDeleteComment,
+  canEditComment,
   isReply = false,
 }) => {
   const handleLike = useCallback(() => {
@@ -54,6 +121,10 @@ export const CommentActions = ({
   const handleToggleReplies = useCallback(() => {
     onToggleReplies(comment.id);
   }, [comment.id, onToggleReplies]);
+
+  const handleEdit = useCallback(() => {
+    onEdit(comment.id);
+  }, [comment.id, onEdit]);
 
   const handleDelete = useCallback(() => {
     if (window.confirm(isReply ? "Bạn có chắc muốn xóa phản hồi này?" : "Bạn có chắc muốn xóa bình luận này?")) {
@@ -93,6 +164,16 @@ export const CommentActions = ({
         >
           {showReplies ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           {comment.replyCount} phản hồi
+        </button>
+      )}
+
+      {canEditComment && (
+        <button
+          className="hover:underline text-blue-500 flex items-center gap-1"
+          onClick={handleEdit}
+        >
+          <Edit size={isReply ? 12 : 14} />
+          Sửa
         </button>
       )}
 
@@ -179,7 +260,7 @@ export const ReplyForm = ({
   );
 };
 
-// Single Comment Component - Memoized
+// Single Comment Component - Updated with Edit functionality
 export const Comment = ({
   comment,
   post,
@@ -191,12 +272,19 @@ export const Comment = ({
   handleReplySubmit,
   useForm,
 }) => {
+  // State for editing
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingReplyId, setEditingReplyId] = useState(null);
+
   // Kiểm tra xem comment có phải của user hiện tại không
   const currentUserId = getUserId();
   const isOwnComment = comment.author?.id === currentUserId;
   
   // Kiểm tra quyền xóa comment: nếu là comment của bản thân hoặc bài viết của bản thân
   const canDeleteComment = isOwnComment || isOwnPost;
+  
+  // Kiểm tra quyền sửa comment: chỉ chủ comment mới được sửa
+  const canEditComment = isOwnComment;
   
   const showReplies = comments.showReplies[comment.id];
   const isLoadingReplies = comments.loadingReplies[comment.id];
@@ -225,7 +313,6 @@ export const Comment = ({
   // Handle reply deletion
   const handleDeleteReply = useCallback(async (replyId) => {
     try {
-      // Sử dụng deleteComment với replyId - most APIs treat replies as comments
       if (comments.deleteComment) {
         await comments.deleteComment(replyId);
       } else {
@@ -238,11 +325,10 @@ export const Comment = ({
     }
   }, [comments.deleteComment]);
 
-  // ✅ FIX: Handle reply like with proper optimistic update
+  // Handle reply like with proper optimistic update
   const handleLikeReply = useCallback(async (replyId, isLiked) => {
     console.log("handleLikeReply called:", { replyId, isLiked });
     try {
-      // ✅ Use the same likeComment function - it now handles both comments and replies
       await comments.likeComment(replyId, isLiked);
       console.log("Reply like successful");
     } catch (error) {
@@ -250,6 +336,34 @@ export const Comment = ({
       toast.error("Có lỗi xảy ra khi thích phản hồi");
     }
   }, [comments.likeComment]);
+
+  // Handle edit comment
+  const handleEditComment = useCallback((commentId) => {
+    setEditingCommentId(commentId);
+    setEditingReplyId(null); // Close any reply editing
+  }, []);
+
+  const handleEditReply = useCallback((replyId) => {
+    setEditingReplyId(replyId);
+    setEditingCommentId(null); // Close any comment editing
+  }, []);
+
+  // Handle save edit
+  const handleSaveEdit = useCallback(async (commentId, newContent) => {
+    try {
+      await comments.editComment(commentId, newContent);
+      setEditingCommentId(null);
+      setEditingReplyId(null);
+    } catch (error) {
+      console.error("Error saving edit:", error);
+    }
+  }, [comments.editComment]);
+
+  // Handle cancel edit
+  const handleCancelEdit = useCallback(() => {
+    setEditingCommentId(null);
+    setEditingReplyId(null);
+  }, []);
 
   return (
     <div className="flex gap-3 text-sm">
@@ -267,7 +381,18 @@ export const Comment = ({
             {dayjs(comment.createdAt).fromNow()}
           </span>
         </div>
-        <p className="text-sm mb-1">{comment.content}</p>
+        
+        {/* Comment Content - Edit mode or display mode */}
+        {editingCommentId === comment.id ? (
+          <EditCommentForm
+            comment={comment}
+            onSave={handleSaveEdit}
+            onCancel={handleCancelEdit}
+            isReply={false}
+          />
+        ) : (
+          <p className="text-sm mb-1">{comment.content}</p>
+        )}
 
         {comment.fileUrl && (
           <div className="mb-1">
@@ -275,15 +400,17 @@ export const Comment = ({
           </div>
         )}
 
-        {/* ✅ FIX: Main comment actions with optimistic updates */}
+        {/* Main comment actions with edit functionality */}
         <CommentActions
           comment={comment}
           onLike={comments.likeComment}
           onReply={onReply}
           onToggleReplies={comments.toggleReplies}
+          onEdit={handleEditComment}
           showReplies={showReplies}
           onDelete={comments.deleteComment}
           canDeleteComment={canDeleteComment}
+          canEditComment={canEditComment}
           isReply={false}
         />
 
@@ -303,6 +430,9 @@ export const Comment = ({
                   // Kiểm tra quyền xóa reply: nếu là reply của bản thân hoặc bài viết của bản thân
                   const canDeleteReply = isOwnReply || isOwnPost;
                   
+                  // Kiểm tra quyền sửa reply: chỉ chủ reply mới được sửa
+                  const canEditReply = isOwnReply;
+                  
                   return (
                     <div key={reply.id} className="flex gap-2 text-sm">
                       <Avatar
@@ -319,7 +449,19 @@ export const Comment = ({
                             {dayjs(reply.createdAt).fromNow()}
                           </span>
                         </div>
-                        <p className="text-xs mb-1">{reply.content}</p>
+                        
+                        {/* Reply Content - Edit mode or display mode */}
+                        {editingReplyId === reply.id ? (
+                          <EditCommentForm
+                            comment={reply}
+                            onSave={handleSaveEdit}
+                            onCancel={handleCancelEdit}
+                            isReply={true}
+                          />
+                        ) : (
+                          <p className="text-xs mb-1">{reply.content}</p>
+                        )}
+
                         {reply.fileUrl && (
                           <div className="mb-1">
                             <MediaDisplay
@@ -330,15 +472,17 @@ export const Comment = ({
                           </div>
                         )}
                         
-                        {/* ✅ FIX: Reply Actions with proper optimistic updates */}
+                        {/* Reply Actions with edit functionality */}
                         <CommentActions
                           comment={reply}
                           onLike={handleLikeReply}
                           onReply={() => {}} // Không cho phép reply trên reply
                           onToggleReplies={() => {}} // Không có nested replies
+                          onEdit={handleEditReply}
                           showReplies={false}
                           onDelete={handleDeleteReply}
                           canDeleteComment={canDeleteReply}
+                          canEditComment={canEditReply}
                           isReply={true}
                         />
                       </div>

@@ -16,14 +16,14 @@ import useMessageNotification from "@/hooks/useMessageNotification";
 import useErrorSocket from "@/hooks/useErrorSocket"; // ✅ Import useErrorSocket
 import { AuthProvider } from '@/hooks/useAuth'
 import useOnlineNotification from "@/hooks/useOnlineNotification";
-
+import { getAuthInfo } from "@/utils/axios";
 // ✅ Import Call System
 import { CallProvider } from "@/context/CallContext";
 import { useCall } from "@/context/CallContext";
 import CallPopup from "@/components/social-app-component/CallPopup";
 import CallVideo from "@/components/social-app-component/CallVideo";
 import ThemeProvider from "@/providers/ThemeProvider";
-
+import { useRouter } from "next/navigation";
 // ✅ Component để hiển thị call UI global
 function GlobalCallInterface() {
   const { 
@@ -36,10 +36,19 @@ function GlobalCallInterface() {
     acceptCall, 
     rejectCall 
   } = useCall();
-
+  const router=useRouter();
   // ✅ State để control việc hiển thị CallVideo
   const [showCallVideo, setShowCallVideo] = useState(false);
-
+const authInfo=getAuthInfo();
+useEffect(()=>{
+  if(!authInfo){
+        router.push("/register")
+        return;
+  }
+  if(!authInfo.token || !authInfo.userId || !authInfo.userName)
+    router.push("/register")
+},[])
+console.log(authInfo);
   // ✅ Hiển thị CallVideo khi có cuộc gọi active hoặc đang ending
   useEffect(() => {
     const shouldShow = currentCall || isCallEnding;
@@ -295,9 +304,13 @@ const layoutContent = (
 
       <div className={`flex flex-1 ${contentPaddingTop} bg-[var(--background)] text-[var(--foreground)] transition-colors duration-500`}>
         {/* Left Sidebar - ẩn trên mobile, fixed trên desktop */}
-        <aside className={`hidden md:block md:w-[80px] ${sidebarHeight} overflow-y-auto`}>
-          <Sidebar />
-        </aside>
+       <aside
+  className={`hidden md:block md:w-[80px] ${sidebarHeight} overflow-y-auto ${
+    pathname === "/chats" ? "pt-12" : ""
+  }`}
+>
+  <Sidebar />
+</aside>
 
         {/* Main Content - điều chỉnh height và padding */}
         <main className={`flex-1 ${showHeader ? 'h-[calc(100vh-64px)]' : 'h-screen'} overflow-y-auto`}>

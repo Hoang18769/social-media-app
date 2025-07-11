@@ -1,7 +1,3 @@
-import createNextIntlPlugin from 'next-intl/plugin';
-
-const withNextIntl = createNextIntlPlugin();
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Image optimization configuration
@@ -39,11 +35,13 @@ const nextConfig = {
   // Experimental features - more stable options
   experimental: {
     esmExternals: true,
+    // Ensure middleware is enabled
+    serverComponentsExternalPackages: [],
   },
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  // Webpack configuration
+  // Webpack configuration - SIMPLIFIED to not interfere with middleware
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Client-side fallbacks
     if (!isServer) {
@@ -101,4 +99,5 @@ const nextConfig = {
   compress: true,
 };
 
-export default withNextIntl(nextConfig);
+// Use ES module export
+export default nextConfig;
