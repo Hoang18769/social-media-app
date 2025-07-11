@@ -69,7 +69,7 @@ const CallVideo = ({ onCallEnd }) => {
     }
   }, [remoteStream]);
 
-  // Toggle camera - sử dụng toggleLocalVideo từ context
+  // Toggle camera - sử dụng toggleLocalVideo từ context với video refresh
   const toggleCamera = async () => {
     if (!mediaPermissions.video || !localStream) {
       console.warn("[DEBUG] Camera permission not available or no local stream");
@@ -86,11 +86,26 @@ const CallVideo = ({ onCallEnd }) => {
     console.log("[DEBUG] Camera toggled:", newCameraState);
 
     // Sử dụng toggleLocalVideo từ context với logic mới (!enabled)
-    // newCameraState = true (muốn bật) → toggleLocalVideo(false) vì !enabled
-    // newCameraState = false (muốn tắt) → toggleLocalVideo(true) vì !enabled
     toggleLocalVideo(!newCameraState);
-    
     setIsCameraOn(newCameraState);
+    
+    // QUAN TRỌNG: Force refresh video element khi bật lại camera
+    if (newCameraState && localVideoRef.current && localStream) {
+      console.log("[DEBUG] Refreshing video element for camera enable");
+      
+      // Tạm thời reset srcObject
+      localVideoRef.current.srcObject = null;
+      
+      // Reassign và play lại sau một chút
+      setTimeout(() => {
+        if (localVideoRef.current && localStream) {
+          localVideoRef.current.srcObject = localStream;
+          localVideoRef.current.play().catch(error => {
+            console.warn("[DEBUG] Video play failed after enable:", error);
+          });
+        }
+      }, 100);
+    }
   };
 
   // Toggle microphone - sử dụng toggleMute từ context
