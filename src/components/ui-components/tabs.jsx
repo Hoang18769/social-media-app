@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Children, cloneElement } from "react"
+import { Children, cloneElement } from "react"
 
 export function Tabs({ value, onValueChange, children, className = "" }) {
   return (
