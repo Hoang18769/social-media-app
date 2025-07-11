@@ -408,33 +408,32 @@ export const CallProvider = ({ children }) => {
     [localStream]
   );
 
-  const toggleLocalVideo = useCallback(
-    (enabled) => {
-      if (!localStream) {
-        console.warn("[DEBUG] Cannot toggle video - no local stream");
-        return;
-      }
+const toggleLocalVideo = useCallback(
+  (enabled) => {
+    if (!localStream) {
+      console.warn("[DEBUG] Cannot toggle video - no local stream");
+      return;
+    }
 
-      const videoTracks = localStream.getVideoTracks();
-      if (videoTracks.length === 0) {
-        console.warn("[DEBUG] No video tracks available");
-        return;
-      }
+    const videoTracks = localStream.getVideoTracks();
+    if (videoTracks.length === 0) {
+      console.warn("[DEBUG] No video tracks available");
+      return;
+    }
 
-      console.log("[DEBUG] Toggling local video:", enabled);
-      videoTracks.forEach((track) => {
-        track.enabled = enabled;
-      });
+    console.log("[DEBUG] Toggling local video enabled:", enabled);
+    videoTracks.forEach((track) => {
+      track.enabled = !enabled;
+    });
 
-      // Also call Stringee API if available
-      const call = currentCallRef.current;
-      if (call && typeof call.enableLocalVideo === "function") {
-        call.enableLocalVideo(enabled);
-      }
-    },
-    [localStream]
-  );
-
+    // Also call Stringee API if available
+    const call = currentCallRef.current;
+    if (call && typeof call.enableLocalVideo === "function") {
+      call.enableLocalVideo(!enabled); // Stringee API: enabled=true thì enableLocalVideo=false
+    }
+  },
+  [localStream]
+);
   return (
     <CallContext.Provider
       value={{

@@ -69,7 +69,7 @@ const CallVideo = ({ onCallEnd }) => {
     }
   }, [remoteStream]);
 
-  // Toggle camera at device level
+  // Toggle camera - sử dụng toggleLocalVideo từ context
   const toggleCamera = async () => {
     if (!mediaPermissions.video || !localStream) {
       console.warn("[DEBUG] Camera permission not available or no local stream");
@@ -85,19 +85,15 @@ const CallVideo = ({ onCallEnd }) => {
     const newCameraState = !isCameraOn;
     console.log("[DEBUG] Camera toggled:", newCameraState);
 
-    // Toggle the track enabled state
-    videoTracks.forEach(track => {
-      track.enabled = newCameraState;
-      console.log("[DEBUG] Video track enabled:", track.enabled);
-    });
-
-    setIsCameraOn(newCameraState);
+    // Sử dụng toggleLocalVideo từ context với logic mới (!enabled)
+    // newCameraState = true (muốn bật) → toggleLocalVideo(false) vì !enabled
+    // newCameraState = false (muốn tắt) → toggleLocalVideo(true) vì !enabled
+    toggleLocalVideo(!newCameraState);
     
-    // Call context method to sync state
-    toggleLocalVideo(newCameraState);
+    setIsCameraOn(newCameraState);
   };
 
-  // Toggle microphone at device level
+  // Toggle microphone - sử dụng toggleMute từ context
   const toggleMicrophone = async () => {
     if (!mediaPermissions.audio || !localStream) {
       console.warn("[DEBUG] Microphone permission not available or no local stream");
@@ -113,16 +109,12 @@ const CallVideo = ({ onCallEnd }) => {
     const newMicState = !isMicOn;
     console.log("[DEBUG] Microphone toggled:", newMicState);
 
-    // Toggle the track enabled state
-    audioTracks.forEach(track => {
-      track.enabled = newMicState;
-      console.log("[DEBUG] Audio track enabled:", track.enabled);
-    });
-
-    setIsMicOn(newMicState);
-    
-    // Call context method to sync state (note: toggleMute expects muted state)
+    // Sử dụng toggleMute từ context với logic (!muted)
+    // newMicState = true (muốn bật) → toggleMute(false) vì !muted
+    // newMicState = false (muốn tắt) → toggleMute(true) vì !muted
     toggleMute(!newMicState);
+    
+    setIsMicOn(newMicState);
   };
 
   const handleEndCall = () => {

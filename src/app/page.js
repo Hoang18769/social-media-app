@@ -12,12 +12,12 @@ export default function RootPage() {
     hasUserId: !!userId
   })
   
-  // Check authentication and redirect accordingly
-  // if (token && userId) {
-  //   // User is authenticated, redirect to index
-  //   redirect('/home')
-  // } else {
-  //   // User is not authenticated, redirect to register
-  //   redirect('/register')
-  // }
+  //Check authentication and redirect accordingly
+  if (token && userId) {
+    // User is authenticated, redirect to index
+    redirect('/home')
+  } else {
+    // User is not authenticated, redirect to register
+    redirect('/register')
+  }
 }
