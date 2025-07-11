@@ -113,7 +113,8 @@ export default function ProfileHeader({
     try {
       await api.delete(`/v1/friend-request/delete/${username}`);
       toast.success("Đã hủy lời mời kết bạn");
-      onProfileUpdate({ ...profileData, request: null });
+      // FIX: Set request to "NONE" so "Kết bạn" button shows up again
+      onProfileUpdate({ ...profileData, request: "NONE" });
     } catch (error) {
       toast.error("Lỗi khi hủy lời mời");
     }
@@ -123,7 +124,8 @@ export default function ProfileHeader({
     try {
       await api.delete(`/v1/friend-request/delete/${username}`);
       toast.success("Đã từ chối lời mời");
-      onProfileUpdate({ ...profileData, request: null });
+      // FIX: Set request to "NONE" so "Kết bạn" button shows up again
+      onProfileUpdate({ ...profileData, request: "NONE" });
     } catch (error) {
       toast.error("Lỗi khi từ chối lời mời");
     }
@@ -146,7 +148,7 @@ export default function ProfileHeader({
     const optimisticData = {
       ...profileData,
       isFriend: true,
-      request: null,
+      request: "NONE", // FIX: Set to "NONE" instead of null
       friendCount: profileData.friendCount + 1
     };
     
@@ -181,9 +183,11 @@ export default function ProfileHeader({
     try {
       await api.delete(`/v1/friends/${username}`);
       toast.success("Đã hủy kết bạn");
+      // FIX: Set request to "NONE" so "Kết bạn" button shows up again
       onProfileUpdate({
         ...profileData,
         isFriend: false,
+        request: "NONE", // This is the key fix
         friendCount: profileData.friendCount - 1
       });
       setIsDropdownOpen(false);
@@ -249,7 +253,7 @@ export default function ProfileHeader({
   };
 
   const renderActionButtons = () => {
-
+    // FIX: Updated condition to check for both null and "NONE"
     if (profileData.request) {
       if (profileData.request === "OUT") {
         return (
@@ -283,8 +287,8 @@ export default function ProfileHeader({
       }
     }
 
-    // Nếu chưa là bạn bè và không có request nào: hiển thị nút kết bạn và nhắn tin
-    if (!profileData.isFriend && profileData.request === "NONE") {
+    // FIX: Check for both null and "NONE" values
+    if (!profileData.isFriend && (profileData.request === "NONE" || profileData.request === null)) {
       return (
         <div className="flex gap-2">
           <button
@@ -294,18 +298,10 @@ export default function ProfileHeader({
             <UserPlus size={16} />
             <span>Kết bạn</span>
           </button>
-          <button
-            onClick={handleChatClick}
-            className="flex items-center gap-2 px-4 py-2 bg-[#7a7d81] hover:bg-[#6b7280] text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <MessageCircle size={16} />
-            <span>Nhắn tin</span>
-          </button>
         </div>
       );
     }
     
-
     return null;
   };
 
@@ -313,7 +309,7 @@ export default function ProfileHeader({
     if (!isDropdownOpen) return null;
 
     return (
-      <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--card)] rounded-lg shadow-lg border border-[var(--border)] z-50">
+      <div className="absolute right-0 h-full top-full mt-2 w-48 bg-[var(--card)] rounded-lg shadow-lg border border-[var(--border)] z-[100]">
         {profileData.isFriend && (
           <button
             onClick={unfriend}
@@ -445,13 +441,7 @@ export default function ProfileHeader({
           <FileImage size={16} />
           <span>Ảnh và video</span>
         </button>
-        <button 
-          className="flex items-center gap-2 px-4 py-2 rounded-full font-medium text-[var(--muted-foreground)] cursor-not-allowed opacity-50" 
-          disabled
-        >
-          <Bookmark size={16} />
-          <span>Đã lưu</span>
-        </button>
+       
       </div>
 
       {/* Overlay để đóng dropdown khi click outside */}

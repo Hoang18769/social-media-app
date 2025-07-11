@@ -48,11 +48,11 @@ export default function SidebarNavigation() {
   const unreadMessageCount = useAppStore(state => state.unreadMessageCount);
 
   const menuItems = [
-    { id: "home", icon: Home, href: "/home" },
-    { id: "search", icon: Search, href: "/search" },
-    { id: "message", icon: MessageCircle, href: "/chats", showBadge: true }, // ✅ Add showBadge flag
-    { id: "favorites", icon: Users, href: "/friends" },
-    { id: "profile", icon: UserPen, href: username ? `/profile/${username}` : "#" },
+    { id: "home", icon: Home, href: "/home", label: "Home" },
+    { id: "search", icon: Search, href: "/search", label: "Search" },
+    { id: "message", icon: MessageCircle, href: "/chats", showBadge: true, label: "Messages" },
+    { id: "favorites", icon: Users, href: "/friends", label: "Friends" },
+    { id: "profile", icon: UserPen, href: username ? `/profile/${username}` : "#", label: "Profile" },
   ];
 
   // ✅ Update badge count when store count changes
@@ -236,6 +236,7 @@ export default function SidebarNavigation() {
                 }}
                 disabled={isLoggingOut}
                 className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                aria-label={item.label}
               >
                 <Icon size={16} className="mr-3" />
                 {isLoggingOut && item.id === "logout" ? "Logging out..." : item.label}
@@ -249,6 +250,7 @@ export default function SidebarNavigation() {
               href={item.href}
               onClick={() => setShowSettingsDropdown(false)}
               className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label={item.label}
             >
               <Icon size={16} className="mr-3" />
               {item.label}
@@ -323,6 +325,8 @@ export default function SidebarNavigation() {
                         : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
                     }
                   `}
+                  aria-label={item.label}
+                  title={item.label}
                 >
                   <Icon size={24} strokeWidth={isActive ? 3 : 2} />
                 </Link>
@@ -341,6 +345,7 @@ export default function SidebarNavigation() {
               ref={notificationButtonRef}
               type="button"
               aria-label="Notifications"
+              title="Notifications"
               onClick={handleNotificationClick}
               disabled={isLoggingOut || isMarkingAsRead}
               className={`
@@ -370,6 +375,8 @@ export default function SidebarNavigation() {
           {/* More button with dropdown */}
           <div className="relative">
             <button
+              aria-label="Menu"
+              title="Menu"
               ref={moreButtonRef}
               onClick={handleMoreClick}
               className={`

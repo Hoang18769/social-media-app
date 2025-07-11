@@ -64,9 +64,9 @@ export default function ChatInput({
     if (onFocus) {
       try {
         onFocus(e)
-        console.log("✅ Typing focus handler called successfully")
+        // console.log("✅ Typing focus handler called successfully")
       } catch (error) {
-        console.error("❌ Error calling typing focus handler:", error)
+        // console.error("❌ Error calling typing focus handler:", error)
       }
     } else {
       console.warn("⚠️ No onFocus handler provided to ChatInput")
@@ -75,7 +75,7 @@ export default function ChatInput({
 
   // ✅ Handle textarea blur với proper logging
   const handleTextareaBlur = (e) => {
-    console.log("📝 ChatInput: Textarea blurred - calling typing blur handler")
+    // console.log("📝 ChatInput: Textarea blurred - calling typing blur handler")
     
     // Gọi typing notification blur handler từ useTypingNotification
     if (onBlur) {

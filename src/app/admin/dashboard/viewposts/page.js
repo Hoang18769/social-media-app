@@ -16,13 +16,13 @@ export default function ViewPostPage() {
   const [totalPosts, setTotalPosts] = useState(0)
   const [error, setError] = useState("")
   
-  // Infinity scroll states  
+  // Pagination states
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [currentSkip, setCurrentSkip] = useState(0)
   
   // Refs for optimization
-  const scrollTimeoutRef = useRef(null)
   const abortControllerRef = useRef(null)
   
   const LIMIT = 20
@@ -76,7 +76,7 @@ export default function ViewPostPage() {
       setError("")
 
       const res = await api.get(
-        `/v1/posts/newsfeed?type=TIME&skip=${0}&limit=${100}`,
+        `/v1/posts/newsfeed?type=TIME&skip=${skipValue}&limit=${LIMIT}`,
         { signal: abortControllerRef.current.signal }
       )
       console.log(res.data.body)
@@ -95,8 +95,9 @@ export default function ViewPostPage() {
           }
         })
         
-        // Update hasMore based on returned data
+        // Update hasMore and currentSkip based on returned data
         setHasMore(newPosts.length === LIMIT)
+        setCurrentSkip(skipValue + newPosts.length)
         
         console.log(`Loaded ${newPosts.length} posts, skip: ${skipValue}`)
       }
@@ -128,62 +129,14 @@ export default function ViewPostPage() {
     return () => controller.abort()
   }, [])
 
-  // Throttled scroll handler for better performance - same as ProfilePage
-  const handleScroll = useCallback(() => {
-    if (loadingMore || !hasMore || loading) {
-      return
+  // Handle load more button click
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      fetchPosts(currentSkip, true)
     }
+  }, [currentSkip, hasMore, loadingMore, fetchPosts])
 
-    // Clear existing timeout
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current)
-    }
-
-    // Throttle scroll events
-    scrollTimeoutRef.current = setTimeout(() => {
-      const scrollContainer = document.querySelector('main')
-      if (!scrollContainer) return
-
-      const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight * 100
-
-      if (scrollPercentage >= 80) {
-        console.log('Loading more posts at 80%...')
-        fetchPosts(posts.length, true)
-      }
-    }, 100) // Throttle by 100ms
-
-  }, [loadingMore, hasMore, loading, posts.length, fetchPosts])
-
-  // Optimize scroll listener with passive option - same as ProfilePage
-  useEffect(() => {
-    const scrollContainer = document.querySelector('main')
-    
-    if (!scrollContainer) {
-      const timer = setTimeout(() => {
-        const retryContainer = document.querySelector('main')
-        if (retryContainer) {
-          console.log('Adding scroll listener to main container for posts...')
-          retryContainer.addEventListener('scroll', handleScroll, { passive: true })
-        }
-      }, 100)
-      
-      return () => clearTimeout(timer)
-    }
-
-    console.log('Adding scroll listener to main container for posts...')
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-    
-    return () => {
-      console.log('Removing scroll listener from main container for posts...')
-      scrollContainer.removeEventListener('scroll', handleScroll)
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current)
-      }
-    }
-  }, [handleScroll])
-
-  // Initial data load with cleanup - same as ProfilePage
+  // Initial data load with cleanup
   useEffect(() => {
     console.log('Initial posts and stats load...')
     fetchTotalPosts()
@@ -200,7 +153,7 @@ export default function ViewPostPage() {
     router.back()
   }, [router])
 
-  // Memoized skeleton components for better performance - same as ProfilePage
+  // Memoized skeleton components for better performance
   const PostSkeleton = useMemo(() => (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
       <div className="flex items-center space-x-3 mb-4">
@@ -252,80 +205,102 @@ export default function ViewPostPage() {
   }, [PostSkeleton])
 
   return (
-    <main className="max-w-4xl mx-auto mt-4">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleBackToStats}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Statistics
-            </button>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              All Posts ({totalPosts})
-            </h2>
+    <main className="max-w-4xl mx-auto mt-4 px-4">
+      <div className="space-y-6 flex flex-col items-center">
+        {/* Container wrapper for centering */}
+        <div className="w-full max-w-2xl space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleBackToStats}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Statistics
+              </button>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                All Posts ({totalPosts})
+              </h2>
+            </div>
           </div>
-        </div>
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-            <p className="text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
-
-        {/* Posts List */}
-        <section className="space-y-4">
-          {loading && posts.length === 0 ? (
-            <PostsLoadingSkeleton count={5} />
-          ) : posts.length > 0 ? (
-            <>
-              {posts.map((post) => (
-                <PostCard
-                  key={post.id || Math.random().toString(36)}
-                  post={post}
-                  liked={post.liked}
-                  likeCount={post.likeCount}
-                  onLikeToggle={() => toggleLike(post.id)}
-                  onPostDeleted={handlePostDeleted}
-                  isOwnProfile={currentUser?.username === post.user?.username}
-                  isFriend={post.user?.isFriend}
-                />
-              ))}
-              
-              {loadingMore && <PostsLoadingSkeleton count={3} />}
-              
-              {!hasMore && posts.length > 0 && (
-                <div className="flex justify-center py-8">
-                  <div className="bg-white dark:bg-gray-800 rounded-full px-6 py-3 shadow-sm border border-gray-200 dark:border-gray-700">
-                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                      🎉 Youve reached the end!
-                    </p>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center max-w-md">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  No posts available
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  There are no posts to display at the moment.
-                </p>
-              </div>
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+              <p className="text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
-        </section>
+
+          {/* Posts List */}
+          <section className="space-y-4">
+            {loading && posts.length === 0 ? (
+              <PostsLoadingSkeleton count={5} />
+            ) : posts.length > 0 ? (
+              <div className="flex flex-col items-center">
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id || Math.random().toString(36)}
+                    post={post}
+                    liked={post.liked}
+                    likeCount={post.likeCount}
+                    onLikeToggle={() => toggleLike(post.id)}
+                    onPostDeleted={handlePostDeleted}
+                    isOwnProfile={currentUser?.username === post.user?.username}
+                    isFriend={post.user?.isFriend}
+                  />
+                ))}
+                
+                {loadingMore && <PostsLoadingSkeleton count={3} />}
+                
+                {/* Load More Button or End Message */}
+                <div className="flex justify-center py-8">
+                  {hasMore ? (
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                    >
+                      {loadingMore ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          Load More Posts
+                          <span className="text-sm opacity-80">({posts.length} / {totalPosts})</span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="bg-white dark:bg-gray-800 rounded-full px-6 py-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                        🎉 Bạn đã xem hết bài viết!
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center max-w-md">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    No posts available
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    There are no posts to display at the moment.
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </main>
   )

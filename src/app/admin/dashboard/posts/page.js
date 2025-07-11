@@ -172,7 +172,7 @@ export default function PostsPage() {
   }
 
   const handleTotalPostsClick = () => {
-    router.push('/admin/dashboard/viewpost')
+    router.push('/admin/dashboard/viewposts')
   }
 
   useEffect(() => {

@@ -15,12 +15,14 @@ import {
   AreaChart,
   Area,
 } from "recharts"
+import { useRouter } from "next/navigation"
 import { Users, TrendingUp, Calendar, Clock, Eye, UserCheck, UserX } from "lucide-react"
 
 export default function UsersPage() {
   const [usersData, setUsersData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const router = useRouter()
 
   const fetchUsersStatistics = async () => {
     setLoading(true)
@@ -66,9 +68,12 @@ export default function UsersPage() {
       }))
   }
 
-  const StatCard = ({ title, value, icon: Icon, color, trend }) => (
+  const StatCard = ({ title, value, icon: Icon, color, trend, onClick }) => (
     <div
-      className={`bg-gradient-to-r ${color} p-6 rounded-xl shadow-lg text-white transform hover:scale-105 transition-transform duration-200`}
+      className={`bg-gradient-to-r ${color} p-6 rounded-xl shadow-lg text-white transform hover:scale-105 transition-transform duration-200 ${
+        onClick ? 'cursor-pointer' : ''
+      }`}
+      onClick={onClick}
     >
       <div className="flex items-center justify-between">
         <div>
@@ -125,6 +130,9 @@ export default function UsersPage() {
               icon={Users}
               color="from-blue-500 to-blue-600"
               trend={`+${usersData.newUsersThisMonth} this month`}
+              onClick={() => {
+                router.push('/admin/dashboard/viewusers')
+              }}
             />
             <StatCard
               title="Online Now"

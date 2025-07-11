@@ -223,11 +223,11 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
 
   const textSizes = {
     username: size === "compact" ? "text-sm" : size === "large" ? "text-base" : "text-sm",
-    time: "text-xs text-[var(--muted-foreground)]",
-    content: "text-sm text-[var(--foreground)]",
-    likes: "text-xs text-[var(--muted-foreground)] mt-1",
-    viewAll: "text-xs text-[var(--muted-foreground)] mt-2 hover:underline",
-    comment: "text-sm text-[var(--foreground)] mt-1"
+    time: "text-xs ",
+    content: "text-sm ",
+    likes: "text-xs  mt-1",
+    viewAll: "text-xs  mt-2 hover:underline",
+    comment: "text-sm  mt-1"
   }
 
   const handleEdit = () => {
@@ -424,17 +424,10 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
     return currentPost
   }
 
-  const getPostForInteractions = () => {
-    if (currentPost.sharedPost && originalPostData) {
-      return originalPostData
-    }
-    return currentPost.sharedPost ? currentPost.originalPost : currentPost
-  }
-
   return (
     <>
       <Card 
-        className={`bg-[var(--card)] text-[var(--card-foreground)] rounded-xl shadow-sm ${padding} w-full ${className} cursor-pointer hover:bg-[var(--card)]/90 transition-colors`}
+        className={` my-2 text-[var(--card-foreground)] rounded-xl shadow-sm ${padding} w-full ${className} cursor-pointer hover:bg-[var(--card)]/90 transition-colors`}
         onClick={handleCardClick}
       >
         <div className={`flex items-start justify-between ${spacing} relative`}>
@@ -472,6 +465,8 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
           {showMoreOptions && (
             <div className="relative">
               <button 
+               aria-label="More options"
+    title="More options"
                 onClick={(e) => {
                   e.stopPropagation()
                   setShowOptions(!showOptions)
@@ -567,33 +562,41 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
           </div>
         )}
 
-        <div className="flex mt-3 gap-4 text-[var(--muted-foreground)]">
-          <button 
-            onClick={(e) => {
-              e.stopPropagation()
-              handleLikeToggle()
-            }} 
-            className={`p-2 rounded-full hover:bg-[var(--input)] transition-colors ${isLiking ? 'opacity-70' : ''}`}
-            disabled={isLiking}
-          >
-            <Heart className={`h-5 w-5 transition-colors ${optimisticLiked ? "fill-red-500 text-red-500" : ""}`} />
-          </button>
-          <button 
-            onClick={handleMessageCircleClick}
-            className="p-2 rounded-full hover:bg-[var(--input)]"
-          >
-            <MessageCircle className="h-5 w-5" />
-          </button>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation()
-              handleShare()
-            }}
-            className="p-2 rounded-full hover:bg-[var(--input)]"
-          >
-            <SendHorizonal className="h-5 w-5" />
-          </button>
-        </div>
+   <div className="flex mt-3 gap-4 text-[var(--muted-foreground)]">
+  <button
+    onClick={(e) => {
+      e.stopPropagation()
+      handleLikeToggle()
+    }}
+    className={`p-2 rounded-full hover:bg-[var(--input)] transition-colors ${isLiking ? 'opacity-70' : ''}`}
+    disabled={isLiking}
+    aria-label={optimisticLiked ? "Unlike post" : "Like post"}
+    title={optimisticLiked ? "Unlike post" : "Like post"}
+  >
+    <Heart className={`h-5 w-5 transition-colors ${optimisticLiked ? "fill-red-500 text-red-500" : ""}`} />
+  </button>
+  
+  <button
+    onClick={handleMessageCircleClick}
+    className="p-2 rounded-full hover:bg-[var(--input)]"
+    aria-label="Comment on post"
+    title="Comment on post"
+  >
+    <MessageCircle className="h-5 w-5" />
+  </button>
+  
+  <button
+    onClick={(e) => {
+      e.stopPropagation()
+      handleShare()
+    }}
+    className="p-2 rounded-full hover:bg-[var(--input)]"
+    aria-label="Share post"
+    title="Share post"
+  >
+    <SendHorizonal className="h-5 w-5" />
+  </button>
+</div>
 
         <p className={textSizes.likes}>
           {optimisticLikeCount} lượt thích

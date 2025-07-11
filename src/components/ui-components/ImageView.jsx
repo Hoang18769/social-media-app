@@ -96,6 +96,8 @@ export default function ImageView({
             />
 
             <button
+             aria-label="changes mute/unmute"
+    title="changes mute/unmute"
               onClick={() => toggleMute(index)}
               className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
             >
