@@ -42,55 +42,19 @@ const CallVideo = ({ onCallEnd }) => {
       console.log("[DEBUG] Stream state updated - Camera:", videoTracks.length > 0 && videoTracks[0].enabled, "Mic:", audioTracks.length > 0 && audioTracks[0].enabled);
     }
   }, [localStream]);
-useEffect(() => {
-  if (localStream) {
-    const videoTracks = localStream.getVideoTracks();
-    const audioTracks = localStream.getAudioTracks();
-    
-    if (videoTracks.length > 0) {
-      setIsCameraOn(videoTracks[0].enabled);
-    }
-    
-    if (audioTracks.length > 0) {
-      setIsMicOn(audioTracks[0].enabled);
-    }
-  }
-}, [localStream]);
+
   // Setup local video
-useEffect(() => {
-  if (localStream && localVideoRef.current) {
-    console.log("[DEBUG] Setting up local video stream");
-    
-    // Gán srcObject
-    localVideoRef.current.srcObject = localStream;
-    
-    // Play video
-    localVideoRef.current.play().catch(error => {
-      console.warn("[DEBUG] Local video autoplay failed:", error);
-      setAutoplayError(true);
-    });
-    
-    // Event listeners
-    const handleError = (error) => {
-      console.warn("[DEBUG] Video error:", error);
-      setAutoplayError(true);
-    };
-    
-    const handleLoadedData = () => {
-      console.log("[DEBUG] Video loaded successfully");
-    };
-    
-    localVideoRef.current.addEventListener('error', handleError);
-    localVideoRef.current.addEventListener('loadeddata', handleLoadedData);
-    
-    return () => {
-      if (localVideoRef.current) {
-        localVideoRef.current.removeEventListener('error', handleError);
-        localVideoRef.current.removeEventListener('loadeddata', handleLoadedData);
-      }
-    };
-  }
-}, [localStream]);
+  useEffect(() => {
+    if (localStream && localVideoRef.current) {
+      console.log("[DEBUG] Assigning local stream to video element");
+      localVideoRef.current.srcObject = localStream;
+      
+      localVideoRef.current.play().catch(error => {
+        console.warn("[DEBUG] Local video autoplay failed:", error);
+        setAutoplayError(true);
+      });
+    }
+  }, [localStream]);
 
   // Setup remote video
   useEffect(() => {
@@ -106,78 +70,46 @@ useEffect(() => {
   }, [remoteStream]);
 
   // Toggle camera - sử dụng toggleLocalVideo từ context với video refresh
-const toggleCamera = async () => {
-  if (!mediaPermissions.video || !localStream) {
-    console.warn("[DEBUG] Camera permission not available or no local stream");
-    return;
-  }
-
-  const videoTracks = localStream.getVideoTracks();
-  if (videoTracks.length === 0) {
-    console.warn("[DEBUG] No video tracks available");
-    return;
-  }
-
-  const newCameraState = !isCameraOn;
-  console.log("[DEBUG] Camera toggled:", newCameraState);
-
-  if (newCameraState) {
-    // BẬT CAMERA: Enable track + Force refresh video element
-    videoTracks.forEach(track => {
-      track.enabled = true;
-    });
-    
-    // Gọi Stringee API
-    const call = currentCall;
-    if (call && typeof call.enableLocalVideo === "function") {
-      call.enableLocalVideo(true);
+  const toggleCamera = async () => {
+    if (!mediaPermissions.video || !localStream) {
+      console.warn("[DEBUG] Camera permission not available or no local stream");
+      return;
     }
-    
-    // QUAN TRỌNG: Force refresh video element
-    if (localVideoRef.current) {
-      // Bước 1: Xóa srcObject
-      localVideoRef.current.srcObject = null;
-      
-      // Bước 2: Đợi DOM update
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // Bước 3: Gán lại srcObject
-      localVideoRef.current.srcObject = localStream;
-      
-      // Bước 4: Force play
-      try {
-        await localVideoRef.current.play();
-        console.log("[DEBUG] Camera enabled and video refreshed successfully");
-      } catch (error) {
-        console.error("[DEBUG] Failed to play video after camera enable:", error);
-        // Retry một lần nữa
-        setTimeout(async () => {
-          try {
-            await localVideoRef.current.play();
-          } catch (retryError) {
-            console.error("[DEBUG] Retry play failed:", retryError);
-            setAutoplayError(true);
-          }
-        }, 100);
-      }
+
+    const videoTracks = localStream.getVideoTracks();
+    if (videoTracks.length === 0) {
+      console.warn("[DEBUG] No video tracks available");
+      return;
     }
-  } else {
-    // TẮT CAMERA: Chỉ disable track
-    videoTracks.forEach(track => {
-      track.enabled = false;
-    });
-    
-    // Gọi Stringee API
-    const call = currentCall;
-    if (call && typeof call.enableLocalVideo === "function") {
-      call.enableLocalVideo(false);
-    }
-    
-    console.log("[DEBUG] Camera disabled");
-  }
-  
-  setIsCameraOn(newCameraState);
-};
+
+    // const newCameraState = !isCameraOn;
+    // console.log("[DEBUG] Camera toggled:", newCameraState);
+    // Sử dụng toggleLocalVideo từ context với logic mới (!enabled)
+    toggleLocalVideo(!newCameraState);
+    setIsCameraOn(newCameraState);
+    const videoTrack=localStream.getVideoTracks()[0];
+    if (videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                setIsCameraOn(videoTrack.enabled);
+            }
+    // // QUAN TRỌNG: Force refresh video element khi bật lại camera
+    // if (newCameraState && localVideoRef.current && localStream) {
+    //   console.log("[DEBUG] Refreshing video element for camera enable");
+      
+    //   // Tạm thời reset srcObject
+    //   localVideoRef.current.srcObject = null;
+      
+    //   // Reassign và play lại sau một chút
+    //   setTimeout(() => {
+    //     if (localVideoRef.current && localStream) {
+    //       localVideoRef.current.srcObject = localStream;
+    //       localVideoRef.current.play().catch(error => {
+    //         console.warn("[DEBUG] Video play failed after enable:", error);
+    //       });
+    //     }
+    //   }, 100);
+    // }
+  };
 
   // Toggle microphone - sử dụng toggleMute từ context
   const toggleMicrophone = async () => {
