@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import ChatList from "@/components/social-app-component/ChatList";
 import ChatBox from "@/components/social-app-component/ChatBox";
 import useAppStore from "@/store/ZustandStore";
@@ -15,40 +15,39 @@ function ChatLayoutContent() {
 
   // Logic hiển thị responsive
   const shouldShowChatList = !targetUser || !isMobile;
-  const shouldShowChatBox = !!targetUser;
+  const shouldShowChatBox = !!targetUser ;
   const shouldShowChatSkeleton = !targetUser && !isMobile;
 
+  const selectedChatId_Store = useAppStore((state) => state.selectedChatId);
+  const virtualChatUser_Store = useAppStore((state) => state.virtualChatUser);
+  const chatList = useAppStore((state) => state.chatList);
   const fetchChatList = useAppStore((state) => state.fetchChatList);
   const clearChatSelection = useAppStore((state) => state.clearChatSelection);
 
-  // useEffect(() => {
-  //   console.log("🔍 ChatLayout useEffect:");
-  //   console.log("📊 Store selectedChatId:", selectedChatId_Store);
-  //   console.log("📊 Store virtualChatUser:", virtualChatUser_Store);
+  useEffect(() => {
+    if (selectedChatId_Store) {
+      console.log("✅ Using selectedChatId from store");
+      const selectedChat = chatList.find(chat =>
+        chat.chatId === selectedChatId_Store || chat.id === selectedChatId_Store
+      );
+      if (selectedChat) {
+        setSelectedChatId(selectedChatId_Store);
+        setTargetUser(selectedChat.target);
+        return;
+      }
+    }
 
-  //   if (selectedChatId_Store) {
-  //     console.log("✅ Using selectedChatId from store");
-  //     const selectedChat = chatList.find(chat =>
-  //       chat.chatId === selectedChatId_Store || chat.id === selectedChatId_Store
-  //     );
-  //     if (selectedChat) {
-  //       setSelectedChatId(selectedChatId_Store);
-  //       setTargetUser(selectedChat.target);
-  //       return;
-  //     }
-  //   }
+    if (virtualChatUser_Store) {
+      console.log("✅ Using virtualChatUser from store");
+      setSelectedChatId(null);
+      setTargetUser(virtualChatUser_Store);
+      return;
+    }
 
-  //   if (virtualChatUser_Store) {
-  //     console.log("✅ Using virtualChatUser from store");
-  //     setSelectedChatId(null);
-  //     setTargetUser(virtualChatUser_Store);
-  //     return;
-  //   }
-
-  //   else {
-  //     console.log("❌ No valid data found");
-  //   }
-  // }, [ selectedChatId_Store, virtualChatUser_Store, chatList]);
+    else {
+      console.log("❌ No valid data found");
+    }
+  }, [ selectedChatId_Store, virtualChatUser_Store, chatList]);
 
   const handleSelectChat = (chatId, user) => {
     setSelectedChatId(chatId);

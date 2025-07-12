@@ -21,10 +21,10 @@ const useAppStore = create(
   devtools((set, get) => ({
     // ============ CHAT STATE ============
     chatList: [],
-    conversationMap: new Map(),
+    conversationMap: new Map(), //about to remove
     isLoadingChats: false,
     error: null,
-    unreadMessageCount: 0, // ✅ NEW: Total unread messages from all chats
+    unreadMessageCount: 0, // Total unread messages from all chats
 
     // ✅ NEW: Helper function to calculate unread message count
     calculateUnreadMessageCount: (chatList) => {
@@ -124,27 +124,27 @@ const useAppStore = create(
       console.log(`✅ Updated target online status for ${userId}`, onlineStatusData);
     },
 
-    // Helper để lấy online status của user từ chatList
-    getUserOnlineStatusFromChats: (userId) => {
-      const { chatList } = get();
-      
-      for (const chat of chatList) {
-        // Tìm trong participants
-        if (chat.participants && Array.isArray(chat.participants)) {
-          const participant = chat.participants.find(p => p.id === userId);
-          if (participant && participant.onlineStatus) {
-            return participant.onlineStatus;
-          }
-        }
-        
-        // Tìm trong target
-        if (chat.target && chat.target.id === userId && chat.target.onlineStatus) {
-          return chat.target.onlineStatus;
-        }
-      }
-      
-      return null;
-    },
+    //unused: Helper để lấy online status của user từ chatList
+    // getUserOnlineStatusFromChats: (userId) => {
+    //   const { chatList } = get();
+    //
+    //   for (const chat of chatList) {
+    //     // Tìm trong participants
+    //     if (chat.participants && Array.isArray(chat.participants)) {
+    //       const participant = chat.participants.find(p => p.id === userId);
+    //       if (participant && participant.onlineStatus) {
+    //         return participant.onlineStatus;
+    //       }
+    //     }
+    //
+    //     // Tìm trong target
+    //     if (chat.target && chat.target.id === userId && chat.target.onlineStatus) {
+    //       return chat.target.onlineStatus;
+    //     }
+    //   }
+    //
+    //   return null;
+    // },
 
     // ✅ NEW: Get block status by chat ID
     getBlockStatusByChatId: (chatId) => {
@@ -188,7 +188,7 @@ updateBlockStatus: (chatId, blockStatusData) => {
   console.log(`✅ Block status updated for chat ${chatId}:`, blockStatusData);
 },
 
-    // ✅ NEW: Block/Unblock user in chat
+    // unused: Block/Unblock user in chat
     toggleBlockUser: async (chatId, shouldBlock = true) => {
       try {
         const endpoint = shouldBlock ? '/v1/chat/block' : '/v1/chat/unblock';
@@ -302,7 +302,7 @@ updateBlockStatus: (chatId, blockStatusData) => {
         };
       });
     },
-
+  //unused
     getUserByChatId: (chatId) => {
       const chat = get().chatList.find(c => (c.id === chatId || c.chatId === chatId));
       return chat ? chat.target : null;
@@ -635,14 +635,14 @@ updateBlockStatus: (chatId, blockStatusData) => {
         isLoadingNotifications: false,
       }, false, 'clearAllData'); // ✅ Better devtools action name
     },
-
+  //unused
     getChatByUserId: (userId) => get().conversationMap.get(userId),
-    
+    //unused
     getSelectedChat: () => {
       const { selectedChatId, chatList } = get();
       return chatList.find(chat => (chat.id === selectedChatId || chat.chatId === selectedChatId)) || null;
     },
-
+    //unused
     ensureNotificationsLoaded: () => {
       const { notifications, isLoadingNotifications } = get();
       
@@ -652,12 +652,12 @@ updateBlockStatus: (chatId, blockStatusData) => {
       }
     },
 
-    // ✅ NEW: Force refresh methods
+    // unused: Force refresh methods
     refreshChatList: async () => {
       console.log('🔄 Force refreshing chat list...');
       return get().fetchChatList();
     },
-
+    //unused
     refreshNotifications: async () => {
       console.log('🔄 Force refreshing notifications...');
       return get().fetchNotifications(true);
@@ -669,13 +669,13 @@ updateBlockStatus: (chatId, blockStatusData) => {
       return get().fetchUnreadNotificationCount();
     },
 
-    // ✅ NEW: Get total unread message count
+    // unsed: Get total unread message count
     getTotalUnreadMessageCount: () => {
       const { unreadMessageCount } = get();
       return unreadMessageCount;
     },
 
-    // ✅ NEW: Manual recalculate unread message count (if needed)
+    // unused: Manual recalculate unread message count (if needed)
     recalculateUnreadMessageCount: () => {
       return get().updateUnreadMessageCount();
     },

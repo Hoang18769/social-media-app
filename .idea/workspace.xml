@@ -6,12 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="send original prop from postcard">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(auth)/forgot-password/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/forgot-password/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(auth)/register/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/register/page.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/store/ZustandStore.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/ZustandStore.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,7 +33,7 @@
   }
 }</component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="Security Analysis" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
@@ -101,7 +97,7 @@
       <updated>1752160851919</updated>
       <workItem from="1752247441691" duration="4745000" />
       <workItem from="1752285905111" duration="1143000" />
-      <workItem from="1752289724274" duration="9261000" />
+      <workItem from="1752289724274" duration="13933000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -119,7 +115,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752257100670</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="send original prop from postcard">
+      <option name="closed" value="true" />
+      <created>1752302187662</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1752302187662</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
