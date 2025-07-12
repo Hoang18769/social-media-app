@@ -13,10 +13,8 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState(null);
   const [posts, setPosts] = useState([]);
   const [files, setFiles] = useState([]);
-  const [localUsername, setLocalUsername] = useState(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
-  const [activeImageIndex, setActiveImageIndex] = useState(null);
 
   // Infinity scroll states
   const [loading, setLoading] = useState(false);
@@ -52,7 +50,6 @@ export default function ProfilePage() {
     const storedUsername = localStorage.getItem("userName");
     if (!storedUsername) return;
 
-    setLocalUsername(storedUsername);
     setIsOwnProfile(storedUsername === routeUsername);
   }, [routeUsername]);
 
@@ -89,7 +86,6 @@ export default function ProfilePage() {
 
       if (isOwnProfile) {
         localStorage.setItem("userName", newUsername);
-        setLocalUsername(newUsername);
       }
 
       router.replace(`/profile/${newUsername}`);
@@ -277,42 +273,9 @@ export default function ProfilePage() {
     setActiveTab(tab);
   }, []);
 
-  const handleImageClick = useCallback((index) => {
-    setActiveImageIndex(index);
-    console.log(`Clicked on image at index: ${index}`);
-  }, []);
+
 
   // Optimize like toggle with immediate UI update
-  const handleToggleLike = useCallback(async (postId) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if (post.id !== postId) return post;
-
-        const liked = post.liked;
-        const updatedPost = {
-          ...post,
-          liked: !liked,
-          likeCount: post.likeCount + (liked ? -1 : 1),
-        };
-
-        // Fire and forget API call
-        (async () => {
-          try {
-            if (liked) {
-              await api.delete(`/v1/posts/unlike/${postId}`);
-            } else {
-              await api.post(`/v1/posts/like/${postId}`);
-            }
-          } catch (err) {
-            console.error("Toggle like failed:", err);
-            // Optionally revert the optimistic update here
-          }
-        })();
-
-        return updatedPost;
-      })
-    );
-  }, []);
 
   // Memoized skeleton components
   const ProfileHeaderSkeleton = useMemo(
@@ -534,7 +497,7 @@ export default function ProfilePage() {
                               src={url}
                               alt={`media-${index}`}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                              onClick={() => handleImageClick(index)}
+                              // onClick={() => handleImageClick(index)}
                             />
                           )}
                         </div>

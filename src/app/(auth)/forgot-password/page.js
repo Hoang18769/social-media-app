@@ -1,11 +1,8 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { ArrowDown, ArrowLeft } from "lucide-react"
-import { useTheme } from "next-themes"
-import Connectimg from "@/assests/photo/Connect.jpg"
 import Button from "@/components/ui-components/Button"
 import { motion } from "framer-motion"
 import useMeasure from "react-use-measure"
@@ -16,8 +13,6 @@ import Link from "next/link"
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const formRef = useRef(null)
-  const { theme } = useTheme()
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
 

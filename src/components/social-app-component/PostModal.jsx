@@ -21,12 +21,13 @@ export default function PostModal({
                                     loadingComments = false,
                                     activeIndex = 0,
                                     isOwnPost,
+                                    originalPostCanView, // Add this prop
                                     onClose,
                                     onLikeToggle,
                                     onCommentSubmit,
                                     onCommentUpdate,
                                   }) {
-  // ✅ Add error handling for missing or invalid post
+  // Add error handling for missing or invalid post
   if (!post || !post.id) {
     return (
         <Modal isOpen={true} onClose={onClose} size="small">
@@ -56,12 +57,6 @@ export default function PostModal({
   const displayPost = isSharedPost ? post.originalPost : post;
   const router = useRouter();
 
-  // ✅ For shared posts, we still show the modal even if originalPost is missing
-  // The original post area will show "content not available" but user can still interact with the share
-
-  // ✅ For shared posts, we still show the modal even if originalPost is missing
-  // The original post area will show "content not available" but user can still interact with the share
-
   // Handle media from both regular posts and shared posts
   let media = [];
   if (isSharedPost && post.originalPost) {
@@ -69,7 +64,7 @@ export default function PostModal({
   } else if (!isSharedPost) {
     media = post?.files || post?.images || [];
   }
-  // ✅ For shared posts without originalPost, media will be empty array
+  // For shared posts without originalPost, media will be empty array
   const hasMedia = Array.isArray(media) && media.length > 0;
 
   const [page, setPage] = useState({ index: activeIndex, direction: 0 });
@@ -77,12 +72,11 @@ export default function PostModal({
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   const [isSharedContentExpanded, setIsSharedContentExpanded] = useState(false);
 
-  // ✅ Initialize comments manager with optimistic updates
+  //  Initialize comments manager with optimistic updates
   const commentsManager = useComments(comments, post);
 
   const handleProfileClick = (e, post) => {
     e.stopPropagation();
-    // ✅ Add safety check for author
     if (post?.author?.username) {
       router.push(`/profile/${post.author.username}`);
     }
@@ -210,38 +204,6 @@ export default function PostModal({
     setReplyingTo(null);
   }, []);
 
-  // ✅ Handle comment like with optimistic updates
-  const handleCommentLike = useCallback(async (commentId, isLiked) => {
-    console.log("Handling comment like:", { commentId, isLiked });
-    try {
-      // ✅ This will handle optimistic updates automatically
-      await commentsManager.likeComment(commentId, isLiked);
-
-      // ✅ Optional: Update parent component if needed
-      if (onCommentUpdate) {
-        onCommentUpdate(commentId, 'like', !isLiked);
-      }
-    } catch (error) {
-      console.error("Error liking comment:", error);
-      // Error handling is already done in the hook
-    }
-  }, [commentsManager, onCommentUpdate]);
-
-  // ✅ Handle comment deletion with optimistic updates
-  const handleCommentDelete = useCallback(async (commentId) => {
-    try {
-      await commentsManager.deleteComment(commentId);
-
-      // ✅ Optional: Update parent component if needed
-      if (onCommentUpdate) {
-        onCommentUpdate(commentId, 'delete');
-      }
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-      // Error handling is already done in the hook
-    }
-  }, [commentsManager, onCommentUpdate]);
-
   // Memoized components to prevent unnecessary re-renders
   const PostHeader = useMemo(() => (
       <div className="flex flex-col gap-3 p-4 border-b border-[var(--border)]">
@@ -266,7 +228,7 @@ export default function PostModal({
               {/* Show shared post content if exists */}
               {post.content && (
                   <div className="ml-12">
-                    <div className="text-sm">
+                    <div className="text-sm break-words whitespace-pre-wrap">
                       {shouldTruncateContent(post.content) && !isSharedContentExpanded ? (
                           <>
                             {renderTextWithLinks(getTruncatedContent(post.content))}
@@ -298,8 +260,8 @@ export default function PostModal({
 
         {/* Original post in a rounded container */}
         <div className={`${isSharedPost ? 'p-4 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`}>
-          {/* ✅ Handle missing originalPost for shared posts */}
-          {isSharedPost && !post.originalPost ? (
+          {/* Handle shared posts based on originalPostCanView */}
+          {isSharedPost && originalPostCanView === false ? (
               <div className="flex flex-col items-center justify-center py-8 space-y-3">
                 <div className="w-12 h-12 bg-[var(--muted)] rounded-full flex items-center justify-center">
                   <MessageCircle className="h-6 w-6 text-[var(--muted-foreground)]" />
@@ -333,7 +295,7 @@ export default function PostModal({
 
                 {/* Original post content */}
                 {displayPost?.content && (
-                    <div className="text-sm">
+                    <div className="text-sm break-words whitespace-pre-wrap">
                       {shouldTruncateContent(displayPost.content) && !isContentExpanded ? (
                           <>
                             {renderTextWithLinks(getTruncatedContent(displayPost.content))}
@@ -363,8 +325,7 @@ export default function PostModal({
           )}
         </div>
       </div>
-  ), [post, displayPost, isSharedPost, isContentExpanded, isSharedContentExpanded, handleProfileClick, renderTextWithLinks]);
-
+  ), [post, displayPost, isSharedPost, isContentExpanded, isSharedContentExpanded, handleProfileClick, renderTextWithLinks, originalPostCanView]);
   const PostActions = useMemo(() => (
       <div className="border-b border-[var(--border)]">
         <div className="flex gap-4 text-[var(--muted-foreground)] items-center p-3">

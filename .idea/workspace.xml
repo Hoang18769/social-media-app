@@ -4,24 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/social-media-app.iml" afterDir="false" />
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="send original prop from postcard">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(auth)/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/layout.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(auth)/forgot-password/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/forgot-password/page.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(auth)/register/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/register/page.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/layout.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/head.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatHeader.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatHeader.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostModal.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui-components/PageTransitionLoader.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui-components/SearchBar.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui-components/Switch.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useMinLoading.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/pageTittle.js" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,9 +33,12 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/Hoang18769/social-media-app.git&quot;,
-    &quot;accountId&quot;: &quot;49f9505c-2508-40d0-b8f9-8d6454d09257&quot;
+    &quot;accountId&quot;: &quot;7c6282ce-26d5-4228-8fb7-bfeb4820b3c1&quot;
   }
 }</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -69,6 +62,9 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "preferences.lookFeel",
+    "ts.external.directory.path": "C:\\Program Files\\JetBrains\\IntelliJ IDEA 2025.1.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -103,8 +99,27 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1752160851919</updated>
-      <workItem from="1752247441691" duration="4155000" />
+      <workItem from="1752247441691" duration="4745000" />
+      <workItem from="1752285905111" duration="1143000" />
+      <workItem from="1752289724274" duration="9261000" />
     </task>
+    <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
+      <option name="closed" value="true" />
+      <created>1752257084490</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1752257084491</updated>
+    </task>
+    <task id="LOCAL-00002" summary="postmodal fix, remove some stuff">
+      <option name="closed" value="true" />
+      <created>1752257100670</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1752257100670</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -120,5 +135,10 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="postmodal fix, remove some stuff" />
+    <MESSAGE value="send original prop from postcard" />
+    <option name="LAST_COMMIT_MESSAGE" value="send original prop from postcard" />
   </component>
 </project>

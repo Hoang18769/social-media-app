@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import ChatList from "@/components/social-app-component/ChatList";
 import ChatBox from "@/components/social-app-component/ChatBox";
 import useAppStore from "@/store/ZustandStore";
@@ -18,9 +18,6 @@ function ChatLayoutContent() {
   const shouldShowChatBox = !!targetUser;
   const shouldShowChatSkeleton = !targetUser && !isMobile;
 
-  const selectedChatId_Store = useAppStore((state) => state.selectedChatId);
-  const virtualChatUser_Store = useAppStore((state) => state.virtualChatUser);
-  const chatList = useAppStore((state) => state.chatList);
   const fetchChatList = useAppStore((state) => state.fetchChatList);
   const clearChatSelection = useAppStore((state) => state.clearChatSelection);
 

@@ -11,16 +11,13 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, ArrowDown, ArrowLeftRight } from "lucide-react";
-import { useTheme } from "next-themes";
 import { AnimatePresence, motion } from "framer-motion";
 import useMeasure from "react-use-measure";
 import MotionContainer from "@/components/ui-components/MotionContainer";
 import Button from "@/components/ui-components/Button";
-import Connectimg from "@/assests/photo/Connect.jpg";
 import Link from "next/link";
 import api, { setAuthToken } from "@/utils/axios";
 import { jwtDecode } from "jwt-decode";
-import axios from "axios";
 
 // 1. CONSTANTS - Tách ra ngoài để tránh tạo lại
 const FORM_ANIMATION_CONFIG = {
@@ -176,7 +173,6 @@ const FormFields = ({
           required
           disabled={isDisabled}
         />
-        {/* Hiển thị nút gửi lại chỉ khi ở mode register và showResendButton = true */}
         {mode === "register" && showResendButton && (
           <button
             type="button"
@@ -497,7 +493,6 @@ function AuthFormWithParams() {
         });
 
         // Sync cookies
-        console.log("📝 Syncing to cookies...");
         const syncSuccess = setAuthToken(token, decoded.sub, decoded.username);
 
         if (syncSuccess) {
