@@ -35,19 +35,23 @@ const CallVideo = ({ onCallEnd }) => {
     }
   }, [localStream]);
 
-  // Force video element refresh - THE CRITICAL FUNCTION
+  // Force video element refresh - FIXED VERSION
   const forceVideoRefresh = () => {
     if (localVideoRef.current && localStream) {
-      // Method 1: Clone and replace srcObject
-      const currentStream = localVideoRef.current.srcObject;
+      // Reset srcObject to null
       localVideoRef.current.srcObject = null;
 
       // Force a reflow
       localVideoRef.current.offsetHeight;
 
-      // Reassign immediately
-      localVideoRef.current.srcObject = currentStream;
+      // CRITICAL: Always reassign localStream, not currentStream
+      localVideoRef.current.srcObject = localStream;
       localVideoRef.current.load();
+
+      // Force play to ensure video starts
+      localVideoRef.current.play().catch(error => {
+        setAutoplayError(true);
+      });
 
       // Increment key to force React re-render if needed
       setVideoRefreshKey(prev => prev + 1);
@@ -77,7 +81,7 @@ const CallVideo = ({ onCallEnd }) => {
     }
   }, [remoteStream]);
 
-  // GUARANTEED WORKING TOGGLE CAMERA
+  // GUARANTEED WORKING TOGGLE CAMERA - FIXED
   const toggleCamera = () => {
     if (!mediaPermissions.video || !localStream) {
       return;
@@ -97,8 +101,10 @@ const CallVideo = ({ onCallEnd }) => {
     // 2. Update state immediately
     setIsCameraOn(newCameraState);
 
-    // 3. CRITICAL: Force video refresh
-    forceVideoRefresh();
+    // 3. CRITICAL: Only force refresh when ENABLING camera
+    if (newCameraState) {
+      forceVideoRefresh();
+    }
 
     // 4. Sync with context
     if (toggleLocalVideo) {
