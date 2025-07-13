@@ -332,7 +332,7 @@ export const CallProvider = ({ children }) => {
           }
         });
       } catch (error) {
-          if(error.response.code)
+          if(error.response.data.code===7012 || error.response.data.code===7011)
               toast("máy bận");
         console.error("[DEBUG] Init call failed:", error);
         stream.getTracks().forEach((track) => track.stop());
