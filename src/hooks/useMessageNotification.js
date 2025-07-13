@@ -3,15 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   subscribe, 
-  unsubscribe, 
-  sendMessage as sendStompMessage, 
-  isConnected,
+  unsubscribe,
   getStompClient,
   stompClientSingleton 
 } from "@/utils/socket";
 import { toast } from "react-hot-toast";
 import useAppStore from "@/store/ZustandStore";
-import { isTokenValid } from "@/utils/axios";
 import { useRouter } from "next/navigation";
 import { playSound } from "@/utils/playSound";
 
@@ -27,7 +24,7 @@ export default function useMessageNotification(userId) {
   });
   const router = useRouter();
 
-  const { fetchChatList, onMessageReceived, onChatCreated, selectChat } = useAppStore();
+  const {  onMessageReceived, selectChat } = useAppStore();
 
   // Initialize current user ID
   useEffect(() => {

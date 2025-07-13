@@ -50,21 +50,6 @@ class StompClientSingleton {
         this.resubscribeAll();
       },
       
-      onDisconnect: () => {
-        console.warn("⚠️ STOMP disconnected");
-        this.isConnecting = false;
-      },
-      
-      onWebSocketClose: (event) => {
-        console.warn("⚠️ WebSocket closed:", event);
-        this.isConnecting = false;
-      },
-      
-      onWebSocketError: (event) => {
-        console.error("❌ WebSocket error:", event);
-        this.isConnecting = false;
-      },
-      
       onStompError: (frame) => {
         console.error("❌ STOMP error:", frame.headers["message"] || frame.body);
         this.isConnecting = false;
@@ -72,19 +57,6 @@ class StompClientSingleton {
         if (this.isAuthenticationError(frame)) {
           console.log("🔄 Authentication error detected. Attempting token refresh...");
           this.handleAuthError();
-        }
-      },
-      
-      beforeConnect: async () => {
-        console.log("🔌 STOMP preparing to connect...");
-        try {
-          const token = await this.ensureValidToken();
-          this.client.connectHeaders = {
-            Authorization: "Bearer " + (token || ""),
-          };
-          console.log("✅ STOMP headers updated with valid token");
-        } catch (error) {
-          console.error("❌ Failed to get valid token for STOMP:", error);
         }
       }
     });
@@ -423,7 +395,7 @@ class StompClientSingleton {
   // Update configuration
   updateConfig(newConfig) {
     this.config = { ...this.config, ...newConfig };
-    
+
     if (this.client) {
       this.client.reconnectDelay = this.config.reconnectDelay;
     }
@@ -442,12 +414,12 @@ class StompClientSingleton {
   // Cleanup
   cleanup() {
     console.log("🧹 Cleaning up STOMP singleton...");
-    
+
     this.tokenRefreshListeners.forEach(unsubscribe => unsubscribe());
     this.tokenRefreshListeners = [];
-    
+
     this.disconnect();
-    
+
     this.client = null;
     this.subscribers.clear();
   }
@@ -485,14 +457,6 @@ export function isConnected() {
   return stompClientSingleton.isConnected();
 }
 
-export function getSubscriberCount() {
-  return stompClientSingleton.getSubscriberCount();
-}
-
-export function updateConfig(config) {
-  return stompClientSingleton.updateConfig(config);
-}
-
 export function cleanup() {
   return stompClientSingleton.cleanup();
 }
@@ -523,13 +487,6 @@ export function createStompClient(onConnect, options = {}) {
   });
 }
 
-export function createBasicStompClient(onConnect) {
-  console.warn("⚠️ createBasicStompClient is deprecated. Use getStompClient() instead.");
-  return createStompClient(onConnect, {
-    reconnectDelay: 3000,
-    maxReconnectAttempts: 10
-  });
-}
 
 // Export singleton instance for advanced usage
 export { stompClientSingleton };

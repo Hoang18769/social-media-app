@@ -156,7 +156,6 @@ const useAppStore = create(
     return "NORMAL"; // Default status if chat not found
   }
 
-  console.log(`✅ Block status for chat ${chatId}:`, chat.blockStatus);
   return chat.blockStatus || "NORMAL"; // Return the direct blockStatus value
 },
 

@@ -4,10 +4,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="send original prop from postcard">
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="another callvideo, fix bg profile header, remove unused method">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/page.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/layout.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/CallVideo.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/CallVideo.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/MessageItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/MessageItem.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ProfileHeader.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ProfileHeader.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui-components/Header.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/Header.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hooks/useMessageNotification.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useMessageNotification.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hooks/useNotificationSocket.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useNotificationSocket.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/store/ZustandStore.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/ZustandStore.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/socket.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/socket.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -97,7 +106,7 @@
       <updated>1752160851919</updated>
       <workItem from="1752247441691" duration="4745000" />
       <workItem from="1752285905111" duration="1143000" />
-      <workItem from="1752289724274" duration="13933000" />
+      <workItem from="1752289724274" duration="27963000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -123,7 +132,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752302187662</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="fix stupid commented out">
+      <option name="closed" value="true" />
+      <created>1752313508929</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1752313508929</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -143,6 +160,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="postmodal fix, remove some stuff" />
     <MESSAGE value="send original prop from postcard" />
-    <option name="LAST_COMMIT_MESSAGE" value="send original prop from postcard" />
+    <MESSAGE value="fix stupid commented out" />
+    <MESSAGE value="another callvideo, fix bg profile header, remove unused method" />
+    <option name="LAST_COMMIT_MESSAGE" value="another callvideo, fix bg profile header, remove unused method" />
   </component>
 </project>

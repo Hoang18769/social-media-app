@@ -59,6 +59,11 @@ export default function useNotificationSocket(userId) {
         case "REPLY_COMMENT":
           toast(`${name} đã trả lời bình luận của bạn 💬`);
           break;
+        case "DELETE_COMMENT":
+          toast(`${name} đã xóa bình luận của bạn 💬`);
+          break;case "DELETE_POST":
+          toast(`${name} đã xóa bài viết của bạn 💬`);
+          break;
 
         case "NEW_MESSAGE": {
           toast(`${name} đã nhắn tin cho bạn 💬`);

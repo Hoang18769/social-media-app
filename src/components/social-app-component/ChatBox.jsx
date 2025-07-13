@@ -64,7 +64,6 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
     loadMoreMessages,
     isTyping,        // ✅ Thêm isTyping
   } = useChat(currentChatId);
-  console.log(messages)
   const {
     setupSubscription,
     cleanupSubscription,
@@ -107,7 +106,6 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   }, [chatId]);
 
   const handleInputFocus = useCallback(() => {
-    console.log('🎯 Input focused - setting up subscription');
     setupSubscription();
   }, [setupSubscription]);
 

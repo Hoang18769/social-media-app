@@ -8,34 +8,11 @@ import api, { clearSession } from "@/utils/axios";
 import NewPostModal from "../social-app-component/CreatePostForm";
 import useAppStore from "@/store/ZustandStore";
 
-export default function Header({ className = "" }) {
+export default function Header({ }) {
   const router = useRouter();
   const [showPostModal, setShowPostModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const clearAllData = useAppStore(state => state.clearAllData);
-
-  const handleLogout = async () => {
-    // ✅ Prevent multiple logout calls
-    if (isLoggingOut) return;
-    
-    setIsLoggingOut(true);
-    
-    try {
-      await api.delete("/v1/auth/logout");
-    } catch (err) {
-      console.error("Logout failed:", err.response?.data || err.message);
-    } finally {
-      // ✅ Clear session first
-      clearSession();
-      // ✅ Clear store data after session is cleared
-      clearAllData();
-      
-      // ✅ Navigate immediately after clearing data
-      router.replace("/register"); // Use replace instead of push
-      
-      setIsLoggingOut(false);
-    }
-  };
 
   return (
     <>
@@ -61,7 +38,7 @@ export default function Header({ className = "" }) {
               type="button"
               aria-label="Add"
               onClick={() => setShowPostModal(true)}
-              className="w-32 h-12 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition rounded-l-full px-2"
+              className="w-32 h-12 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition rounded-full px-2"
               disabled={isLoggingOut} // ✅ Disable during logout
             >
               <Plus size={24} className="text-[var(--foreground)] " />

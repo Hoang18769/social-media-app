@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Edit, MessageCircle, UserPlus, UserMinus, UserCheck, UserX, Shield, MoreVertical, FileText, FileImage, Bookmark } from "lucide-react";
+import { Edit, MessageCircle, UserPlus, UserMinus, UserCheck, UserX, Shield, MoreVertical, FileText, FileImage } from "lucide-react";
 import Avatar from "../ui-components/Avatar";
 import Modal from "../ui-components/Modal";
 import EditProfileModal from "./EditProfile";
@@ -33,7 +33,6 @@ export default function ProfileHeader({
 
   const username = profileData.username;
   console.log(profileData)
-  const navigateToChat = useAppStore((state) => state.navigateToChat);
   const selectChat = useAppStore((state) => state.selectChat);
   const showVirtualChat = useAppStore((state) => state.showVirtualChat);
   const chatList = useAppStore((state) => state.chatList);
@@ -309,7 +308,7 @@ export default function ProfileHeader({
     if (!isDropdownOpen) return null;
 
     return (
-      <div className="absolute right-0 h-full top-full mt-2 w-48 bg-[var(--card)] rounded-lg shadow-lg border border-[var(--border)] z-[100]">
+      <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--card)] rounded-lg shadow-lg border border-[var(--border)] z-[100]">
         {profileData.isFriend && (
           <button
             onClick={unfriend}
