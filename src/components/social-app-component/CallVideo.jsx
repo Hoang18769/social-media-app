@@ -103,6 +103,7 @@ const CallVideo = ({ onCallEnd }) => {
 
     // 3. CRITICAL: Only force refresh when ENABLING camera
     if (newCameraState) {
+      console.log("force video refresh")
       forceVideoRefresh();
     }
 
