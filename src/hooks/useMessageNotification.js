@@ -7,12 +7,15 @@ import {
   getStompClient,
   stompClientSingleton 
 } from "@/utils/socket";
+import { useCall } from "@/context/CallContext";
+
 import { toast } from "react-hot-toast";
 import useAppStore from "@/store/ZustandStore";
 import { useRouter } from "next/navigation";
 import { playSound } from "@/utils/playSound";
 
 export default function useMessageNotification(userId) {
+  const {endcall}=useCall();
   const subscriptionRef = useRef(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -221,9 +224,21 @@ export default function useMessageNotification(userId) {
        if (messageData.command === "TYPING") {
               console.log("💬 Typing notification received:", messageData);
               return;
-            }
+       }
+      if (messageData.command === "END_CALL") {
+        console.log(messageData)
+        toast(`Cuộc gọi đã kết thúc`, {
+          duration: 3000,
+          position: "top-right",
+        });
+        endcall();
+        return;
+      }
 
-           
+
+
+
+
       const newMessage = {
         ...messageData,
         isOwnMessage: messageData.sender?.id === currentUserId,

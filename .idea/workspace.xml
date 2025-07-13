@@ -4,9 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="another callvideo 2">
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="restore to the old videocall?">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/CallVideo.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/CallVideo.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/AfroAvatar copy.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(auth)/reset-password/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/reset-password/page.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/assests/photo/AfroAvatar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/assests/photo/Connect.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/assests/photo/connectimg.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/assests/photo/index.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/home.module.css" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -96,7 +102,7 @@
       <updated>1752160851919</updated>
       <workItem from="1752247441691" duration="4745000" />
       <workItem from="1752285905111" duration="1143000" />
-      <workItem from="1752289724274" duration="29164000" />
+      <workItem from="1752289724274" duration="35107000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -154,7 +160,23 @@
       <option name="project" value="LOCAL" />
       <updated>1752397884240</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="restore to the old videocall">
+      <option name="closed" value="true" />
+      <created>1752398561267</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1752398561267</updated>
+    </task>
+    <task id="LOCAL-00009" summary="restore to the old videocall?">
+      <option name="closed" value="true" />
+      <created>1752398826409</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1752398826409</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -178,6 +200,8 @@
     <MESSAGE value="another callvideo, fix bg profile header, remove unused method" />
     <MESSAGE value="another callvideo 1" />
     <MESSAGE value="another callvideo 2" />
-    <option name="LAST_COMMIT_MESSAGE" value="another callvideo 2" />
+    <MESSAGE value="restore to the old videocall" />
+    <MESSAGE value="restore to the old videocall?" />
+    <option name="LAST_COMMIT_MESSAGE" value="restore to the old videocall?" />
   </component>
 </project>
