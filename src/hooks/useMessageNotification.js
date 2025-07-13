@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { playSound } from "@/utils/playSound";
 
 export default function useMessageNotification(userId) {
-  const {endcall}=useCall();
+  const {endCall}=useCall();
   const subscriptionRef = useRef(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
