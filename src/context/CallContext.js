@@ -289,7 +289,7 @@ export const CallProvider = ({ children }) => {
 
       try {
         const res = await api.get(`/v1/call/init/${callee.trim()}`);
-        if(res.data.code){
+        if(res.data.code===7012 || res.data.code===7011){
             toast.error("Máy bận");
             return;
         }

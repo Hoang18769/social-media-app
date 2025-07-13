@@ -4,10 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="restore to the old videocall?">
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="manual err handle in call">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/context/CallContext.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/context/CallContext.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useMessageNotification.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useMessageNotification.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -97,7 +95,7 @@
       <updated>1752160851919</updated>
       <workItem from="1752247441691" duration="4745000" />
       <workItem from="1752285905111" duration="1143000" />
-      <workItem from="1752289724274" duration="37553000" />
+      <workItem from="1752289724274" duration="38206000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -179,7 +177,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752430919098</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="manual err handle in call">
+      <option name="closed" value="true" />
+      <created>1752432864142</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1752432864142</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -205,6 +211,7 @@
     <MESSAGE value="another callvideo 2" />
     <MESSAGE value="restore to the old videocall" />
     <MESSAGE value="restore to the old videocall?" />
-    <option name="LAST_COMMIT_MESSAGE" value="restore to the old videocall?" />
+    <MESSAGE value="manual err handle in call" />
+    <option name="LAST_COMMIT_MESSAGE" value="manual err handle in call" />
   </component>
 </project>
