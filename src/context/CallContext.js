@@ -11,6 +11,7 @@ import React, {
 import { jwtDecode } from "jwt-decode";
 import { playRingtone, stopSound, initAudioSystem, preloadAudio } from "@/utils/playSound";
 import api from "@/utils/axios";
+import toast from "react-hot-toast";
 
 function decodeJWT(token) {
   try {
@@ -287,7 +288,11 @@ export const CallProvider = ({ children }) => {
       }
 
       try {
-        await api.get(`/v1/call/init/${callee.trim()}`);
+        const res = await api.get(`/v1/call/init/${callee.trim()}`);
+        if(res.data.code){
+            toast.error("Máy bận");
+            return;
+        }
 
         const call = new window.StringeeCall(
           clientRef.current,
@@ -327,6 +332,8 @@ export const CallProvider = ({ children }) => {
           }
         });
       } catch (error) {
+          if(error.response.code)
+              toast("máy bận");
         console.error("[DEBUG] Init call failed:", error);
         stream.getTracks().forEach((track) => track.stop());
         setCallStatus("Init call failed");

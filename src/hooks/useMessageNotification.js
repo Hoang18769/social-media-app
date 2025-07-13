@@ -221,10 +221,7 @@ export default function useMessageNotification(userId) {
         }
         return;
       }
-       if (messageData.command === "TYPING") {
-              console.log("💬 Typing notification received:", messageData);
-              return;
-       }
+
       if (messageData.command === "END_CALL") {
         console.log(messageData)
         toast(`Cuộc gọi đã kết thúc`, {
