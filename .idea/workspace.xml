@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="manual err handle in call">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="change error import name" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -95,7 +93,7 @@
       <updated>1752160851919</updated>
       <workItem from="1752247441691" duration="4745000" />
       <workItem from="1752285905111" duration="1143000" />
-      <workItem from="1752289724274" duration="38206000" />
+      <workItem from="1752289724274" duration="39077000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -185,7 +183,23 @@
       <option name="project" value="LOCAL" />
       <updated>1752432864142</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="manual err handle in call 2">
+      <option name="closed" value="true" />
+      <created>1752433360987</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1752433360987</updated>
+    </task>
+    <task id="LOCAL-00013" summary="change error import name">
+      <option name="closed" value="true" />
+      <created>1752434915154</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1752434915154</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -212,6 +226,8 @@
     <MESSAGE value="restore to the old videocall" />
     <MESSAGE value="restore to the old videocall?" />
     <MESSAGE value="manual err handle in call" />
-    <option name="LAST_COMMIT_MESSAGE" value="manual err handle in call" />
+    <MESSAGE value="manual err handle in call 2" />
+    <MESSAGE value="change error import name" />
+    <option name="LAST_COMMIT_MESSAGE" value="change error import name" />
   </component>
 </project>

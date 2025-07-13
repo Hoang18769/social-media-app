@@ -228,7 +228,7 @@ export default function useMessageNotification(userId) {
           duration: 3000,
           position: "top-right",
         });
-        endcall();
+        endCall();
         return;
       }
 
