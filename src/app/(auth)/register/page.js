@@ -164,6 +164,16 @@ const FormFields = ({
     <>
       {/* Email */}
       <div className="space-y-2">
+        {showResendButton && (
+            <button
+                type="button"
+                onClick={onResend}
+                className="text-sm text-blue-500 dark:text-blue-400 hover:underline mt-1"
+                disabled={isDisabled}
+            >
+              Gửi lại email xác thực
+            </button>
+        )}
         <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
         <input
           type="email"
@@ -173,16 +183,7 @@ const FormFields = ({
           required
           disabled={isDisabled}
         />
-        {mode === "register" && showResendButton && (
-          <button
-            type="button"
-            onClick={onResend}
-            className="text-sm text-blue-500 dark:text-blue-400 hover:underline mt-1"
-            disabled={isDisabled}
-          >
-            Gửi lại email xác thực
-          </button>
-        )}
+
       </div>
 
       {/* Register fields */}
@@ -331,7 +332,9 @@ function AuthFormWithParams() {
 
   // Handle resend email function
   const handleResend = useCallback(async () => {
-    if (!formData.email) {
+    const emailParam = searchParams.get("email");
+    const email=emailParam || formData.email;
+    if (!email) {
       setMessages((prev) => ({
         ...prev,
         general: "❌ Vui lòng nhập email trước khi gửi lại",
@@ -342,9 +345,7 @@ function AuthFormWithParams() {
     setStatus((prev) => ({ ...prev, loading: true }));
 
     try {
-      const res = await api.post('/v1/register/resend-verification', {
-        email: formData.email,
-      });
+      const res = await api.post(`/v1/register/resend-email?email=${email}`);
 
       if (res.data.code === 200) {
         setMessages((prev) => ({
@@ -361,7 +362,7 @@ function AuthFormWithParams() {
     } finally {
       setStatus((prev) => ({ ...prev, loading: false }));
     }
-  }, [formData.email]);
+  }, [formData.email, searchParams]);
 
   // Email verification effect - Optimized
   useEffect(() => {
@@ -390,13 +391,21 @@ function AuthFormWithParams() {
           setMode("login");
         }
       } catch (error) {
-        if (isMounted) {
+        if (isMounted){
+          if(error.response.data.code===1009) {
+            setMessages((prev) => ({
+              ...prev,
+              verify: `❌ Mã xác thực hết hạn hoặc không hợp lệ`,
+            }));
+            setShowResendButton(true);
+          }
           console.error("Email verification error:", error);
           setMessages((prev) => ({
             ...prev,
             verify: `❌ Xác thực thất bại: ${parseApiError(error)}`,
           }));
         }
+
       } finally {
         if (isMounted) {
           setStatus((prev) => ({ ...prev, verifying: false }));

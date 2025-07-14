@@ -111,14 +111,8 @@ export default function useChat(chatId) {
     if (data.command === "TYPING") {
       setIsTyping(true);
       
-      
-      
-      
     } else if (data.command === "STOP_TYPING") {
       setIsTyping(false);
-      
-      // Clear timeout
-      
     }
   }, [currentUserId]);
 
@@ -146,7 +140,7 @@ export default function useChat(chatId) {
     }
   }, [chatId]);
 
-  // ✅ UPDATED: Xử lý READING notifications
+  // UPDATED: Xử lý READING notifications
   const handleReadingNotification = useCallback((data) => {
     console.log("👁️ Reading notification received:", data);
     
@@ -170,7 +164,6 @@ export default function useChat(chatId) {
   const handleMessage = useCallback((message) => {
     try {
       const data = JSON.parse(message.body);
-      // console.log("📩 Received:", data);
 
       // ✅ Xử lý typing notifications
       if (data.command === "TYPING" || data.command === "STOP_TYPING") {

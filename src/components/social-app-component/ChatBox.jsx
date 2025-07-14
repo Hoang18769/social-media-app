@@ -38,7 +38,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
   
   // Refs for infinity scroll
   const messagesContainerRef = useRef(null);
-  const topElementRef = useRef(null);
+  // const topElementRef = useRef(null);
   const bottomElementRef = useRef(null);
   const scrollPositionRef = useRef(0);
   const isLoadingMoreRef = useRef(false);
@@ -527,7 +527,6 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
 
     return (
       <>
-        {/* ✅ Typing Indicator - hiển thị ở top (tin nhắn mới nhất) */}
         <TypingIndicator isTyping={isTyping} />
         
         {/* Load more indicator */}
@@ -549,7 +548,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
           </div>
         )}
         
-        {/* Messages list - reversed order (newest first) */}
+        {/* Messages list */}
         {messages.map((msg) => (
           <MessageItem
             key={msg.id}
@@ -566,7 +565,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
         <div ref={bottomElementRef} className="h-1" />
         
         {/* Top element reference for scroll positioning */}
-        <div ref={topElementRef} />
+        {/*<div ref={topElementRef} />*/}
       </>
     );
   };

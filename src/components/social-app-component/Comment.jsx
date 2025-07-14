@@ -261,9 +261,8 @@ export const ReplyForm = ({
 };
 
 // Single Comment Component - Updated with Edit functionality
-export const Comment = ({
+  export const Comment = ({
   comment,
-  post,
   comments,
   onReply,
   replyingTo,

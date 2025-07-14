@@ -12,6 +12,7 @@ import { jwtDecode } from "jwt-decode";
 import { playRingtone, stopSound, initAudioSystem, preloadAudio } from "@/utils/playSound";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
+import {setRequestMeta} from "next/dist/server/request-meta";
 
 function decodeJWT(token) {
   try {
@@ -34,7 +35,7 @@ export const CallProvider = ({ children }) => {
   const [localStream, setLocalStream] = useState(null);
   const [callerName, setCallerName] = useState("");
   const [isCallEnding, setIsCallEnding] = useState(false);
-  
+
   const [mediaPermissions, setMediaPermissions] = useState({
     audio: false,
     video: false,
@@ -48,10 +49,10 @@ export const CallProvider = ({ children }) => {
   useEffect(() => {
     // Khởi tạo audio system
     initAudioSystem();
-    
+
     // Preload ringtone
     preloadAudio("/ringtone.mp3");
-    
+
     // Yêu cầu notification permission
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().then(permission => {
@@ -101,22 +102,29 @@ export const CallProvider = ({ children }) => {
   const cleanupCall = useCallback(
     (stt) => {
       console.log("[DEBUG] Cleaning up call...");
-      
+
       // Dừng âm thanh
       stopSound();
-      
+
       if (localStream) {
-        localStream.getTracks().forEach((track) => track.stop());
+        localStream.getTracks().forEach((track) => {
+            track.stop();
+            track.enabled = false;
+        });
       }
       if (remoteStream) {
-        remoteStream.getTracks().forEach((track) => track.stop());
+        remoteStream.getTracks().forEach((track) => {
+            track.stop();
+            track.enabled = false;
+        });
       }
       setRemoteStream(null);
       setLocalStream(null);
       setCurrentCall(null);
       setIncomingCaller(null);
       setCallStatus("Cleaned");
-      setIsCallEnding(false);
+      setMediaPermissions({ audio: false, video: false });
+      setIsCallEnding(true);
       currentCallRef.current = null;
     },
     [localStream, remoteStream]
@@ -217,14 +225,14 @@ export const CallProvider = ({ children }) => {
 
     client.on("incomingcall", (call) => {
       console.log("[DEBUG] Incoming call event fired 📞");
-      
+
       // Phát ringtone với hệ thống nâng cao
       playRingtone("/ringtone.mp3", {
         loop: true,
         duration: 30000, // 30 giây
         volume: 0.8,
       });
-      
+
       onIncomingCall(call);
       setupCallEvents(call);
     });
@@ -347,10 +355,10 @@ export const CallProvider = ({ children }) => {
     if (!call) return;
 
     console.log("[DEBUG] Accepting call, isVideo:", call.isVideoCall);
-    
+
     // Dừng ringtone
     stopSound();
-    
+
     setupCallEvents(call);
 
     const stream = await createMediaStream(call.isVideoCall);
@@ -369,10 +377,10 @@ export const CallProvider = ({ children }) => {
 
   const rejectCall = useCallback(() => {
     const call = currentCallRef.current;
-    
+
     // Dừng ringtone
     stopSound();
-    
+
     if (!call) return;
     call.reject(() => cleanupCall(5));
   }, [cleanupCall]);
@@ -428,15 +436,15 @@ const toggleLocalVideo = useCallback(
       return;
     }
 
-    console.log("[DEBUG] Toggling local video enabled:", enabled);
     videoTracks.forEach((track) => {
-      track.enabled = !enabled;
+        console.log("[DEBUG] Toggling local video enabled:", enabled);
+        track.enabled = enabled;
     });
 
     // Also call Stringee API if available
     const call = currentCallRef.current;
     if (call && typeof call.enableLocalVideo === "function") {
-      call.enableLocalVideo(!enabled); // Stringee API: enabled=true thì enableLocalVideo=false
+      call.enableLocalVideo(enabled); // Stringee API: enabled=true thì enableLocalVideo=false
     }
   },
   [localStream]

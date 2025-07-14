@@ -41,7 +41,6 @@ export default function SidebarNavigation() {
   const clearAllData = useAppStore(state => state.clearAllData);
   const unreadNotificationCount = useAppStore(state => state.unreadNotificationCount);
   const unreadNotificationCountFromSocket = useAppStore(state => state.unreadNotificationCountFromSocket);
-  const resetSocketNotificationCount = useAppStore(state => state.resetSocketNotificationCount);
   const fetchNotifications = useAppStore(state => state.fetchNotifications);
   
   // ✅ Add unread message count from store

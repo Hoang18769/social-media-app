@@ -25,7 +25,6 @@ export default function PostModal({
                                     onClose,
                                     onLikeToggle,
                                     onCommentSubmit,
-                                    onCommentUpdate,
                                   }) {
   // Add error handling for missing or invalid post
   if (!post || !post.id) {

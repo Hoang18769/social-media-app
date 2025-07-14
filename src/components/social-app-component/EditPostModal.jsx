@@ -274,17 +274,17 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) 
                 </div>
 
                 {/* Hiển thị thông tin bài gốc nếu là shared post */}
-                {isSharedPost && post.originalPost && (
-                  <div className="p-3 border rounded-md bg-[var(--muted)]/20">
-                    <p className="text-sm text-[var(--muted-foreground)] mb-1">Bài viết gốc:</p>
-                    <p className="text-sm font-medium">
-                      {post.originalPost.author?.familyName} {post.originalPost.author?.givenName}
-                    </p>
-                    {post.originalPost.content && (
-                      <p className="text-sm mt-1">{post.originalPost.content}</p>
-                    )}
-                  </div>
-                )}
+                {/*{isSharedPost && post.originalPost && (*/}
+                {/*  <div className="p-3 border rounded-md bg-[var(--muted)]/20">*/}
+                {/*    <p className="text-sm text-[var(--muted-foreground)] mb-1">Bài viết gốc:</p>*/}
+                {/*    <p className="text-sm font-medium">*/}
+                {/*      {post.originalPost.author?.familyName} {post.originalPost.author?.givenName}*/}
+                {/*    </p>*/}
+                {/*    {post.originalPost.content && (*/}
+                {/*      <p className="text-sm mt-1">{post.originalPost.content}</p>*/}
+                {/*    )}*/}
+                {/*  </div>*/}
+                {/*)}*/}
 
                 <div className="flex justify-end mt-auto">
                   <button
@@ -341,60 +341,60 @@ export default function EditPostModal({ isOpen, onClose, post, onPostUpdated }) 
           )}
 
           {/* Form cho shared post không được phép edit files */}
-          {!canEditFiles && (
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Privacy</label>
-                <select
-                  value={newPrivacy}
-                  onChange={(e) => setNewPrivacy(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)]"
-                >
-                  <option value="PUBLIC">🌍 Public</option>
-                  <option value="FRIEND">👥 Friends</option>
-                  <option value="PRIVATE">🔒 Only me</option>
-                </select>
-              </div>
+          {/*{!canEditFiles && (*/}
+          {/*  <div className="mt-4 space-y-4">*/}
+          {/*    <div>*/}
+          {/*      <label className="block text-sm font-medium mb-1">Privacy</label>*/}
+          {/*      <select*/}
+          {/*        value={newPrivacy}*/}
+          {/*        onChange={(e) => setNewPrivacy(e.target.value)}*/}
+          {/*        className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)]"*/}
+          {/*      >*/}
+          {/*        <option value="PUBLIC">🌍 Public</option>*/}
+          {/*        <option value="FRIEND">👥 Friends</option>*/}
+          {/*        <option value="PRIVATE">🔒 Only me</option>*/}
+          {/*      </select>*/}
+          {/*    </div>*/}
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Nội dung chia sẻ
-                </label>
-                <textarea
-                  ref={textareaRef}
-                  value={newContent}
-                  onChange={handleContentChange}
-                  rows={4}
-                  placeholder="Bạn muốn nói gì về bài viết này?"
-                  className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none overflow-hidden"
-                  style={{ minHeight: '96px' }}
-                />
-              </div>
+          {/*    <div>*/}
+          {/*      <label className="block text-sm font-medium mb-1">*/}
+          {/*        Nội dung chia sẻ*/}
+          {/*      </label>*/}
+          {/*      <textarea*/}
+          {/*        ref={textareaRef}*/}
+          {/*        value={newContent}*/}
+          {/*        onChange={handleContentChange}*/}
+          {/*        rows={4}*/}
+          {/*        placeholder="Bạn muốn nói gì về bài viết này?"*/}
+          {/*        className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none overflow-hidden"*/}
+          {/*        style={{ minHeight: '96px' }}*/}
+          {/*      />*/}
+          {/*    </div>*/}
 
-              {/* Hiển thị thông tin bài gốc */}
-              {post?.originalPost && (
-                <div className="p-3 border rounded-md bg-[var(--muted)]/20">
-                  <p className="text-sm text-[var(--muted-foreground)] mb-1">Bài viết gốc:</p>
-                  <p className="text-sm font-medium">
-                    {post.originalPost.author?.familyName} {post.originalPost.author?.givenName}
-                  </p>
-                  {post.originalPost.content && (
-                    <p className="text-sm mt-1">{post.originalPost.content}</p>
-                  )}
-                </div>
-              )}
+          {/*    /!* Hiển thị thông tin bài gốc *!/*/}
+          {/*    {post?.originalPost && (*/}
+          {/*      <div className="p-3 border rounded-md bg-[var(--muted)]/20">*/}
+          {/*        <p className="text-sm text-[var(--muted-foreground)] mb-1">Bài viết gốc:</p>*/}
+          {/*        <p className="text-sm font-medium">*/}
+          {/*          {post.originalPost.author?.familyName} {post.originalPost.author?.givenName}*/}
+          {/*        </p>*/}
+          {/*        {post.originalPost.content && (*/}
+          {/*          <p className="text-sm mt-1">{post.originalPost.content}</p>*/}
+          {/*        )}*/}
+          {/*      </div>*/}
+          {/*    )}*/}
 
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSaveEdit}
-                  disabled={loading}
-                  className="px-4 py-2 rounded-md bg-[var(--primary)] text-white hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Đang lưu..." : "💾 Lưu"}
-                </button>
-              </div>
-            </div>
-          )}
+          {/*    <div className="flex justify-end">*/}
+          {/*      <button*/}
+          {/*        onClick={handleSaveEdit}*/}
+          {/*        disabled={loading}*/}
+          {/*        className="px-4 py-2 rounded-md bg-[var(--primary)] text-white hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"*/}
+          {/*      >*/}
+          {/*        {loading ? "Đang lưu..." : "💾 Lưu"}*/}
+          {/*      </button>*/}
+          {/*    </div>*/}
+          {/*  </div>*/}
+          {/*)}*/}
         </div>
       </Modal>
 

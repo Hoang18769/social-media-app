@@ -31,7 +31,6 @@ export default function NewPostModal({ isOpen, onClose }) {
 
   const handleFileChange = (e) => {
     handleMediaSelect(Array.from(e.target.files));
-    // Reset input value để có thể chọn cùng file nhiều lần
     e.target.value = '';
   };
 

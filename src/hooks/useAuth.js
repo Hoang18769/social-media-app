@@ -12,7 +12,6 @@ export function useAuth() {
   })
   const router = useRouter()
 
-  // Sync từ localStorage - ĐÃ SỬA: dùng accessToken thay vì token
   const syncFromLocalStorage = useCallback(() => {
     try {
       const accessToken = localStorage.getItem('accessToken')
