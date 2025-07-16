@@ -3,11 +3,11 @@ import { useEffect } from "react"
 
 // ✅ Base metadata template
 const baseMetadata = {
-    siteName: 'Social App',
-    defaultDescription: 'Ứng dụng mạng xã hội với tính năng chat, video call và kết nối bạn bè',
-    defaultImage: '/og-default.jpg',
-    baseUrl: 'https://yourapp.com',
-    twitterHandle: '@yourapp'
+    siteName: 'PocPoc - Social App',
+    defaultDescription: 'PocPoc - Ứng dụng mạng xã hội với tính năng chat, video call và kết nối bạn bè',
+    defaultImage: '/pocpoc.png',
+    baseUrl: 'https://pocpoc.online',
+    twitterHandle: '@PocPoc'
 }
 
 // ✅ Hàm update document head cho client-side

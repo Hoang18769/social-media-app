@@ -47,7 +47,6 @@ function GlobalCallInterface() {
   if(!authInfo.token || !authInfo.userId || !authInfo.userName)
     router.push("/register")
 },[router])
-  usePageMetadata(pageMetadata.settings());
 
   // ✅ Hiển thị CallVideo khi có cuộc gọi active hoặc đang ending
   useEffect(() => {
