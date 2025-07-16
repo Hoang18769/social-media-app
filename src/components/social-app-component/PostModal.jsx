@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef  } from "react";
 import { Heart, MessageCircle, SendHorizonal } from "lucide-react";
 import Avatar from "../ui-components/Avatar";
 import Modal from "../ui-components/Modal";
@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { useComments, useForm } from "@/hooks/useComment";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
+import {renderTextWithLinks} from "@/hooks/renderTextWithLinks";
+import SharePostModal from "@/components/social-app-component/SharePostModal";
 
 // Main Post Modal Component
 export default function PostModal({
@@ -21,7 +23,6 @@ export default function PostModal({
                                     loadingComments = false,
                                     activeIndex = 0,
                                     isOwnPost,
-                                    originalPostCanView, // Add this prop
                                     onClose,
                                     onLikeToggle,
                                     onCommentSubmit,
@@ -55,6 +56,7 @@ export default function PostModal({
   const isSharedPost = post?.sharedPost;
   const displayPost = isSharedPost ? post.originalPost : post;
   const router = useRouter();
+  const inputRef = useRef(null);
 
   // Handle media from both regular posts and shared posts
   let media = [];
@@ -70,6 +72,7 @@ export default function PostModal({
   const [replyingTo, setReplyingTo] = useState(null);
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   const [isSharedContentExpanded, setIsSharedContentExpanded] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false)
 
   //  Initialize comments manager with optimistic updates
   const commentsManager = useComments(comments, post);
@@ -79,39 +82,6 @@ export default function PostModal({
     if (post?.author?.username) {
       router.push(`/profile/${post.author.username}`);
     }
-  };
-
-  // Function to detect and convert links in text
-  const renderTextWithLinks = (text) => {
-    if (!text) return text;
-
-    const urlRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g;
-    const parts = text.split(urlRegex);
-    const matches = text.match(urlRegex) || [];
-
-    return parts.map((part, index) => {
-      if (index === parts.length - 1) {
-        return part;
-      }
-
-      const url = matches[index];
-      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-
-      return (
-          <span key={index}>
-          {part}
-            <a
-                href={fullUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-700 underline"
-                onClick={(e) => e.stopPropagation()}
-            >
-            {url}
-          </a>
-        </span>
-      );
-    });
   };
 
   // Function to check if content should be truncated
@@ -259,8 +229,7 @@ export default function PostModal({
 
         {/* Original post in a rounded container */}
         <div className={`${isSharedPost ? 'p-4 border border-[var(--border)] rounded-lg bg-[var(--muted)]/20' : ''}`}>
-          {/* Handle shared posts based on originalPostCanView */}
-          {isSharedPost && originalPostCanView === false ? (
+          {isSharedPost && post.originalPostCanView === false ? (
               <div className="flex flex-col items-center justify-center py-8 space-y-3">
                 <div className="w-12 h-12 bg-[var(--muted)] rounded-full flex items-center justify-center">
                   <MessageCircle className="h-6 w-6 text-[var(--muted-foreground)]" />
@@ -324,7 +293,7 @@ export default function PostModal({
           )}
         </div>
       </div>
-  ), [post, displayPost, isSharedPost, isContentExpanded, isSharedContentExpanded, handleProfileClick, renderTextWithLinks, originalPostCanView]);
+  ), [post, displayPost, isSharedPost, isContentExpanded, isSharedContentExpanded, handleProfileClick, renderTextWithLinks]);
   const PostActions = useMemo(() => (
       <div className="border-b border-[var(--border)]">
         <div className="flex gap-4 text-[var(--muted-foreground)] items-center p-3">
@@ -335,10 +304,12 @@ export default function PostModal({
                 }`}
             />
           </button>
-          <button>
+          <button onClick={()=>{    inputRef.current?.focus();
+          }}>
             <MessageCircle className="h-5 w-5" />
           </button>
-          <button>
+          <button onClick={()=>setShowShareModal(true)}
+          >
             <SendHorizonal className="h-5 w-5" />
           </button>
         </div>
@@ -387,7 +358,7 @@ export default function PostModal({
 
   // ✅ Memoized comment input with optimistic updates
   const CommentInput = useMemo(() => (
-      <div className="flex-shrink-0 bg-[var(--card)] border-t border-[var(--border)]">
+      <div  className="flex-shrink-0 bg-[var(--card)] border-t border-[var(--border)]">
         {mainCommentForm.file && (
             <div className="p-4">
               <FilePreviewInChat
@@ -403,6 +374,7 @@ export default function PostModal({
             className="flex items-center gap-2 p-4"
         >
           <input
+              ref={inputRef}
               type="text"
               placeholder="Viết bình luận..."
               value={mainCommentForm.content}
@@ -484,6 +456,12 @@ export default function PostModal({
                 </div>
               </>
           )}
+          <SharePostModal
+              isOpen={showShareModal}
+              onClose={() => setShowShareModal(false)}
+              post={post}
+              // onShareSuccess={handleShareSuccess}
+          />
         </div>
       </Modal>
   );

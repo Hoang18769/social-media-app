@@ -10,6 +10,7 @@ export default function ImageView({
   images = [],
   onImageClick,
   isActive = true,
+  isPriority = false
 }) {
   const [mutedVideos, setMutedVideos] = useState({});
   const videoRefs = useRef({});
@@ -113,7 +114,7 @@ export default function ImageView({
             src={src}
             alt={`Post media ${index + 1}`}
             fill
-            unoptimized
+            priority={isPriority}
             onClick={() => onImageClick(index)}
             className="object-cover"
           />

@@ -491,7 +491,7 @@ function AuthFormWithParams() {
 
         // Batch localStorage operations
         const authData = {
-          role: decoded.role,
+          role: decoded.scope,
           accessToken: token,
           userId: decoded.sub,
           userName: decoded.username,

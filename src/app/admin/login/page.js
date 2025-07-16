@@ -73,7 +73,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  // Hàm sync cookie (giả định bạn có hàm setAuthToken)
   const setAuthToken = (token, userId, username, role) => {
     try {
       // Implement cookie sync logic here

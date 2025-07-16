@@ -76,7 +76,7 @@ export default function ViewPostPage() {
       setError("")
 
       const res = await api.get(
-        `/v1/posts/newsfeed?type=TIME&skip=${skipValue}&limit=${LIMIT}`,
+        `/v1/posts?skip=${skipValue}&limit=${LIMIT}`,
         { signal: abortControllerRef.current.signal }
       )
       console.log(res.data.body)

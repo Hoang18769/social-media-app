@@ -5,7 +5,7 @@ import PostCard from "@/components/social-app-component/PostCard"
 import api from "@/utils/axios"
 import toast from "react-hot-toast"
 import usePostActions from "@/hooks/usePostAction"
-
+import PostSkeleton from "@/components/social-app-component/PostCardSkeleton";
 export default function HomePage() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -187,39 +187,10 @@ export default function HomePage() {
   }, [currentUser, fetchPosts])
 
   // Memoized skeleton component
-  const PostSkeleton = useMemo(() => () => (
-    <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
-      {/* Header skeleton */}
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-        <div className="flex-1">
-          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
-          <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
-        </div>
-      </div>
-      
-      {/* Content skeleton */}
-      <div className="space-y-3 mb-4">
-        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
-        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
-      </div>
-      
-      {/* Image skeleton */}
-      <div className="h-64 bg-gray-300 dark:bg-gray-600 rounded-lg mb-4"></div>
-      
-      {/* Actions skeleton */}
-      <div className="flex items-center space-x-6">
-        <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
-        <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
-        <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
-      </div>
-    </div>
-  ), [])
 
   // Memoized loading skeletons
   const loadingSkeletons = useMemo(() => 
-    Array.from({ length: 5 }).map((_, index) => (
+    Array.from({ length: 3 }).map((_, index) => (
       <PostSkeleton key={index} />
     )), [PostSkeleton]
   )
@@ -235,7 +206,7 @@ export default function HomePage() {
     // Không render gì nếu chưa có currentUser
     if (!currentUser) {
       return (
-        <div className="p-6 space-y-6 flex flex-col items-center">
+        <div className=" space-y-6 w-full flex flex-col items-center px-8">
           {loadingSkeletons}
         </div>
       )
@@ -243,7 +214,7 @@ export default function HomePage() {
 
     if (loading) {
       return (
-        <div className="p-6 space-y-6 flex flex-col items-center">
+        <div className=" space-y-6 w-full flex flex-col items-center px-8">
           {loadingSkeletons}
         </div>
       )
@@ -252,16 +223,17 @@ export default function HomePage() {
     if (filteredPosts.length > 0) {
       return (
         <>
-          {filteredPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              liked={post.liked}
-              likeCount={post.likeCount}
-              onLikeToggle={() => toggleLike(post.id)}
-              isOwnPost={post.author?.username === currentUser?.username || 
-                        post.author?.id === currentUser?.id}
-            />
+          {filteredPosts.map((post, index) => (
+              <PostCard
+                  key={post.id}
+                  post={post}
+                  liked={post.liked}
+                  likeCount={post.likeCount}
+                  onLikeToggle={() => toggleLike(post.id)}
+                  isOwnPost={post.author?.username === currentUser?.username ||
+                      post.author?.id === currentUser?.id}
+                  isPriority={index < 3} // Posts với index 0, 1, 2 sẽ có priority
+              />
           ))}
           
           {/* Loading more skeleton */}

@@ -7,6 +7,7 @@ import { Heart, MessageCircle, SendHorizonal, MoreVertical, Share2 } from "lucid
 import ImageView from "../ui-components/ImageView"
 import PostModal from "./PostModal"
 import EditPostModal from "./EditPostModal"
+import SharePostModal from "./SharePostModal"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import dayjs from "dayjs"
@@ -14,10 +15,11 @@ import relativeTime from "dayjs/plugin/relativeTime"
 import api from "@/utils/axios"
 import { getUserId } from "@/utils/axios"
 import Modal from "../ui-components/Modal"
-
+import {isAdmin} from "@/hooks/isAdmin"
+import { renderTextWithLinks} from "@/hooks/renderTextWithLinks";
 dayjs.extend(relativeTime)
 
-export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
+export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPriority = false,
                                      size = "default", className = "" }) {
     const [isMobile, setIsMobile] = useState(undefined)
     const [activeImageIndex, setActiveImageIndex] = useState(null)
@@ -27,12 +29,8 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
     const [comments, setComments] = useState([])
     const [loadingComments, setLoadingComments] = useState(false)
     const [showShareModal, setShowShareModal] = useState(false)
-    const [shareContent, setShareContent] = useState("")
-    const [sharePrivacy, setSharePrivacy] = useState("FRIEND")
-    const [isSharing, setIsSharing] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [currentPost, setCurrentPost] = useState(post)
-
     // Content expansion states
     const [isContentExpanded, setIsContentExpanded] = useState(false)
     const [isOriginalContentExpanded, setIsOriginalContentExpanded] = useState(false)
@@ -50,18 +48,10 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
     const isOwnPost = currentPost.author?.id === currentUserId
 
     // Check if current user is admin
-    const isAdmin = () => {
-        try {
-            const userRole = localStorage.getItem('userRole')
-            return userRole === 'ADMIN'
-        } catch (error) {
-            console.error('Error checking admin role:', error)
-            return false
-        }
-    }
+    const admin = isAdmin();
 
     // Show more options if it's user's own post OR if user is admin
-    const showMoreOptions = isOwnPost || isAdmin()
+    const showMoreOptions = isOwnPost || admin
 
     useEffect(() => {
         const checkScreenSize = () => setIsMobile(window.innerWidth < 640)
@@ -72,7 +62,6 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
 
     useEffect(() => {
         if (isModalOpen) {
-            // Always fetch comments for the current post
             fetchComments()
         }
     }, [isModalOpen])
@@ -83,41 +72,6 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
         setOptimisticLikeCount(post.likeCount || 0)
         setCurrentPost(post)
     }, [liked, post])
-
-    // Function to detect and convert links in text
-    const renderTextWithLinks = (text) => {
-        if (!text) return text
-
-        // Regex to match URLs (including domain.extension pattern)
-        const urlRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?/g
-
-        const parts = text.split(urlRegex)
-        const matches = text.match(urlRegex) || []
-
-        return parts.map((part, index) => {
-            if (index === parts.length - 1) {
-                return part
-            }
-
-            const url = matches[index]
-            const fullUrl = url.startsWith('http') ? url : `https://${url}`
-
-            return (
-                <span key={index}>
-          {part}
-                    <a
-                        href={fullUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:text-blue-700 underline"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-            {url}
-          </a>
-        </span>
-            )
-        })
-    }
 
     // Function to check if content should be truncated
     const shouldTruncateContent = (content, maxLength = 200) => {
@@ -132,7 +86,6 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
 
     const fetchComments = async () => {
         if (loadingComments || comments.length > 0) return
-        // Always use currentPost.id for comments
         fetchCommentsForPost(currentPost.id)
     }
 
@@ -140,9 +93,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
         if (loadingComments || comments.length > 0) return
         setLoadingComments(true)
         try {
-            const res = await api.get(`/v1/comments/of-post/${postId}`, {
-                params: { page: 0, size: 50 }
-            })
+            const res = await api.get(`/v1/comments/of-post/${postId}`)
             console.log(res)
             setComments(res.data.body || [])
         } catch (err) {
@@ -159,7 +110,6 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
 
         setIsLiking(true)
 
-        // Store previous state for rollback
         const prevLiked = optimisticLiked
         const prevLikeCount = optimisticLikeCount
 
@@ -196,19 +146,6 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
 
     if (isMobile === undefined) return null
 
-    const avatarSize = size === "compact" ? (isMobile ? 28 : 32) : size === "large" ? (isMobile ? 36 : 48) : (isMobile ? 32 : 40)
-    const padding = size === "compact" ? "p-2 sm:p-3" : size === "large" ? "p-5" : "p-4"
-    const spacing = size === "compact" ? "gap-2 mb-1" : size === "large" ? "gap-4 mb-3" : "gap-3 mb-2"
-
-    const textSizes = {
-        username: size === "compact" ? "text-sm" : size === "large" ? "text-base" : "text-sm",
-        time: "text-xs ",
-        content: "text-sm ",
-        likes: "text-xs  mt-1",
-        viewAll: "text-xs  mt-2 hover:underline",
-        comment: "text-sm  mt-1"
-    }
-
     const handleEdit = () => {
         setShowOptions(false)
         setShowEditModal(true)
@@ -219,29 +156,11 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
     }
 
     const handleShare = () => {
-
         setShowShareModal(true)
     }
 
-    const handleSharePost = async () => {
-        if (isSharing) return
-        setIsSharing(true)
-        try {
-            await api.post("/v1/posts/share", {
-                content: shareContent,
-                privacy: sharePrivacy,
-                originalPostId: currentPost.id,
-            })
-            toast.success("Chia sẻ bài viết thành công!")
-            setShowShareModal(false)
-            setShareContent("")
-            setSharePrivacy("FRIEND")
-        } catch (err) {
-            toast.error("Lỗi khi chia sẻ bài viết!")
-            console.error(err)
-        } finally {
-            setIsSharing(false)
-        }
+    const handleShareSuccess = (sharedPost) => {
+        console.log("Post shared successfully:", sharedPost)
     }
 
     const handleDeletePost = async () => {
@@ -346,36 +265,36 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                     {/* Original post content with truncation */}
                     {currentPost.originalPost.content && (
                         <pre className="text-sm text-[var(--card-foreground)] mb-3 whitespace-pre-wrap break-all">
-            {shouldTruncateContent(currentPost.originalPost.content) && !isOriginalContentExpanded ? (
-                <>
-                    {renderTextWithLinks(getTruncatedContent(currentPost.originalPost.content))}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setIsOriginalContentExpanded(true)
-                        }}
-                        className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
-                    >
-                        Xem thêm
-                    </button>
-                </>
-            ) : (
-                <>
-                    {renderTextWithLinks(currentPost.originalPost.content)}
-                    {shouldTruncateContent(currentPost.originalPost.content) && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                setIsOriginalContentExpanded(false)
-                            }}
-                            className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
-                        >
-                            Thu gọn
-                        </button>
-                    )}
-                </>
-            )}
-          </pre>
+                            {shouldTruncateContent(currentPost.originalPost.content) && !isOriginalContentExpanded ? (
+                                <>
+                                    {renderTextWithLinks(getTruncatedContent(currentPost.originalPost.content))}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setIsOriginalContentExpanded(true)
+                                        }}
+                                        className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                                    >
+                                        Xem thêm
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    {renderTextWithLinks(currentPost.originalPost.content)}
+                                    {shouldTruncateContent(currentPost.originalPost.content) && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setIsOriginalContentExpanded(false)
+                                            }}
+                                            className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                                        >
+                                            Thu gọn
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </pre>
                     )}
 
                     {/* Original post images */}
@@ -384,6 +303,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                             <ImageView
                                 images={currentPost.originalPost.files}
                                 isActive={!isModalOpen}
+                                priority={isPriority}
                                 onImageClick={(i) => {
                                     setActiveImageIndex(i)
                                     setShowModal(true)
@@ -399,10 +319,13 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
     return (
         <>
             <Card
-                className={` my-2 text-[var(--card-foreground)] rounded-xl shadow-sm ${padding} w-full ${className} cursor-pointer hover:bg-[var(--card)]/90 transition-colors`}
+                className={`my-2 text-[var(--card-foreground)] rounded-xl shadow-sm 
+                    ${size === "compact" ? "p-2 sm:p-3" : size === "large" ? "p-5" : "p-4"} 
+                    w-full ${className} cursor-pointer hover:bg-[var(--card)]/90 transition-colors`}
                 onClick={handleCardClick}
             >
-                <div className={`flex items-start justify-between ${spacing} relative`}>
+                <div className={`flex items-start justify-between relative
+                    ${size === "compact" ? "gap-2 mb-1" : size === "large" ? "gap-4 mb-3" : "gap-3 mb-2"}`}>
                     <div
                         className="flex items-center gap-2 cursor-pointer hover:underline"
                         onClick={handleProfileClick}
@@ -410,10 +333,11 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                         <Avatar
                             src={currentPost.author?.profilePictureUrl}
                             alt={currentPost.author?.username || ""}
-                            size={avatarSize}
+                            size={size === "compact" ? (isMobile ? 28 : 32) : size === "large" ? (isMobile ? 36 : 48) : (isMobile ? 32 : 40)}
                         />
                         <div>
-                            <p className={`font-semibold ${textSizes.username}`}>
+                            <p className={`font-semibold 
+                                ${size === "compact" ? "text-sm" : size === "large" ? "text-base" : "text-sm"}`}>
                                 {currentPost.author?.familyName + " " + currentPost.author?.givenName}
                                 {currentPost.sharedPost && (
                                     <>
@@ -422,7 +346,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                                     </>
                                 )}
                             </p>
-                            <p className={textSizes.time}>
+                            <p className="text-xs">
                                 {dayjs(currentPost.createdAt).fromNow()} {renderPrivacyIcon(currentPost.privacy)}
                             </p>
                             {currentPost.author?.mutualFriendsCount > 0 && (
@@ -483,37 +407,38 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                         e.stopPropagation()
                         openModal()
                     }}>
-            <pre className={`${textSizes.content} ${spacing} break-all whitespace-pre-wrap`}>
-              {shouldTruncateContent(currentPost.content) && !isContentExpanded ? (
-                  <>
-                      {renderTextWithLinks(getTruncatedContent(currentPost.content))}
-                      <button
-                          onClick={(e) => {
-                              e.stopPropagation()
-                              setIsContentExpanded(true)
-                          }}
-                          className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
-                      >
-                          Xem thêm
-                      </button>
-                  </>
-              ) : (
-                  <>
-                      {renderTextWithLinks(currentPost.content)}
-                      {shouldTruncateContent(currentPost.content) && (
-                          <button
-                              onClick={(e) => {
-                                  e.stopPropagation()
-                                  setIsContentExpanded(false)
-                              }}
-                              className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
-                          >
-                              Thu gọn
-                          </button>
-                      )}
-                  </>
-              )}
-            </pre>
+                        <pre className={`text-sm break-all whitespace-pre-wrap
+                            ${size === "compact" ? "gap-2 mb-1" : size === "large" ? "gap-4 mb-3" : "gap-3 mb-2"}`}>
+                            {shouldTruncateContent(currentPost.content) && !isContentExpanded ? (
+                                <>
+                                    {renderTextWithLinks(getTruncatedContent(currentPost.content))}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setIsContentExpanded(true)
+                                        }}
+                                        className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                                    >
+                                        Xem thêm
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    {renderTextWithLinks(currentPost.content)}
+                                    {shouldTruncateContent(currentPost.content) && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setIsContentExpanded(false)
+                                            }}
+                                            className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                                        >
+                                            Thu gọn
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </pre>
                     </div>
                 )}
 
@@ -526,6 +451,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                         <ImageView
                             images={currentPost.files}
                             isActive={!isModalOpen}
+                            priority={isPriority}
                             onImageClick={(i) => {
                                 setActiveImageIndex(i)
                                 setShowModal(true)
@@ -570,23 +496,12 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                     </button>
                 </div>
 
-                <p className={textSizes.likes}>
+                <p className="text-xs mt-1">
                     {optimisticLikeCount} lượt thích
                 </p>
 
-                {currentPost.latestComment && (
-                    <div className={textSizes.comment}>
-            <span className="font-semibold">
-              {currentPost.latestComment?.user}
-            </span>
-                        <span className="ml-2">
-              {renderTextWithLinks(currentPost.latestComment?.content)}
-            </span>
-                    </div>
-                )}
-
                 <button
-                    className={textSizes.viewAll}
+                    className="text-xs mt-2 hover:underline"
                     onClick={(e) => {
                         e.stopPropagation()
                         openModal()
@@ -617,7 +532,6 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
                     loadingComments={loadingComments}
                     onFetchComments={fetchComments}
                     isOwnPost={isOwnPost}
-                    originalPostCanView={currentPost.originalPostCanView}
                     onClose={() => {
                         setActiveImageIndex(null)
                         setShowModal(false)
@@ -629,46 +543,12 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,
             )}
 
             {/* Share Modal */}
-            {showShareModal && (
-                <Modal isOpen={showShareModal} size="medium" onClose={() => setShowShareModal(false)}>
-                    <div className="p-4 w-full max-w-md mx-auto">
-                        <h2 className="text-lg font-semibold mb-2">Chia sẻ bài viết</h2>
-
-                        <label className="block text-sm mb-1">Privacy</label>
-                        <select
-                            className="w-full mb-3 p-2 border rounded"
-                            value={sharePrivacy}
-                            onChange={(e) => setSharePrivacy(e.target.value)}
-                        >
-                            <option value="PUBLIC">🌍 Public</option>
-                            <option value="FRIEND">👥 Friends</option>
-                            <option value="PRIVATE">🔒 Only me</option>
-                        </select>
-
-                        <label className="block text-sm mb-1">Bạn muốn nói gì không?</label>
-                        <textarea
-                            className="w-full mb-3 p-2 border rounded resize-none"
-                            placeholder="Viết điều gì đó..."
-                            rows={3}
-                            value={shareContent}
-                            onChange={(e) => setShareContent(e.target.value)}
-                        />
-
-                        <div className="flex justify-end space-x-2">
-                            <button
-                                onClick={() => setShowShareModal(false)}
-                                className="px-3 py-1 border rounded"
-                                disabled={isSharing}
-                            >Hủy</button>
-                            <button
-                                onClick={handleSharePost}
-                                className="px-3 py-1 bg-[var(--primary)] text-white rounded disabled:opacity-50"
-                                disabled={isSharing}
-                            >{isSharing ? "Đang chia sẻ..." : "Chia sẻ"}</button>
-                        </div>
-                    </div>
-                </Modal>
-            )}
+            <SharePostModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                post={currentPost}
+                // onShareSuccess={handleShareSuccess}
+            />
         </>
     )
 }

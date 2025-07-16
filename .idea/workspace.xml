@@ -4,29 +4,25 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="change error import name 3">
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="delete unused in: comment, chatbox, sharepostedit, resend register page and resetpassword page, zustand store">
+      <change afterPath="$PROJECT_DIR$/src/app/post/[postId]/page.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/post/layout.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/social-app-component/PostCardSkeleton.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/social-app-component/SharePostModal.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/hooks/isAdmin.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/hooks/renderTextWithLinks.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(auth)/register/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/register/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(auth)/reset-password/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/reset-password/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/settings/privacy/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/settings/privacy/page.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/viewposts/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/dashboard/viewposts/page.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/admin/login/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/login/page.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/social-app-component/Comment.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/Comment.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/CreatePostForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/CreatePostForm.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/EditPostModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/EditPostModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostModal.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostWithMedia.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostWithoutMedia.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ReplyForm.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui-components/Sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/Sidebar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui-components/tabs.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/context/CallContext.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/context/CallContext.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/fetchNotification.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useAuth.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useAuth.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useChat.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useChat.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useForm.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/providers/IntlProviderLoader.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/providers/IntlProviderWrapper.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/providers/RouteLoadingProvider.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/store/ZustandStore.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/ZustandStore.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui-components/ImageView.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/ImageView.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hooks/usePostAction.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/usePostAction.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +31,14 @@
   </component>
   <component name="ComposerSettings">
     <execution />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JavaScript File" />
+        <option value="JSX File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -83,6 +87,11 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="F:\LVTN2025\social-media-app\src\app" />
+    </key>
+  </component>
   <component name="RunManager" selected="npm.Next.js: server-side">
     <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
       <method v="2" />
@@ -117,7 +126,8 @@
       <workItem from="1752247441691" duration="4745000" />
       <workItem from="1752285905111" duration="1143000" />
       <workItem from="1752289724274" duration="44265000" />
-      <workItem from="1752461982289" duration="31363000" />
+      <workItem from="1752461982289" duration="56454000" />
+      <workItem from="1752637556739" duration="6350000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -239,7 +249,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752435919731</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="delete unused in: comment, chatbox, sharepostedit, resend register page and resetpassword page, zustand store">
+      <option name="closed" value="true" />
+      <created>1752516626217</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1752516626217</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -270,6 +288,7 @@
     <MESSAGE value="change error import name" />
     <MESSAGE value="change error import name 2" />
     <MESSAGE value="change error import name 3" />
-    <option name="LAST_COMMIT_MESSAGE" value="change error import name 3" />
+    <MESSAGE value="delete unused in: comment, chatbox, sharepostedit, resend register page and resetpassword page, zustand store" />
+    <option name="LAST_COMMIT_MESSAGE" value="delete unused in: comment, chatbox, sharepostedit, resend register page and resetpassword page, zustand store" />
   </component>
 </project>

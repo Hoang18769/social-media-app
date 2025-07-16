@@ -6,10 +6,15 @@ export default function usePostActions({ posts, setPosts }) {
 
   const toggleLike = useCallback((postId) => {
     if (isLikingRef.current[postId]) return // ⛔ Đang xử lý, chặn click tiếp
+    const isArray = Array.isArray(posts)
 
     // Lấy trạng thái hiện tại TRƯỚC khi update UI
-    const currentPost = posts.find((p) => p.id === postId)
+    const currentPost = isArray
+        ? posts.find((p) => p.id === postId)
+        : posts
+
     if (!currentPost) return
+
 
     const wasLiked = currentPost.liked // Lưu trạng thái ban đầu
 
