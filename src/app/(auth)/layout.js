@@ -12,8 +12,8 @@ const geistMono = Roboto_Mono({
   subsets: ["latin"],
 });
 export const metadata = {
-  title: "Đăng nhập/ Đăng ký",
-  description: "Mạng xã hội kết nối mọi người",
+  title: "PocPoc - Đăng nhập/ Đăng ký",
+  description: "PocPoc - Mạng xã hội kết nối mọi người",
   icons: {
     icon: "/pocpoc.png", // hoặc .png/.svg tùy loại file
   },

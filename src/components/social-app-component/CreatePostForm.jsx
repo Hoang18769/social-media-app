@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Modal from "@/components/ui-components/Modal";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
@@ -15,6 +15,16 @@ export default function NewPostModal({ isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const [zoomIndex, setZoomIndex] = useState(null); // 🔍 index để zoom
 
+  useEffect(() => {
+    if (isOpen) {
+      const storedPrivacy = localStorage.getItem("defaultPrivacy")
+      if ((storedPrivacy)) {
+        setPrivacy(storedPrivacy)
+      } else {
+        setPrivacy("FRIEND") // fallback
+      }
+    }
+  }, [isOpen])
   const handleMediaSelect = (files) => {
     const mediaFiles = files.filter(
       (file) => file.type.startsWith("image/") || file.type.startsWith("video/")

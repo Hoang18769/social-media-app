@@ -199,7 +199,7 @@ export default function SidebarNavigation() {
       id: "settings",
       icon: Settings,
       label: "Settings",
-      href: "/settings",
+      href: "/settings/personalinfo",
     },
     {
       id: "logout",

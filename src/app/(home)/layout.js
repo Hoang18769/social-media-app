@@ -14,7 +14,6 @@ import ChatList from "@/components/social-app-component/ChatList";
 import useNotificationSocket from "@/hooks/useNotificationSocket";
 import useMessageNotification from "@/hooks/useMessageNotification";
 import useErrorSocket from "@/hooks/useErrorSocket"; // ✅ Import useErrorSocket
-import { AuthProvider } from '@/hooks/useAuth'
 import useOnlineNotification from "@/hooks/useOnlineNotification";
 import { getAuthInfo } from "@/utils/axios";
 // ✅ Import Call System
@@ -24,6 +23,7 @@ import CallPopup from "@/components/social-app-component/CallPopup";
 import CallVideo from "@/components/social-app-component/CallVideo";
 import ThemeProvider from "@/providers/ThemeProvider";
 import { useRouter } from "next/navigation";
+import {pageMetadata, usePageMetadata} from "@/utils/clientMetadata";
 // ✅ Component để hiển thị call UI global
 function GlobalCallInterface() {
   const { 
@@ -31,7 +31,6 @@ function GlobalCallInterface() {
     currentCall, 
     localStream, 
     remoteStream, 
-    callStatus,
     isCallEnding,
     acceptCall, 
     rejectCall 
@@ -48,6 +47,8 @@ function GlobalCallInterface() {
   if(!authInfo.token || !authInfo.userId || !authInfo.userName)
     router.push("/register")
 },[router])
+  usePageMetadata(pageMetadata.settings());
+
   // ✅ Hiển thị CallVideo khi có cuộc gọi active hoặc đang ending
   useEffect(() => {
     const shouldShow = currentCall || isCallEnding;

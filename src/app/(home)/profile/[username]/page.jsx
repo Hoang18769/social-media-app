@@ -7,6 +7,7 @@ import api from "@/utils/axios";
 import PostCard from "@/components/social-app-component/PostCard";
 import usePostActions from "@/hooks/usePostAction";
 import PostSkeleton from "@/components/social-app-component/PostCardSkeleton";
+import {pageMetadata, usePageMetadata} from "@/utils/clientMetadata";
 
 export default function ProfilePage() {
   const { username: routeUsername } = useParams();
@@ -27,6 +28,8 @@ export default function ProfilePage() {
 
   const LIMIT = 20;
   const { toggleLike } = usePostActions({ posts, setPosts });
+
+  usePageMetadata(pageMetadata.profile());
 
   // Memoize filtered posts to avoid unnecessary recalculations
   const filteredPosts = useMemo(() => {

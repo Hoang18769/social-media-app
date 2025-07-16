@@ -6,6 +6,7 @@ import PostCard from "@/components/social-app-component/PostCard";
 import Input from "@/components/ui-components/Input";
 import UserHeader from "@/components/social-app-component/UserHeader";
 import { useRouter } from "next/navigation";
+import {pageMetadata, usePageMetadata} from "@/utils/clientMetadata";
 
 let debounceTimeout = null;
 
@@ -15,6 +16,7 @@ export default function ExplorerPage() {
   const [loading, setLoading] = useState(false);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
   const router = useRouter();
+  usePageMetadata(pageMetadata.search());
 
   useEffect(() => {
     const fetchSuggestedUsers = async () => {

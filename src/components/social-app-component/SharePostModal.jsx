@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Modal from "../ui-components/Modal"
 import toast from "react-hot-toast"
 import api from "@/utils/axios"
@@ -13,7 +13,16 @@ export default function SharePostModal({
     const [shareContent, setShareContent] = useState("")
     const [sharePrivacy, setSharePrivacy] = useState("FRIEND")
     const [isSharing, setIsSharing] = useState(false)
-
+    useEffect(() => {
+        if (isOpen) {
+            const storedPrivacy = localStorage.getItem("defaultPrivacy")
+            if ((storedPrivacy)) {
+                setSharePrivacy(storedPrivacy)
+            } else {
+                setSharePrivacy("FRIEND") // fallback
+            }
+        }
+    }, [isOpen])
     const handleSharePost = async () => {
         if (isSharing) return
 

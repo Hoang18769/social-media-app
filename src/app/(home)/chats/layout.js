@@ -5,6 +5,7 @@ import ChatList from "@/components/social-app-component/ChatList";
 import ChatBox from "@/components/social-app-component/ChatBox";
 import useAppStore from "@/store/ZustandStore";
 import useIsMobile from "@/hooks/useIsMobile";
+import {pageMetadata, updatePageMetadata, usePageMetadata} from "@/utils/clientMetadata";
 
 // Tách component sử dụng useSearchParams
 function ChatLayoutContent() {
@@ -23,6 +24,7 @@ function ChatLayoutContent() {
   const chatList = useAppStore((state) => state.chatList);
   const fetchChatList = useAppStore((state) => state.fetchChatList);
   const clearChatSelection = useAppStore((state) => state.clearChatSelection);
+  usePageMetadata(pageMetadata.chats());
 
   useEffect(() => {
     if (selectedChatId_Store) {

@@ -140,7 +140,7 @@ export default function AdminLoginPage() {
             accessToken: token,
             userId: decoded.sub,
             userName: decoded.username,
-            userRole: decoded.scope,
+            role: decoded.scope,
           };
 
           // Set localStorage safely

@@ -11,7 +11,6 @@ export const metadata = {
   },
   // PWA metadata
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

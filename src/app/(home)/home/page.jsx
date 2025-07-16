@@ -6,6 +6,9 @@ import api from "@/utils/axios"
 import toast from "react-hot-toast"
 import usePostActions from "@/hooks/usePostAction"
 import PostSkeleton from "@/components/social-app-component/PostCardSkeleton";
+import {pageMetadata, updatePageMetadata, usePageMetadata} from "@/utils/clientMetadata";
+
+
 export default function HomePage() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,6 +22,7 @@ export default function HomePage() {
   
   const LIMIT = 20
   const { toggleLike } = usePostActions({ posts, setPosts })
+  usePageMetadata(pageMetadata.home());
 
   // Lấy thông tin user một lần khi component mount
   useEffect(() => {
