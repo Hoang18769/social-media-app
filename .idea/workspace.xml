@@ -4,21 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="fix wrong metadata name">
-      <change afterPath="$PROJECT_DIR$/src/utils/adminInterception.js" afterDir="false" />
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="adminapi, simply handle code, add mounted in home, check admin by prop,">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/settings/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/settings/layout.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/dashboard/layout.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/users/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/dashboard/users/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/viewposts/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/dashboard/viewposts/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/admin/dashboard/viewusers/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/dashboard/viewusers/page.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/admin/login/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/login/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/post/[postId]/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/post/[postId]/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/MessageItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/MessageItem.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/isAdmin.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/isAdmin.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/renderTextWithLinks.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/renderTextWithLinks.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/EditProfile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/EditProfile.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/adminInterception.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/adminInterception.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/utils/axios.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/axios.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/utils/socket.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/socket.js" afterDir="false" />
     </list>
@@ -125,7 +116,7 @@
       <workItem from="1752285905111" duration="1143000" />
       <workItem from="1752289724274" duration="44265000" />
       <workItem from="1752461982289" duration="56454000" />
-      <workItem from="1752637556739" duration="40823000" />
+      <workItem from="1752637556739" duration="55385000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -279,7 +270,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752662341869</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="adminapi, simply handle code, add mounted in home, check admin by prop,">
+      <option name="closed" value="true" />
+      <created>1752733008808</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1752733008808</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -314,6 +313,7 @@
     <MESSAGE value="mvp post page, helper isadmin, getrole , helper rendertextwithlink, hook postaction handle array+object post, non-lazy index-123," />
     <MESSAGE value="add metadata, default privacy for newpost and share(still mvp post page)" />
     <MESSAGE value="fix wrong metadata name" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix wrong metadata name" />
+    <MESSAGE value="adminapi, simply handle code, add mounted in home, check admin by prop," />
+    <option name="LAST_COMMIT_MESSAGE" value="adminapi, simply handle code, add mounted in home, check admin by prop," />
   </component>
 </project>

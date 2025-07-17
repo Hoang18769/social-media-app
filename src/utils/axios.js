@@ -150,6 +150,7 @@ async function handleTokenRefresh(originalRequest) {
         if (token) {
           originalRequest.headers.Authorization = `Bearer ${token}`;
           resolve(api(originalRequest));
+          alert("token refreshed");
         } else {
           reject(new Error("Failed to refresh token"));
         }
@@ -250,6 +251,17 @@ export function getUserId() {
 
 export function getUserName() {
   return cookieUtils.get('userName') || localStorage.getItem("userName");
+}
+export function setUserName(username) {
+  if (!username || typeof username !== 'string') return;
+
+  // Lưu vào cookie
+  cookieUtils.set('userName', username, {
+    maxAge: 7 * 24 * 60 * 60
+  });
+
+  // Lưu vào localStorage
+  localStorage.setItem('userName', username);
 }
 
 export function getAuthInfo() {

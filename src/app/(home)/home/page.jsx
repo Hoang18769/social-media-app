@@ -1,7 +1,6 @@
 "use client"
 import { useEffect, useState, useCallback, useRef, useMemo } from "react"
-import { throttle } from "lodash"
-import { useRouter } from "next/navigation" // Thêm router để detect route changes
+import { useRouter } from "next/navigation"
 import PostCard from "@/components/social-app-component/PostCard"
 import api from "@/utils/axios"
 import toast from "react-hot-toast"
@@ -19,27 +18,35 @@ export default function HomePage() {
   const containerRef = useRef(null)
   const abortControllerRef = useRef(null)
   const isInitialLoadRef = useRef(true)
-  const isMountedRef = useRef(true) // Thêm ref để track component mounted state
+  const isMountedRef = useRef(true)
   const router = useRouter()
+
+  // Intersection Observer ref
+  const loadMoreRef = useRef(null)
+  const observerRef = useRef(null)
 
   const LIMIT = 20
   const { toggleLike } = usePostActions({ posts, setPosts })
   usePageMetadata(pageMetadata.home())
 
-  // Thêm cleanup khi component unmount
+  // Component cleanup
   useEffect(() => {
     isMountedRef.current = true
 
     return () => {
       isMountedRef.current = false
-      // Cancel mọi request khi component unmount
+      // Cancel all requests when component unmounts
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
+      }
+      // Cleanup observer
+      if (observerRef.current) {
+        observerRef.current.disconnect()
       }
     }
   }, [])
 
-  // Lấy thông tin user một lần khi component mount
+  // Get user info once when component mounts
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedUsername = localStorage.getItem("userName")
@@ -79,20 +86,20 @@ export default function HomePage() {
     })
   }, [posts, currentUser])
 
-  // Cải thiện fetchPosts function
+  // Improved fetchPosts function
   const fetchPosts = useCallback(async (skipValue = 0, isLoadMore = false) => {
-    // Kiểm tra component có còn mounted không
+    // Check if component is still mounted
     if (!isMountedRef.current) {
       return
     }
 
     try {
-      // Cancel request cũ nếu có
+      // Cancel old request if exists
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
       }
 
-      // Tạo controller mới
+      // Create new controller
       abortControllerRef.current = new AbortController()
 
       if (isLoadMore) {
@@ -106,7 +113,7 @@ export default function HomePage() {
           { signal: abortControllerRef.current.signal }
       )
 
-      // Kiểm tra lại component mounted sau khi request hoàn thành
+      // Check component mounted after request completes
       if (!isMountedRef.current) {
         return
       }
@@ -135,10 +142,10 @@ export default function HomePage() {
         isInitialLoadRef.current = false
       }
     } catch (err) {
-      // Chỉ show toast error nếu:
-      // 1. Không phải AbortError
-      // 2. Component vẫn còn mounted
-      // 3. Không phải initial load
+      // Only show toast error if:
+      // 1. Not an AbortError
+      // 2. Component is still mounted
+      // 3. Not initial load
       if (err.name !== 'AbortError' &&
           isMountedRef.current &&
           !isInitialLoadRef.current) {
@@ -146,7 +153,7 @@ export default function HomePage() {
         toast.error("Failed to load posts.")
       }
     } finally {
-      // Chỉ update state nếu component vẫn mounted
+      // Only update state if component is still mounted
       if (isMountedRef.current) {
         setLoading(false)
         setLoadingMore(false)
@@ -154,57 +161,42 @@ export default function HomePage() {
     }
   }, [])
 
-  // Cải thiện throttled scroll handler
-  const throttledScrollHandler = useMemo(
-      () => throttle(() => {
-        // Kiểm tra component mounted
-        if (!isMountedRef.current) {
-          return
-        }
+  // Intersection Observer callback
+  const handleIntersection = useCallback((entries) => {
+    const [entry] = entries
 
-        const scrollContainer = document.querySelector('main')
+    if (entry.isIntersecting && hasMore && !loadingMore && !loading && currentUser) {
+      console.log('Loading more posts via Intersection Observer...')
+      fetchPosts(skip, true)
+    }
+  }, [hasMore, loadingMore, loading, currentUser, skip, fetchPosts])
 
-        if (!scrollContainer || loadingMore || !hasMore) {
-          return
-        }
-
-        const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-        const scrollPercentage = (scrollTop + clientHeight) / scrollHeight * 100
-
-        if (scrollPercentage >= 80) {
-          console.log('Loading more posts at 80%...')
-          fetchPosts(skip, true)
-        }
-      }, 200),
-      [loadingMore, hasMore, skip, fetchPosts]
-  )
-
-  // Cải thiện scroll event listener
+  // Setup Intersection Observer
   useEffect(() => {
-    const scrollContainer = document.querySelector('main')
+    if (!loadMoreRef.current) return
 
-    if (!scrollContainer) {
-      const timer = setTimeout(() => {
-        const retryContainer = document.querySelector('main')
-        if (retryContainer && isMountedRef.current) {
-          retryContainer.addEventListener('scroll', throttledScrollHandler, { passive: true })
-        }
-      }, 100)
-
-      return () => clearTimeout(timer)
+    // Cleanup previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect()
     }
 
-    scrollContainer.addEventListener('scroll', throttledScrollHandler, { passive: true })
+    // Create new observer
+    observerRef.current = new IntersectionObserver(handleIntersection, {
+      root: null, // Use viewport as root
+      rootMargin: '100px', // Start loading 100px before the element comes into view
+      threshold: 0.1 // Trigger when 10% of the element is visible
+    })
+
+    observerRef.current.observe(loadMoreRef.current)
 
     return () => {
-      if (scrollContainer) {
-        scrollContainer.removeEventListener('scroll', throttledScrollHandler)
+      if (observerRef.current) {
+        observerRef.current.disconnect()
       }
-      throttledScrollHandler.cancel()
     }
-  }, [throttledScrollHandler])
+  }, [handleIntersection])
 
-  // Cải thiện initial load effect
+  // Initial load effect
   useEffect(() => {
     if (currentUser && isInitialLoadRef.current && isMountedRef.current) {
       fetchPosts(0, false)
@@ -258,9 +250,17 @@ export default function HomePage() {
                 />
             ))}
 
-            {loadingMore && (
-                <div className="w-full space-y-6">
-                  {loadingMoreSkeletons}
+            {/* Intersection Observer target element */}
+            {hasMore && (
+                <div
+                    ref={loadMoreRef}
+                    className="w-full flex justify-center py-8"
+                >
+                  {loadingMore && (
+                      <div className="w-full space-y-6">
+                        {loadingMoreSkeletons}
+                      </div>
+                  )}
                 </div>
             )}
 

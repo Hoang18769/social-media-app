@@ -3,7 +3,7 @@
   import { useState } from "react"
   import Avatar from "../ui-components/Avatar"
   import Input from "../ui-components/Input"
-  import api, { setAuthToken } from "@/utils/axios"
+  import api, {setAuthToken, setUserName} from "@/utils/axios"
   import axios from "axios"
 
   export default function EditProfileModal({ profileData, onSave }) {
@@ -134,24 +134,21 @@
       // If username was successfully updated, sync localStorage and call setAuthToken
       if (usernameUpdated && !errors.username) {
         try {
-          // Update userName in localStorage
-          localStorage.setItem("userName", formData.username)
-          
-          // Get userId and accessToken from localStorage
-          const userId = localStorage.getItem("userId")
-          const accessToken = localStorage.getItem("accessToken")
-          
-          // Call setAuthToken (assuming this function is imported or available globally)
-          const syncSuccess = setAuthToken(accessToken, userId, formData.username)
-          if (syncSuccess) {
-            console.log("✅ Username synced successfully")
-            setSuccessMessages((prev) => [...prev, "Username synced successfully"])
-          } else {
-            console.warn("⚠️ Failed to sync username")
-          }        
+          setUserName(formData.username)
+
+          // // Sync lại auth token
+          // const userId = localStorage.getItem("userId")
+          // const accessToken = localStorage.getItem("accessToken")
+          // const syncSuccess = setAuthToken(accessToken, userId, formData.username)
+          //
+          // if (syncSuccess) {
+          //   console.log("✅ Username synced successfully")
+          //   setSuccessMessages((prev) => [...prev, "Username synced successfully"])
+          // } else {
+          //   console.warn("⚠️ Failed to sync username")
+          // }
         } catch (syncError) {
           console.error("❌ Error syncing username:", syncError)
-          // Optionally show a warning but don't fail the entire operation
         }
       }
 

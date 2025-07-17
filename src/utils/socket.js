@@ -250,7 +250,6 @@ class StompClientSingleton {
           newToken && isTokenValid() ? resolve(newToken) : reject(new Error("Invalid token received"));
         });
 
-        this.triggerTokenRefresh().catch(() => {});
         setTimeout(() => {
           unsubscribe();
           reject(new Error("Token refresh timeout"));
@@ -343,28 +342,28 @@ export const isConnected = () => stompClientSingleton.isConnected();
 export const cleanup = () => stompClientSingleton.cleanup();
 
 // Legacy function for backward compatibility
-export function createStompClient(onConnect, options = {}) {
-  console.warn("⚠️ createStompClient is deprecated. Use getStompClient() instead.");
-
-  if (Object.keys(options).length > 0) {
-    stompClientSingleton.updateConfig(options);
-  }
-
-  return stompClientSingleton.getInstance().then(client => {
-    if (onConnect) {
-      if (client.connected) {
-        onConnect();
-      } else {
-        const originalOnConnect = client.onConnect;
-        client.onConnect = (frame) => {
-          originalOnConnect(frame);
-          onConnect(frame);
-        };
-      }
-    }
-    return client;
-  });
-}
+// export function createStompClient(onConnect, options = {}) {
+//   console.warn("⚠️ createStompClient is deprecated. Use getStompClient() instead.");
+//
+//   if (Object.keys(options).length > 0) {
+//     stompClientSingleton.updateConfig(options);
+//   }
+//
+//   return stompClientSingleton.getInstance().then(client => {
+//     if (onConnect) {
+//       if (client.connected) {
+//         onConnect();
+//       } else {
+//         const originalOnConnect = client.onConnect;
+//         client.onConnect = (frame) => {
+//           originalOnConnect(frame);
+//           onConnect(frame);
+//         };
+//       }
+//     }
+//     return client;
+//   });
+// }
 
 // Export singleton instance for advanced usage
 export { stompClientSingleton };

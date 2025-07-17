@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ProfileHeader from "@/components/social-app-component/ProfileHeader";
-import api from "@/utils/axios";
+import api, {setUserName} from "@/utils/axios";
 import PostCard from "@/components/social-app-component/PostCard";
 import usePostActions from "@/hooks/usePostAction";
 import PostSkeleton from "@/components/social-app-component/PostCardSkeleton";
@@ -23,8 +23,11 @@ export default function ProfilePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const containerRef = useRef(null);
-  const scrollTimeoutRef = useRef(null);
   const abortControllerRef = useRef(null);
+
+  // Intersection Observer refs
+  const observerRef = useRef(null);
+  const loadMoreTriggerRef = useRef(null);
 
   const LIMIT = 20;
   const { toggleLike } = usePostActions({ posts, setPosts });
@@ -88,11 +91,11 @@ export default function ProfilePage() {
       (oldUsername, newUsername) => {
         console.log("Username changed from", oldUsername, "to", newUsername);
 
-        if (isOwnProfile) {
-          localStorage.setItem("userName", newUsername);
-        }
-
+        // if (isOwnProfile) {
+        //   setUserName(newUsername);
+        // }
         router.replace(`/profile/${newUsername}`);
+        router.refresh();
       },
       [isOwnProfile, router]
   );
@@ -181,66 +184,48 @@ export default function ProfilePage() {
     );
   }, []);
 
-  // Throttled scroll handler for better performance
-  const handleScroll = useCallback(() => {
-    if (activeTab !== "posts" || loadingMore || !hasMore || loading) {
-      return;
+  // Intersection Observer callback
+  const handleIntersection = useCallback((entries) => {
+    const [entry] = entries;
+
+    // Kiểm tra có đang intersecting và các điều kiện khác
+    if (entry.isIntersecting &&
+        activeTab === "posts" &&
+        !loadingMore &&
+        hasMore &&
+        !loading) {
+
+      console.log("Loading more profile posts via Intersection Observer...");
+      fetchPosts(posts.length, true);
     }
+  }, [activeTab, loadingMore, hasMore, loading, posts.length, fetchPosts]);
 
-    // Clear existing timeout
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    // Throttle scroll events
-    scrollTimeoutRef.current = setTimeout(() => {
-      const scrollContainer = document.querySelector("main");
-      if (!scrollContainer) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-      const scrollPercentage =
-          ((scrollTop + clientHeight) / scrollHeight) * 100;
-
-      if (scrollPercentage >= 80) {
-        console.log("Loading more profile posts at 80%...");
-        fetchPosts(posts.length, true);
-      }
-    }, 100); // Throttle by 100ms
-  }, [loadingMore, hasMore, loading, posts.length, fetchPosts, activeTab]);
-
-  // Optimize scroll listener with passive option
+  // Setup Intersection Observer
   useEffect(() => {
-    const scrollContainer = document.querySelector("main");
-
-    if (!scrollContainer) {
-      const timer = setTimeout(() => {
-        const retryContainer = document.querySelector("main");
-        if (retryContainer) {
-          console.log(
-              "Adding scroll listener to main container for profile..."
-          );
-          retryContainer.addEventListener("scroll", handleScroll, {
-            passive: true,
-          });
-        }
-      }, 100);
-
-      return () => clearTimeout(timer);
+    // Cleanup previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
     }
 
-    console.log("Adding scroll listener to main container for profile...");
-    scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+    // Create new observer
+    observerRef.current = new IntersectionObserver(handleIntersection, {
+      root: null, // Use viewport as root
+      rootMargin: '200px', // Trigger 200px before element enters viewport
+      threshold: 0.1 // Trigger when 10% of element is visible
+    });
 
+    // Start observing if trigger element exists
+    if (loadMoreTriggerRef.current) {
+      observerRef.current.observe(loadMoreTriggerRef.current);
+    }
+
+    // Cleanup function
     return () => {
-      console.log(
-          "Removing scroll listener from main container for profile..."
-      );
-      scrollContainer.removeEventListener("scroll", handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
       }
     };
-  }, [handleScroll]);
+  }, [handleIntersection]);
 
   // Optimize files fetch with abort controller
   useEffect(() => {
@@ -380,6 +365,19 @@ export default function ProfilePage() {
                         {loadingMore && (
                             <div className="w-full space-y-6">
                               {loadingMoreSkeletons}
+                            </div>
+                        )}
+
+                        {/* Intersection Observer Trigger Element */}
+                        {hasMore && !loading && (
+                            <div
+                                ref={loadMoreTriggerRef}
+                                className="w-full h-10 flex items-center justify-center"
+                            >
+                              {/* Optional: Add loading indicator */}
+                              <div className="text-gray-400 text-sm">
+                                Loading more posts...
+                              </div>
                             </div>
                         )}
 

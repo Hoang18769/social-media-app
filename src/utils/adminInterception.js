@@ -222,7 +222,7 @@ adminApi.interceptors.response.use(
             !originalRequest._retry &&
             !isAdminPublicEndpoint(originalRequest.url) &&
             !originalRequest.skipAuth &&
-            originalRequest.url !== "/admin/refresh"
+            originalRequest.url !== "/auth/refresh"
         ) {
             originalRequest._retry = true;
             return handleAdminTokenRefresh(originalRequest);
