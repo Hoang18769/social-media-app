@@ -9,6 +9,7 @@ import {
   FileText, Database, MessageCircle, MessageSquare, Mail,
   Sun,
 } from "lucide-react";
+import {pageMetadata, usePageMetadata} from "@/utils/clientMetadata";
 
 const groupedMenuItems = [
   {
@@ -36,6 +37,7 @@ const groupedMenuItems = [
 
 export default function SettingsLayout({ children }) {
   const pathname = usePathname();
+  usePageMetadata(pageMetadata.settings());
 
   return (
     <div className="flex h-screen w-full bg-[var(--background)] text-[var(--foreground)]">

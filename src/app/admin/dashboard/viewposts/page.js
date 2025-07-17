@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import PostCard from "@/components/social-app-component/PostCard"
 import usePostActions from "@/hooks/usePostAction"
 import toast from "react-hot-toast"
+import adminApi from "@/utils/adminInterception";
 
 export default function ViewPostPage() {
   const router = useRouter()
@@ -58,7 +59,7 @@ export default function ViewPostPage() {
     const controller = new AbortController()
 
     try {
-      const res = await api.get("/v1/statistics/posts", {
+      const res = await adminApi.get("/v1/statistics/posts", {
         signal: controller.signal
       })
       setTotalPosts(res.data.body?.totalPosts || 0)
@@ -94,7 +95,7 @@ export default function ViewPostPage() {
       }
       setError("")
 
-      const res = await api.get(
+      const res = await adminApi.get(
           `/v1/posts?skip=${skipValue}&limit=${LIMIT}`,
           { signal: abortControllerRef.current.signal }
       )
@@ -244,14 +245,18 @@ export default function ViewPostPage() {
                   <PostsLoadingSkeleton count={5} />
               ) : posts.length > 0 ? (
                   <div className="flex flex-col items-center">
-                    {posts.map((post) => (
+                    {posts.reduce((acc, post) => {
+                      if (!acc.some(p => p.id === post.id)) acc.push(post);
+                      return acc;
+                    }, []).map(post => (
                         <PostCard
-                            key={post.id || Math.random().toString(36)}
+                            key={post.id}
                             post={post}
                             liked={post.liked}
                             likeCount={post.likeCount}
                             onLikeToggle={() => toggleLike(post.id)}
                             onPostDeleted={handlePostDeleted}
+                            isAdmin={true}
                             isOwnProfile={currentUser?.username === post.user?.username}
                             isFriend={post.user?.isFriend}
                         />

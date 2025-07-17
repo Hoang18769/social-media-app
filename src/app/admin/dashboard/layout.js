@@ -4,6 +4,7 @@ import api, { clearSession } from "@/utils/axios"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { LogOut } from "lucide-react"
+import adminApi, {clearAdminSession} from "@/utils/adminInterception";
 
 export default function AdminLayout({ children }) {
   const router = useRouter()
@@ -11,11 +12,12 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => {
     try {
-      await api.delete("/v1/auth/logout")
+      await adminApi.delete("/v1/auth/logout")
     } catch (err) {
       console.error("Logout failed:", err.response?.data || err.message)
     } finally {
-      clearSession()
+      clearAdminSession();
+      localStorage.removeItem("admin_role");
       router.push("/admin/login")
     }
   }

@@ -10,6 +10,7 @@ import {
   Check
 } from "lucide-react";
 import Avatar from "../ui-components/Avatar";
+import {renderTextWithLinks} from "@/hooks/renderTextWithLinks";
 
 dayjs.extend(relativeTime);
 
@@ -224,7 +225,7 @@ export default function MessageItem({
       );
     }
 
-    return msg.content;
+    return renderTextWithLinks(msg.content);
   };
 
 

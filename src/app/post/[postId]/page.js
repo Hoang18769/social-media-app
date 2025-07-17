@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import PostCard from "@/components/social-app-component/PostCard";
-import api from "@/utils/axios";
+import api, {getAuthInfo} from "@/utils/axios";
 import toast from "react-hot-toast";
 import usePostActions from "@/hooks/usePostAction";
+import { House } from "lucide-react";
 export default function PostPage() {
     const params = useParams();
     const router = useRouter();
@@ -15,8 +16,35 @@ export default function PostPage() {
     const [error, setError] = useState(null);
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [user, setUser] = useState(null);
 
     const { toggleLike } = usePostActions({ post, setPost })
+    const handleRouterBack=()=>{
+
+            router.push("/");
+    }
+    // Check authentication status
+    useEffect(() => {
+        const authInfo = getAuthInfo();
+        if (!authInfo) {
+            router.push("/register");
+            return;
+        }
+        if (!authInfo.token || !authInfo.userId || !authInfo.userName) {
+            router.push("/register");
+            return;
+        }
+
+        // Set user info from authInfo
+        setIsLoggedIn(true);
+        setUser({
+            id: authInfo.userId,
+            name: authInfo.userName,
+            username: authInfo.userName
+        });
+    }, [router]);
+
     // Fetch post data
     useEffect(() => {
         const fetchPost = async () => {
@@ -36,8 +64,15 @@ export default function PostPage() {
 
             } catch (err) {
                 console.error("Error fetching post:", err);
-                setError(err.response?.data?.message || "Không thể tải bài viết");
-                toast.error("Không thể tải bài viết");
+
+                // Handle specific error code 5003
+                if (err.response?.data?.code === 5003) {
+                    setError("Nội dung không tồn tại hoặc không khả dụng lúc này");
+                    toast.error("Nội dung không tồn tại hoặc không khả dụng lúc này");
+                } else {
+                    setError(err.response?.data?.message || "Không thể tải bài viết");
+                    toast.error("Không thể tải bài viết");
+                }
             } finally {
                 setLoading(false);
             }
@@ -46,7 +81,11 @@ export default function PostPage() {
         fetchPost();
     }, [postId]);
 
-    // Handle like toggle
+    // Handle login redirect
+    const handleLogin = () => {
+        router.push('/login');
+    };
+
     // Handle post deletion
     const handlePostDeleted = (deletedPostId) => {
         // Redirect to home or previous page after deletion
@@ -133,22 +172,42 @@ export default function PostPage() {
     // Render PostCard
     return (
         <div className="min-h-screen bg-[var(--background)]">
-            {/* Header with back button */}
+            {/* Header with back button and login */}
             <div className="sticky top-0 bg-[var(--background)]/80 backdrop-blur-md border-b border-[var(--border)] z-10">
                 <div className="max-w-2xl mx-auto px-4 py-3">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => router.back()}
-                            className="p-2 rounded-full hover:bg-[var(--input)] transition-colors"
-                            aria-label="Go back"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                        </button>
-                        <h1 className="text-lg font-semibold text-[var(--card-foreground)]">
-                            Bài viết
-                        </h1>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleRouterBack}
+                                className="p-2 rounded-full hover:bg-[var(--input)] transition-colors"
+                                aria-label="Go back"
+                            >
+                                <House/>
+                            </button>
+
+                        </div>
+
+                        {/* Login button - only show if not logged in */}
+                        {!isLoggedIn && (
+                            <button
+                                onClick={handleLogin}
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+                            >
+                                Đăng nhập
+                            </button>
+                        )}
+
+                        {/* User info - show if logged in */}
+                        {isLoggedIn && user && (
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
+                                    {user.name?.charAt(0) || user.username?.charAt(0) || 'U'}
+                                </div>
+                                <span className="text-sm text-[var(--card-foreground)] hidden sm:block">
+                                    {user.name || user.username}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

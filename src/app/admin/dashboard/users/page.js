@@ -17,6 +17,7 @@ import {
 } from "recharts"
 import { useRouter } from "next/navigation"
 import { Users, TrendingUp, Calendar, Clock, Eye, UserCheck, UserX } from "lucide-react"
+import adminApi from "@/utils/adminInterception";
 
 export default function UsersPage() {
   const [usersData, setUsersData] = useState(null)
@@ -28,7 +29,7 @@ export default function UsersPage() {
     setLoading(true)
     setError("")
     try {
-      const res = await api.get("/v1/statistics/users")
+      const res = await adminApi.get("/v1/statistics/users")
       setUsersData(res.data.body)
     } catch (err) {
       setError(`Không thể tải thống kê users: ${err.message}`)

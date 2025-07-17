@@ -17,9 +17,10 @@ import { getUserId } from "@/utils/axios"
 import Modal from "../ui-components/Modal"
 import {isAdmin} from "@/hooks/isAdmin"
 import { renderTextWithLinks} from "@/hooks/renderTextWithLinks";
+import adminApi from "@/utils/adminInterception";
 dayjs.extend(relativeTime)
 
-export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPriority = false,
+export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPriority = false, isAdmin=false,
                                      size = "default", className = "" }) {
     const [isMobile, setIsMobile] = useState(undefined)
     const [activeImageIndex, setActiveImageIndex] = useState(null)
@@ -48,10 +49,9 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
     const isOwnPost = currentPost.author?.id === currentUserId
 
     // Check if current user is admin
-    const admin = isAdmin();
 
     // Show more options if it's user's own post OR if user is admin
-    const showMoreOptions = isOwnPost || admin
+    const showMoreOptions = isOwnPost || isAdmin
 
     useEffect(() => {
         const checkScreenSize = () => setIsMobile(window.innerWidth < 640)
@@ -164,14 +164,19 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
     }
 
     const handleDeletePost = async () => {
-        const confirmMessage = isAdmin() && !isOwnPost
+        const confirmMessage = isAdmin && !isOwnPost
             ? "Bạn có chắc chắn muốn xóa bài viết này với tư cách admin không?"
             : "Bạn có chắc chắn muốn xóa bài viết này không?"
 
         if (!confirm(confirmMessage)) return
         setDeleting(true)
         try {
-            await api.delete(`/v1/posts/${currentPost.id}`)
+            if(isAdmin){
+                await adminApi.delete(`/v1/posts/${currentPost.id}`)
+            }
+            else{
+                await api.delete(`/v1/posts/${currentPost.id}`)
+            }
             toast.success("Đã xóa bài viết!")
 
             // Thay vì refresh, gọi callback để cập nhật state
@@ -273,7 +278,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
                                             e.stopPropagation()
                                             setIsOriginalContentExpanded(true)
                                         }}
-                                        className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
+                                        className="text-blue-500  hover:underline hover:text-blue-700 ml-2 text-sm"
                                     >
                                         Xem thêm
                                     </button>

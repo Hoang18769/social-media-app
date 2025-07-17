@@ -26,7 +26,9 @@ export const renderTextWithLinks = (text) => {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-700 underline"
+                // className="text-blue-500 hover:text-blue-700 underline"
+                className="font-medium underline"
+
                 onClick={(e) => e.stopPropagation()}
             >
                 {url}

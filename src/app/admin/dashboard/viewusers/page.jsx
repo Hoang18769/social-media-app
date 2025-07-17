@@ -5,6 +5,7 @@ import { User, Loader2, Mail, Calendar, Users, MessageCircle, FileText, Phone, S
 import api from "@/utils/axios";
 import UserHeader from '@/components/social-app-component/UserHeader';
 import { useRouter } from 'next/navigation';
+import adminApi from "@/utils/adminInterception";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -112,7 +113,7 @@ const UsersPage = () => {
       }
       setError("");
 
-      const res = await api.get(
+      const res = await adminApi.get(
         `/v1/users?skip=${skipValue}&limit=${LIMIT}`,
         { signal: abortControllerRef.current.signal }
       );
@@ -173,7 +174,7 @@ const UsersPage = () => {
   // User Card Component
   const UserCard = ({ user }) => (
     <div 
-      className="bg-card rounded-xl shadow-sm border border-border p-6 hover:shadow-md transition-shadow cursor-pointer"
+      className="bg-[var(--card)] rounded-xl shadow-sm border border-border p-6 hover:shadow-md transition-shadow cursor-pointer"
       onClick={() => goToProfile(user.username)}
     >
       {/* Header Section */}
