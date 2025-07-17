@@ -16,7 +16,7 @@ import {
   Bell,
 } from "lucide-react";
 import Badge from "@/components/ui-components/Badge";
-import api, { clearSession } from "@/utils/axios";
+import api, {clearSession, getUserName} from "@/utils/axios";
 import NotificationList from "../social-app-component/NotificationList";
 import useAppStore from "@/store/ZustandStore";
 
@@ -60,7 +60,8 @@ export default function SidebarNavigation() {
   }, [unreadNotificationCount, unreadNotificationCountFromSocket]);
 
   useEffect(() => {
-    const storedUsername = localStorage.getItem("userName");
+
+    const storedUsername = getUserName()
     if (storedUsername) {
       setUsername(storedUsername);
     }
@@ -118,7 +119,7 @@ export default function SidebarNavigation() {
       console.log(unreadNotificationCountFromSocket);
       // ✅ If there are socket notifications, mark them as read first
       if (unreadNotificationCountFromSocket > 0) {
-        const res = await api.post(`/v1/notifications/mark-as-read?limit=${unreadNotificationCountFromSocket}`);
+        const res = await api.patch(`/v1/notifications/mark-as-read?limit=${unreadNotificationCountFromSocket}`);
         console.log(res);
         
         console.log(`✅ Successfully marked ${unreadNotificationCountFromSocket} notifications as read`);

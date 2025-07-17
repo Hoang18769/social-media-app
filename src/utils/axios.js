@@ -199,6 +199,41 @@ async function handleTokenRefresh(originalRequest) {
     isRefreshing = false;
   }
 }
+export async function refreshTokenManually() {
+  try {
+    const { data } = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/v1/auth/refresh`,
+        {},
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
+        }
+    );
+
+    const newToken = data.body?.token;
+    if (!newToken) throw new Error("No new token in refresh response");
+
+    const userId = getUserId();
+    const userName = getUserName();
+
+    setAuthStorage(newToken, userId, userName);
+    api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+
+    // ✅ Tạm thời vô hiệu hóa callback để tránh vòng lặp
+    const savedListeners = [...tokenEventListeners];
+    tokenEventListeners.length = 0; // clear listeners tạm thời
+
+    notifyTokenRefresh(newToken); // sẽ không gây loop
+
+    tokenEventListeners.push(...savedListeners); // khôi phục lại
+
+    return true;
+  } catch (error) {
+    console.error("Manual token refresh failed:", error);
+    clearSession();
+    return false;
+  }
+}
 
 // Response interceptor
 api.interceptors.response.use(

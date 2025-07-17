@@ -3,9 +3,8 @@
   import { useState } from "react"
   import Avatar from "../ui-components/Avatar"
   import Input from "../ui-components/Input"
-  import api, {setAuthToken, setUserName} from "@/utils/axios"
+  import api, {refreshTokenManually, setAuthToken, setUserName} from "@/utils/axios"
   import axios from "axios"
-
   export default function EditProfileModal({ profileData, onSave }) {
     const [formData, setFormData] = useState({
       firstname: profileData.givenName || "",
@@ -135,6 +134,7 @@
       if (usernameUpdated && !errors.username) {
         try {
           setUserName(formData.username)
+          const refresh=refreshTokenManually();
 
           // // Sync lại auth token
           // const userId = localStorage.getItem("userId")

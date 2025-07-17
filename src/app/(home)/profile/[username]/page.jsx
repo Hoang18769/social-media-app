@@ -94,10 +94,10 @@ export default function ProfilePage() {
         // if (isOwnProfile) {
         //   setUserName(newUsername);
         // }
-        router.replace(`/profile/${newUsername}`);
-        router.refresh();
+        // router.replace(`/profile/${newUsername}`);
+        window.location.href = `/profile/${newUsername}`;
       },
-      [isOwnProfile, router]
+      [ router]
   );
 
   // Optimize fetch posts with abort controller and better state management

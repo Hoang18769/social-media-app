@@ -4,14 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="adminapi, simply handle code, add mounted in home, check admin by prop,">
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="update username changes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/social-app-component/EditProfile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/EditProfile.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/adminInterception.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/adminInterception.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui-components/Sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/Sidebar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/store/ZustandStore.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/ZustandStore.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/utils/axios.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/axios.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/socket.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/socket.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,6 +42,10 @@
     &quot;url&quot;: &quot;https://github.com/Hoang18769/social-media-app.git&quot;,
     &quot;accountId&quot;: &quot;7c6282ce-26d5-4228-8fb7-bfeb4820b3c1&quot;
   }
+}</component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
 }</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="Security Analysis" />
@@ -116,7 +119,8 @@
       <workItem from="1752285905111" duration="1143000" />
       <workItem from="1752289724274" duration="44265000" />
       <workItem from="1752461982289" duration="56454000" />
-      <workItem from="1752637556739" duration="55385000" />
+      <workItem from="1752637556739" duration="56503000" />
+      <workItem from="1752760882211" duration="5715000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -278,7 +282,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752733008808</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="update username changes">
+      <option name="closed" value="true" />
+      <created>1752758891043</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1752758891043</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -314,6 +326,7 @@
     <MESSAGE value="add metadata, default privacy for newpost and share(still mvp post page)" />
     <MESSAGE value="fix wrong metadata name" />
     <MESSAGE value="adminapi, simply handle code, add mounted in home, check admin by prop," />
-    <option name="LAST_COMMIT_MESSAGE" value="adminapi, simply handle code, add mounted in home, check admin by prop," />
+    <MESSAGE value="update username changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="update username changes" />
   </component>
 </project>

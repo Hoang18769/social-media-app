@@ -19,6 +19,14 @@ export const STORE_EVENTS = {
 
 const useAppStore = create(
     devtools((set, get) => ({
+      // ============ USER STATE ============
+      userName:null,
+      setUserNameStore:(username)=>{
+        set({userName:username})
+      },
+      getUserNameStore: () => get().userName,
+
+
       // ============ CHAT STATE ============
       chatList: [],
       conversationMap: new Map(),
@@ -127,10 +135,10 @@ const useAppStore = create(
       },
 
       // Get user by chat ID
-      getUserByChatId: (chatId) => {
-        const chat = get().chatList.find(c => (c.id === chatId || c.chatId === chatId));
-        return chat ? chat.target : null;
-      },
+      // getUserByChatId: (chatId) => {
+      //   const chat = get().chatList.find(c => (c.id === chatId || c.chatId === chatId));
+      //   return chat ? chat.target : null;
+      // },
 
       // Mark chat as read
       markChatAsRead: async (chatId) => {
@@ -316,10 +324,10 @@ const useAppStore = create(
       },
 
       // Reset socket notification count
-      resetSocketNotificationCount: () => {
-        set({ unreadNotificationCountFromSocket: 0 });
-        console.log('✅ Reset socket notification count to 0');
-      },
+      // resetSocketNotificationCount: () => {
+      //   set({ unreadNotificationCountFromSocket: 0 });
+      //   console.log('✅ Reset socket notification count to 0');
+      // },
 
       // ============ CHAT NAVIGATION & SELECTION LOGIC ============
       selectedChatId: null,
@@ -387,10 +395,10 @@ const useAppStore = create(
       },
 
       // Get selected chat
-      getSelectedChat: () => {
-        const { selectedChatId, chatList } = get();
-        return chatList.find(chat => (chat.id === selectedChatId || chat.chatId === selectedChatId)) || null;
-      },
+      // getSelectedChat: () => {
+      //   const { selectedChatId, chatList } = get();
+      //   return chatList.find(chat => (chat.id === selectedChatId || chat.chatId === selectedChatId)) || null;
+      // },
 
       // Ensure notifications are loaded
       ensureNotificationsLoaded: () => {
@@ -409,27 +417,27 @@ const useAppStore = create(
       },
 
       // Force refresh notifications
-      refreshNotifications: async () => {
-        console.log('🔄 Force refreshing notifications...');
-        return get().fetchNotifications(true);
-      },
+      // refreshNotifications: async () => {
+      //   console.log('🔄 Force refreshing notifications...');
+      //   return get().fetchNotifications(true);
+      // },
 
       // Force refresh unread count
-      refreshUnreadCount: async () => {
-        console.log('🔄 Force refreshing unread count...');
-        return get().fetchUnreadNotificationCount();
-      },
+      // refreshUnreadCount: async () => {
+      //   console.log('🔄 Force refreshing unread count...');
+      //   return get().fetchUnreadNotificationCount();
+      // },
 
       // Get total unread message count
-      getTotalUnreadMessageCount: () => {
-        const { unreadMessageCount } = get();
-        return unreadMessageCount;
-      },
+      // getTotalUnreadMessageCount: () => {
+      //   const { unreadMessageCount } = get();
+      //   return unreadMessageCount;
+      // },
 
       // Manual recalculate unread message count
-      recalculateUnreadMessageCount: () => {
-        return get().updateUnreadMessageCount();
-      },
+      // recalculateUnreadMessageCount: () => {
+      //   return get().updateUnreadMessageCount();
+      // },
 
     }), {
       name: 'app-store'
