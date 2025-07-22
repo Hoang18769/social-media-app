@@ -132,9 +132,8 @@ export const CommentActions = ({
     }, [comment.id, onEdit]);
 
     const handleDelete = useCallback(() => {
-        if (window.confirm(isReply ? "Bạn có chắc muốn xóa phản hồi này?" : "Bạn có chắc muốn xóa bình luận này?")) {
             onDelete(comment.id);
-        }
+
     }, [comment.id, onDelete, isReply]);
 
     return (

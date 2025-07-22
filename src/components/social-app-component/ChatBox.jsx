@@ -563,9 +563,7 @@ export default function ChatBox({ chatId, targetUser, onBack, onChatCreated }) {
         
         {/* Bottom element reference for intersection observer */}
         <div ref={bottomElementRef} className="h-1" />
-        
-        {/* Top element reference for scroll positioning */}
-        {/*<div ref={topElementRef} />*/}
+
       </>
     );
   };

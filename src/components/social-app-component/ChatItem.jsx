@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Avatar from "../ui-components/Avatar";
 import Badge from "../ui-components/Badge";
 import dayjs from "dayjs";
@@ -9,15 +10,15 @@ import "dayjs/locale/vi";
 dayjs.extend(relativeTime);
 dayjs.locale("vi");
 
-export default function ChatItem({ chat, onClick, selected }) {
+function ChatItem({ chat, onClick, selected }) {
   const { chatId, latestMessage, target, notReadMessageCount } = chat;
 
   const isOnline = target?.isOnline || false;
   const isUnread = notReadMessageCount > 0;
   const displayName =
-    `${target?.givenName || ""} ${target?.familyName || ""}`.trim() ||
-    target?.username ||
-    "Unknown User";
+      `${target?.givenName || ""} ${target?.familyName || ""}`.trim() ||
+      target?.username ||
+      "Unknown User";
 
   let content = "Chưa có tin nhắn nào";
   let sentTime = "";
@@ -131,3 +132,50 @@ export default function ChatItem({ chat, onClick, selected }) {
     </div>
   );
 }
+
+// ✅ Custom comparison function để tối ưu re-render
+const areEqual = (prevProps, nextProps) => {
+  const prev = prevProps.chat;
+  const next = nextProps.chat;
+
+  // So sánh các props khác
+  if (prevProps.selected !== nextProps.selected) return false;
+
+  // So sánh chatId
+  if (prev.chatId !== next.chatId) return false;
+
+  // So sánh notReadMessageCount
+  if (prev.notReadMessageCount !== next.notReadMessageCount) return false;
+
+  // So sánh target info
+  if (prev.target?.isOnline !== next.target?.isOnline) return false;
+  if (prev.target?.profilePictureUrl !== next.target?.profilePictureUrl) return false;
+  if (prev.target?.givenName !== next.target?.givenName) return false;
+  if (prev.target?.familyName !== next.target?.familyName) return false;
+  if (prev.target?.username !== next.target?.username) return false;
+
+  // So sánh latest message
+  const prevMsg = prev.latestMessage;
+  const nextMsg = next.latestMessage;
+
+  if (!prevMsg && !nextMsg) return true;
+  if (!prevMsg || !nextMsg) return false;
+
+  // So sánh các trường quan trọng của message
+  if (prevMsg.id !== nextMsg.id) return false;
+  if (prevMsg.content !== nextMsg.content) return false;
+  if (prevMsg.sentAt !== nextMsg.sentAt) return false;
+  if (prevMsg.type !== nextMsg.type) return false;
+  if (prevMsg.deleted !== nextMsg.deleted) return false;
+  if (prevMsg.attachment !== nextMsg.attachment) return false;
+  if (prevMsg.callAt !== nextMsg.callAt) return false;
+  if (prevMsg.endAt !== nextMsg.endAt) return false;
+
+  // So sánh sender
+  if (prevMsg.sender?.id !== nextMsg.sender?.id) return false;
+
+  return true;
+};
+
+// ✅ Export memoized component với custom comparison
+export default memo(ChatItem, areEqual);

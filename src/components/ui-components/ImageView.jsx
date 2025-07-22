@@ -1,17 +1,17 @@
 "use client";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 
 const isVideo = (url) =>
-  typeof url === "string" && url.match(/\.(mp4|webm|ogg)$/i);
+    typeof url === "string" && url.match(/\.(mp4|webm|ogg)$/i);
 
-export default function ImageView({
-  images = [],
-  onImageClick,
-  isActive = true,
-  isPriority = false
-}) {
+const ImageView = memo(function ImageView({
+                                            images = [],
+                                            onImageClick,
+                                            isActive = true,
+                                            isPriority = false
+                                          }) {
   const [mutedVideos, setMutedVideos] = useState({});
   const videoRefs = useRef({});
 
@@ -153,4 +153,6 @@ export default function ImageView({
     );
 
   return null;
-}
+});
+
+export default ImageView;

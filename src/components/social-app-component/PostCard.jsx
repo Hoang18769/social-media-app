@@ -1,13 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, memo, useCallback, lazy, Suspense } from "react"
 import Avatar from "../ui-components/Avatar"
 import Card from "../ui-components/Card"
 import { Heart, MessageCircle, SendHorizonal, MoreVertical, Share2 } from "lucide-react"
 import ImageView from "../ui-components/ImageView"
-import PostModal from "./PostModal"
-import EditPostModal from "./EditPostModal"
-import SharePostModal from "./SharePostModal"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import dayjs from "dayjs"
@@ -18,10 +15,24 @@ import Modal from "../ui-components/Modal"
 import {isAdmin} from "@/hooks/isAdmin"
 import { renderTextWithLinks} from "@/hooks/renderTextWithLinks";
 import adminApi from "@/utils/adminInterception";
+
+// Dynamic imports for heavy components
+const PostModal = lazy(() => import("./PostModal"))
+const EditPostModal = lazy(() => import("./EditPostModal"))
+const SharePostModal = lazy(() => import("./SharePostModal"))
+
 dayjs.extend(relativeTime)
 
-export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPriority = false, isAdmin=false,
-                                     size = "default", className = "" }) {
+const PostCard = memo(function PostCard({
+                                            post,
+                                            liked,
+                                            onLikeToggle,
+                                            onPostDeleted,
+                                            isPriority = false,
+                                            isAdmin = false,
+                                            size = "default",
+                                            className = ""
+                                        }) {
     const [isMobile, setIsMobile] = useState(undefined)
     const [activeImageIndex, setActiveImageIndex] = useState(null)
     const [showModal, setShowModal] = useState(false)
@@ -32,6 +43,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
     const [showShareModal, setShowShareModal] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [currentPost, setCurrentPost] = useState(post)
+
     // Content expansion states
     const [isContentExpanded, setIsContentExpanded] = useState(false)
     const [isOriginalContentExpanded, setIsOriginalContentExpanded] = useState(false)
@@ -47,8 +59,6 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
     // Check if current post is owned by current user
     const currentUserId = getUserId()
     const isOwnPost = currentPost.author?.id === currentUserId
-
-    // Check if current user is admin
 
     // Show more options if it's user's own post OR if user is admin
     const showMoreOptions = isOwnPost || isAdmin
@@ -73,23 +83,22 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
         setCurrentPost(post)
     }, [liked, post])
 
-    // Function to check if content should be truncated
+    // Memoized functions to prevent unnecessary re-renders
     const shouldTruncateContent = (content, maxLength = 200) => {
         return content && content.length > maxLength
     }
 
-    // Function to get truncated content
     const getTruncatedContent = (content, maxLength = 200) => {
         if (!content) return ''
         return content.length > maxLength ? content.substring(0, maxLength) + '...' : content
     }
 
-    const fetchComments = async () => {
+    const fetchComments = useCallback(async () => {
         if (loadingComments || comments.length > 0) return
         fetchCommentsForPost(currentPost.id)
-    }
+    }, [loadingComments, comments.length, currentPost.id])
 
-    const fetchCommentsForPost = async (postId) => {
+    const fetchCommentsForPost = useCallback(async (postId) => {
         if (loadingComments || comments.length > 0) return
         setLoadingComments(true)
         try {
@@ -102,10 +111,10 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
         } finally {
             setLoadingComments(false)
         }
-    }
+    }, [loadingComments, comments.length])
 
     // Optimistic like handler
-    const handleLikeToggle = async () => {
+    const handleLikeToggle = useCallback(async () => {
         if (isLiking) return
 
         setIsLiking(true)
@@ -142,28 +151,22 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
         } finally {
             setIsLiking(false)
         }
-    }
-
-    if (isMobile === undefined) return null
+    }, [isLiking, optimisticLiked, optimisticLikeCount, onLikeToggle])
 
     const handleEdit = () => {
         setShowOptions(false)
         setShowEditModal(true)
     }
 
-    const handlePostUpdated = (updatedPost) => {
+    const handlePostUpdated = useCallback((updatedPost) => {
         setCurrentPost(updatedPost)
-    }
+    }, [])
 
     const handleShare = () => {
         setShowShareModal(true)
     }
 
-    const handleShareSuccess = (sharedPost) => {
-        console.log("Post shared successfully:", sharedPost)
-    }
-
-    const handleDeletePost = async () => {
+    const handleDeletePost = useCallback(async () => {
         const confirmMessage = isAdmin && !isOwnPost
             ? "Bạn có chắc chắn muốn xóa bài viết này với tư cách admin không?"
             : "Bạn có chắc chắn muốn xóa bài viết này không?"
@@ -190,14 +193,14 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
             setDeleting(false)
             setShowOptions(false)
         }
-    }
+    }, [isAdmin, isOwnPost, currentPost.id, onPostDeleted])
 
     // Function to open modal - unified logic
-    const openModal = () => {
+    const openModal = useCallback(() => {
         setShowModal(true)
         // Always fetch comments for the current post
         fetchComments()
-    }
+    }, [fetchComments])
 
     const handleCardClick = (e) => {
         // Không mở modal nếu đang click vào button hoặc đang trong mode edit
@@ -212,16 +215,16 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
         router.push(`/profile/${currentPost.author?.username}`)
     }
 
-    const handleOriginalProfileClick = (e) => {
+    const handleOriginalProfileClick = useCallback((e) => {
         e.stopPropagation()
         router.push(`/profile/${currentPost.originalPost?.author?.username}`)
-    }
+    }, [router, currentPost.originalPost?.author?.username])
 
     // Handler for MessageCircle button
-    const handleMessageCircleClick = (e) => {
+    const handleMessageCircleClick = useCallback((e) => {
         e.stopPropagation()
         openModal()
-    }
+    }, [openModal])
 
     const renderPrivacyIcon = (privacy) => {
         switch (privacy) {
@@ -232,7 +235,19 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
         }
     }
 
-    const renderSharedPostContent = () => {
+    const handleImageClick = useCallback((i) => {
+        setActiveImageIndex(i)
+        setShowModal(true)
+    }, [])
+
+    const handleCloseModal = useCallback(() => {
+        setActiveImageIndex(null)
+        setShowModal(false)
+        // Reset comments to allow fresh fetch next time
+        setComments([])
+    }, [])
+
+    const renderSharedPostContent = useCallback(() => {
         if (!currentPost.sharedPost) return null
 
         if (!currentPost.originalPostCanView) {
@@ -247,79 +262,76 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
             )
         }
 
-        else {
-            return (
-                <div className="mt-3 p-4 border border-[var(--border)] rounded-lg bg-[var(--card)]/50">
-                    {/* Original post author info */}
-                    <div className="flex items-center gap-2 mb-3 cursor-pointer hover:underline" onClick={handleOriginalProfileClick}>
-                        <Avatar
-                            src={currentPost.originalPost.author?.profilePictureUrl}
-                            alt={currentPost.originalPost.author?.username || ""}
-                            size={32}
-                        />
-                        <div>
-                            <p className="font-semibold text-sm text-[var(--card-foreground)]">
-                                {currentPost.originalPost.author?.familyName + " " + currentPost.originalPost.author?.givenName}
-                            </p>
-                            <p className="text-xs text-[var(--muted-foreground)]">
-                                {dayjs(currentPost.originalPost.createdAt).fromNow()} {renderPrivacyIcon(currentPost.originalPost.privacy)}
-                            </p>
-                        </div>
+        return (
+            <div className="mt-3 p-4 border border-[var(--border)] rounded-lg bg-[var(--card)]/50">
+                {/* Original post author info */}
+                <div className="flex items-center gap-2 mb-3 cursor-pointer hover:underline" onClick={handleOriginalProfileClick}>
+                    <Avatar
+                        src={currentPost.originalPost.author?.profilePictureUrl}
+                        alt={currentPost.originalPost.author?.username || ""}
+                        size={32}
+                    />
+                    <div>
+                        <p className="font-semibold text-sm text-[var(--card-foreground)]">
+                            {currentPost.originalPost.author?.familyName + " " + currentPost.originalPost.author?.givenName}
+                        </p>
+                        <p className="text-xs text-[var(--muted-foreground)]">
+                            {dayjs(currentPost.originalPost.createdAt).fromNow()} {renderPrivacyIcon(currentPost.originalPost.privacy)}
+                        </p>
                     </div>
+                </div>
 
-                    {/* Original post content with truncation */}
-                    {currentPost.originalPost.content && (
-                        <pre className="text-sm text-[var(--card-foreground)] mb-3 whitespace-pre-wrap break-all">
-                            {shouldTruncateContent(currentPost.originalPost.content) && !isOriginalContentExpanded ? (
-                                <>
-                                    {renderTextWithLinks(getTruncatedContent(currentPost.originalPost.content))}
+                {/* Original post content with truncation */}
+                {currentPost.originalPost.content && (
+                    <pre className="text-sm text-[var(--card-foreground)] mb-3 whitespace-pre-wrap break-all">
+                        {shouldTruncateContent(currentPost.originalPost.content) && !isOriginalContentExpanded ? (
+                            <>
+                                {renderTextWithLinks(getTruncatedContent(currentPost.originalPost.content))}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setIsOriginalContentExpanded(true)
+                                    }}
+                                    className="text-blue-500  hover:underline hover:text-blue-700 ml-2 text-sm"
+                                >
+                                    Xem thêm
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                {renderTextWithLinks(currentPost.originalPost.content)}
+                                {shouldTruncateContent(currentPost.originalPost.content) && (
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation()
-                                            setIsOriginalContentExpanded(true)
+                                            setIsOriginalContentExpanded(false)
                                         }}
-                                        className="text-blue-500  hover:underline hover:text-blue-700 ml-2 text-sm"
+                                        className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
                                     >
-                                        Xem thêm
+                                        Thu gọn
                                     </button>
-                                </>
-                            ) : (
-                                <>
-                                    {renderTextWithLinks(currentPost.originalPost.content)}
-                                    {shouldTruncateContent(currentPost.originalPost.content) && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                setIsOriginalContentExpanded(false)
-                                            }}
-                                            className="text-blue-500 hover:text-blue-700 ml-2 text-sm"
-                                        >
-                                            Thu gọn
-                                        </button>
-                                    )}
-                                </>
-                            )}
-                        </pre>
-                    )}
+                                )}
+                            </>
+                        )}
+                    </pre>
+                )}
 
-                    {/* Original post images */}
-                    {Array.isArray(currentPost.originalPost.files) && currentPost.originalPost.files.length > 0 && (
-                        <div onClick={(e) => e.stopPropagation()}>
-                            <ImageView
-                                images={currentPost.originalPost.files}
-                                isActive={!isModalOpen}
-                                priority={isPriority}
-                                onImageClick={(i) => {
-                                    setActiveImageIndex(i)
-                                    setShowModal(true)
-                                }}
-                            />
-                        </div>
-                    )}
-                </div>
-            )
-        }
-    }
+                {/* Original post images */}
+                {Array.isArray(currentPost.originalPost.files) && currentPost.originalPost.files.length > 0 && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <ImageView
+                            images={currentPost.originalPost.files}
+                            isActive={!isModalOpen}
+                            priority={isPriority}
+                            onImageClick={handleImageClick}
+                        />
+                    </div>
+                )}
+            </div>
+        )
+    }, [currentPost, isOriginalContentExpanded, handleOriginalProfileClick, renderPrivacyIcon, shouldTruncateContent, getTruncatedContent, isModalOpen, isPriority, handleImageClick])
+
+    if (isMobile === undefined) return null
 
     return (
         <>
@@ -457,10 +469,7 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
                             images={currentPost.files}
                             isActive={!isModalOpen}
                             priority={isPriority}
-                            onImageClick={(i) => {
-                                setActiveImageIndex(i)
-                                setShowModal(true)
-                            }}
+                            onImageClick={handleImageClick}
                         />
                     </div>
                 )}
@@ -516,44 +525,48 @@ export default function PostCard({ post, liked, onLikeToggle, onPostDeleted,isPr
                 </button>
             </Card>
 
-            {/* Edit Post Modal - Only show if it's the user's own post */}
-            {isOwnPost && (
-                <EditPostModal
-                    isOpen={showEditModal}
-                    onClose={() => setShowEditModal(false)}
-                    post={currentPost}
-                    onPostUpdated={handlePostUpdated}
-                />
+            {/* Lazy loaded modals - only render when needed */}
+            {showEditModal && isOwnPost && (
+                <Suspense fallback={<div>Loading...</div>}>
+                    <EditPostModal
+                        isOpen={showEditModal}
+                        onClose={() => setShowEditModal(false)}
+                        post={currentPost}
+                        onPostUpdated={handlePostUpdated}
+                    />
+                </Suspense>
             )}
 
-            {/* Post Modal */}
+            {/* Post Modal - only render when needed */}
             {isModalOpen && (
-                <PostModal
-                    post={currentPost}
-                    liked={optimisticLiked}
-                    likeCount={optimisticLikeCount}
-                    activeIndex={activeImageIndex}
-                    comments={comments}
-                    loadingComments={loadingComments}
-                    onFetchComments={fetchComments}
-                    isOwnPost={isOwnPost}
-                    onClose={() => {
-                        setActiveImageIndex(null)
-                        setShowModal(false)
-                        // Reset comments to allow fresh fetch next time
-                        setComments([])
-                    }}
-                    onLikeToggle={handleLikeToggle}
-                />
+                <Suspense fallback={<div>Loading...</div>}>
+                    <PostModal
+                        post={currentPost}
+                        liked={optimisticLiked}
+                        likeCount={optimisticLikeCount}
+                        activeIndex={activeImageIndex}
+                        comments={comments}
+                        loadingComments={loadingComments}
+                        onFetchComments={fetchComments}
+                        isOwnPost={isOwnPost}
+                        onClose={handleCloseModal}
+                        onLikeToggle={handleLikeToggle}
+                    />
+                </Suspense>
             )}
 
-            {/* Share Modal */}
-            <SharePostModal
-                isOpen={showShareModal}
-                onClose={() => setShowShareModal(false)}
-                post={currentPost}
-                // onShareSuccess={handleShareSuccess}
-            />
+            {/* Share Modal - only render when needed */}
+            {showShareModal && (
+                <Suspense fallback={<div>Loading...</div>}>
+                    <SharePostModal
+                        isOpen={showShareModal}
+                        onClose={() => setShowShareModal(false)}
+                        post={currentPost}
+                    />
+                </Suspense>
+            )}
         </>
     )
-}
+})
+
+export default PostCard

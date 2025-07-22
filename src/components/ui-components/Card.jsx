@@ -1,6 +1,7 @@
+import React from "react";
 import clsx from "clsx";
 
-export default function Card({ children, className = "", elevation = 1, style }) {
+const Card = React.memo(function Card({ children, className = "", elevation = 1, style }) {
   const shadows = {
     0: "shadow-none",
     1: "shadow-md",
@@ -25,4 +26,6 @@ export default function Card({ children, className = "", elevation = 1, style })
       {children}
     </div>
   );
-}
+});
+
+export default Card;

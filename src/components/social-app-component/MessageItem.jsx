@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo, useMemo, useCallback } from "react";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -14,7 +14,7 @@ import {renderTextWithLinks} from "@/hooks/renderTextWithLinks";
 
 dayjs.extend(relativeTime);
 
-// Helper functions
+// Helper functions - moved outside component to prevent recreation
 const getFilenameFromUrl = (url) => {
   if (!url) return 'Unknown file';
   const match = url.match(/\/([^\/]+\.(png|jpg|jpeg|gif|pdf|doc|docx|txt|zip|rar|mp4|mp3|wav|xlsx|ppt|pptx))/i);
@@ -51,21 +51,17 @@ const formatFileSize = (bytes) => {
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 };
 
-// Helper function to truncate filename while preserving extension
 const truncateFilename = (filename, maxLength = 35) => {
   if (!filename || filename.length <= maxLength) return filename;
 
   const lastDotIndex = filename.lastIndexOf('.');
   if (lastDotIndex === -1) {
-    // No extension, just truncate
     return filename.substring(0, maxLength - 3) + '...';
   }
 
   const extension = filename.substring(lastDotIndex);
   const nameWithoutExt = filename.substring(0, lastDotIndex);
-
-  // Calculate how much space we have for the name part
-  const availableSpace = maxLength - extension.length - 3; // 3 for "..."
+  const availableSpace = maxLength - extension.length - 3;
 
   if (availableSpace <= 0) {
     return '...' + extension;
@@ -74,45 +70,99 @@ const truncateFilename = (filename, maxLength = 35) => {
   return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
 };
 
-const FileIcon = ({ fileType }) => {
+// Memoized FileIcon component
+const FileIcon = memo(({ fileType }) => {
   if (isImageFile(fileType)) return <Image className="w-5 h-5" />;
   if (isVideoFile(fileType)) return <Film className="w-5 h-5" />;
   if (fileType?.startsWith('audio/')) return <Music className="w-5 h-5" />;
   return <FileText className="w-5 h-5" />;
-};
+});
 
-export default function MessageItem({
-                                      msg,
-                                      targetUser,
-                                      selectedMessage,
-                                      onMessageClick,
-                                      onEditMessage,
-                                      onDeleteMessage
-                                    }) {
+FileIcon.displayName = 'FileIcon';
+
+function MessageItem({
+                       msg,
+                       targetUser,
+                       selectedMessage,
+                       onMessageClick,
+                       onEditMessage,
+                       onDeleteMessage
+                     }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [currentFile, setCurrentFile] = useState(null);
   const [currentFileType, setCurrentFileType] = useState(null);
   const [popupPosition, setPopupPosition] = useState('bottom');
   const buttonRef = useRef(null);
 
-  const isSelf = msg.sender?.id !== targetUser?.id;
-  const isSelected = selectedMessage === msg.id;
-  const timeSent = dayjs(msg.sentAt).fromNow();
-  const isDeleted = msg.deleted === true;
-  const isUpdated = msg.updated === true;
-  const isReading = msg.isRead === true;
+  // Memoized computed values
+  const computedValues = useMemo(() => {
+    const isSelf = msg.sender?.id !== targetUser?.id;
+    const isSelected = selectedMessage === msg.id;
+    const timeSent = dayjs(msg.sentAt).fromNow();
+    const isDeleted = msg.deleted === true;
+    const isUpdated = msg.updated === true;
+    const isReading = msg.isRead === true;
+    const hasFile = msg.attachment || msg.attachedFile;
+    const isFileOnlyMessage = (!msg.content || msg.content.trim() === '') && hasFile;
+    const canEdit = msg.type !== "CALL" && !isFileOnlyMessage;
+    const showMoreButton = msg.type !== "CALL";
 
-  // Check if message has file attachments
-  const hasFile = msg.attachment || msg.attachedFile;
+    return {
+      isSelf,
+      isSelected,
+      timeSent,
+      isDeleted,
+      isUpdated,
+      isReading,
+      hasFile,
+      isFileOnlyMessage,
+      canEdit,
+      showMoreButton
+    };
+  }, [
+    msg.sender?.id,
+    targetUser?.id,
+    selectedMessage,
+    msg.id,
+    msg.sentAt,
+    msg.deleted,
+    msg.updated,
+    msg.isRead,
+    msg.attachment,
+    msg.attachedFile,
+    msg.content,
+    msg.type
+  ]);
 
-  // Check if message content is null/empty and has file
-  const isFileOnlyMessage = (!msg.content || msg.content.trim() === '') && hasFile;
+  const {
+    isSelf, isSelected, timeSent, isDeleted, isUpdated,
+    isReading, hasFile, isFileOnlyMessage, canEdit, showMoreButton
+  } = computedValues;
 
-  // Determine if edit button should be shown
-  const canEdit = msg.type !== "CALL" && !isFileOnlyMessage;
+  // Memoized event handlers
+  const handlePreviewClick = useCallback((url, fileType) => {
+    setCurrentFile(url);
+    setCurrentFileType(fileType);
+    setModalOpen(true);
+  }, []);
 
-  // Determine if more button should be shown at all
-  const showMoreButton = msg.type !== "CALL";
+  const handleMessageClick = useCallback(() => {
+    onMessageClick(msg);
+  }, [onMessageClick, msg]);
+
+  const handleEditMessage = useCallback((e) => {
+    e.stopPropagation();
+    onEditMessage(msg);
+  }, [onEditMessage, msg]);
+
+  const handleDeleteMessage = useCallback((e) => {
+    e.stopPropagation();
+    onDeleteMessage(msg.id);
+  }, [onDeleteMessage, msg.id]);
+
+  const handleModalClose = useCallback(() => {
+    setModalOpen(false);
+  }, []);
 
   // Calculate popup position based on message position in viewport
   useEffect(() => {
@@ -122,7 +172,6 @@ export default function MessageItem({
       const messagePosition = rect.top;
       const distanceFromBottom = viewportHeight - messagePosition;
 
-      // If message is in bottom half of screen (or too close to bottom), show popup above
       if (messagePosition > viewportHeight / 2 || distanceFromBottom < 200) {
         setPopupPosition('top');
       } else {
@@ -131,58 +180,58 @@ export default function MessageItem({
     }
   }, [isSelected]);
 
-  const handlePreviewClick = (url, fileType) => {
-    setCurrentFile(url);
-    setCurrentFileType(fileType);
-    setModalOpen(true);
-  };
-
-  const renderMediaPreview = (url, fileType) => {
-    if (isImageFile(fileType)) {
-      return (
-          <div className="cursor-pointer rounded-lg overflow-hidden" onClick={() => handlePreviewClick(url, fileType)}>
-            <img src={url} alt="Preview" className="max-w-full max-h-64 object-contain rounded-lg border border-[var(--border)]" />
-          </div>
-      );
-    } else if (isVideoFile(fileType)) {
-      return (
-          <div className="cursor-pointer rounded-lg overflow-hidden" onClick={() => handlePreviewClick(url, fileType)}>
-            <video className="max-w-full max-h-64 rounded-lg border border-[var(--border)]">
-              <source src={url} type={fileType} />
-            </video>
-          </div>
-      );
-    }
-    return null;
-  };
-
-  const renderFileInfo = (url, fileType, filename, size) => {
-    if (isImageFile(fileType) || isVideoFile(fileType)) {
-      return renderMediaPreview(url, fileType);
-    }
-
-    const truncatedFilename = truncateFilename(filename);
-
-    return (
-        <div className="flex items-center gap-2 p-2 rounded-lg max-w-full">
-          <FileIcon fileType={fileType} />
-          <div className="flex-1 min-w-0">
-            <div
-                className="font-medium"
-                title={filename} // Show full filename on hover
-            >
-              {truncatedFilename}
+  // Memoized media preview component
+  const MediaPreview = useMemo(() => {
+    const renderMediaPreview = (url, fileType) => {
+      if (isImageFile(fileType)) {
+        return (
+            <div className="cursor-pointer rounded-lg overflow-hidden" onClick={() => handlePreviewClick(url, fileType)}>
+              <img src={url} alt="Preview" className="max-w-full max-h-64 object-contain rounded-lg border border-[var(--border)]" />
             </div>
-            {size && <div className="text-xs opacity-70">{formatFileSize(size)}</div>}
-          </div>
-          <a href={url} download className="p-1 rounded hover:bg-black/10 flex-shrink-0">
-            <Download className="w-4 h-4" />
-          </a>
-        </div>
-    );
-  };
+        );
+      } else if (isVideoFile(fileType)) {
+        return (
+            <div className="cursor-pointer rounded-lg overflow-hidden" onClick={() => handlePreviewClick(url, fileType)}>
+              <video className="max-w-full max-h-64 rounded-lg border border-[var(--border)]">
+                <source src={url} type={fileType} />
+              </video>
+            </div>
+        );
+      }
+      return null;
+    };
 
-  const renderMessageContent = () => {
+    return renderMediaPreview;
+  }, [handlePreviewClick]);
+
+  // Memoized file info renderer
+  const renderFileInfo = useMemo(() => {
+    return (url, fileType, filename, size) => {
+      if (isImageFile(fileType) || isVideoFile(fileType)) {
+        return MediaPreview(url, fileType);
+      }
+
+      const truncatedFilename = truncateFilename(filename);
+
+      return (
+          <div className="flex items-center gap-2 p-2 rounded-lg max-w-full">
+            <FileIcon fileType={fileType} />
+            <div className="flex-1 min-w-0">
+              <div className="font-medium" title={filename}>
+                {truncatedFilename}
+              </div>
+              {size && <div className="text-xs opacity-70">{formatFileSize(size)}</div>}
+            </div>
+            <a href={url} download className="p-1 rounded hover:bg-black/10 flex-shrink-0">
+              <Download className="w-4 h-4" />
+            </a>
+          </div>
+      );
+    };
+  }, [MediaPreview]);
+
+  // Memoized message content
+  const messageContent = useMemo(() => {
     if (isDeleted) return "Tin nhắn đã bị thu hồi";
 
     if (msg.type === "CALL" && msg.callId) {
@@ -206,9 +255,7 @@ export default function MessageItem({
     }
 
     if (msg.attachment) {
-      // Sử dụng attachmentName thay vì trim từ attachment URL
       const filename = msg.attachmentName || getFilenameFromUrl(msg.attachment);
-
       return renderFileInfo(
           msg.attachment,
           getFileTypeFromUrl(msg.attachment),
@@ -226,8 +273,19 @@ export default function MessageItem({
     }
 
     return renderTextWithLinks(msg.content);
-  };
-
+  }, [
+    isDeleted,
+    msg.type,
+    msg.callId,
+    msg.answered,
+    msg.endAt,
+    msg.callAt,
+    msg.attachment,
+    msg.attachmentName,
+    msg.attachedFile,
+    msg.content,
+    renderFileInfo
+  ]);
 
   return (
       <>
@@ -252,7 +310,7 @@ export default function MessageItem({
                   <div className="relative">
                     <button
                         ref={buttonRef}
-                        onClick={() => onMessageClick(msg)}
+                        onClick={handleMessageClick}
                         className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] p-1 rounded-full hover:bg-[var(--muted)] transition-all opacity-0 group-hover:opacity-100"
                     >
                       <MoreVertical className="w-4 h-4" />
@@ -268,10 +326,7 @@ export default function MessageItem({
                         >
                           {canEdit && (
                               <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEditMessage(msg);
-                                  }}
+                                  onClick={handleEditMessage}
                                   className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded w-full text-left"
                               >
                                 <Edit className="w-4 h-4" />
@@ -279,10 +334,7 @@ export default function MessageItem({
                               </button>
                           )}
                           <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteMessage(msg.id);
-                              }}
+                              onClick={handleDeleteMessage}
                               className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded w-full text-left"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -309,7 +361,7 @@ export default function MessageItem({
                     maxWidth: '100%'
                   }}
               >
-                {renderMessageContent()}
+                {messageContent}
 
                 <div className="text-xs mt-1 opacity-70 flex items-center justify-between gap-2">
                   {isUpdated && !isDeleted && (
@@ -320,10 +372,7 @@ export default function MessageItem({
                   )}
                   <span className="ml-auto">{timeSent}</span>
                   {isSelf && !isDeleted && isReading && (
-                      <>
-
-                        <Check size={12}/>
-                      </>
+                      <Check size={12}/>
                   )}
                 </div>
               </div>
@@ -334,7 +383,7 @@ export default function MessageItem({
         {modalOpen && (
             <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
               <button
-                  onClick={() => setModalOpen(false)}
+                  onClick={handleModalClose}
                   className="absolute top-4 right-4 text-white hover:text-gray-300"
               >
                 <X className="w-8 h-8" />
@@ -362,3 +411,8 @@ export default function MessageItem({
       </>
   );
 }
+
+// Custom comparison function for memo
+MessageItem.displayName = 'MessageItem';
+
+export default memo(MessageItem);

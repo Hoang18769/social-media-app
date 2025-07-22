@@ -15,6 +15,8 @@ export default function NewPostModal({ isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const [zoomIndex, setZoomIndex] = useState(null); // 🔍 index để zoom
 
+  const MAX_FILES = 10; // 🔧 Giới hạn tối đa 10 files
+
   useEffect(() => {
     if (isOpen) {
       const storedPrivacy = localStorage.getItem("defaultPrivacy")
@@ -30,6 +32,23 @@ export default function NewPostModal({ isOpen, onClose }) {
       (file) => file.type.startsWith("image/") || file.type.startsWith("video/")
     );
 
+    // 🔧 Kiểm tra giới hạn số file
+    const currentCount = media.length;
+    const availableSlots = MAX_FILES - currentCount;
+
+    if (mediaFiles.length > availableSlots) {
+      toast.error(`Chỉ có thể chọn tối đa ${MAX_FILES} files. Còn lại ${availableSlots} slots.`);
+      // Chỉ lấy số file cho phép
+      mediaFiles.splice(availableSlots);
+    }
+
+    if (mediaFiles.length === 0) {
+      if (availableSlots === 0) {
+        toast.error(`Đã đạt giới hạn tối đa ${MAX_FILES} files.`);
+      }
+      return;
+    }
+
     const newMedia = mediaFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
@@ -37,6 +56,11 @@ export default function NewPostModal({ isOpen, onClose }) {
     }));
 
     setMedia((prev) => [...prev, ...newMedia]);
+
+    // 🔧 Hiển thị thông báo nếu đã đạt giới hạn
+    if (currentCount + mediaFiles.length >= MAX_FILES) {
+      toast.success(`Đã chọn ${currentCount + mediaFiles.length}/${MAX_FILES} files.`);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -50,6 +74,12 @@ export default function NewPostModal({ isOpen, onClose }) {
   };
 
   const handleClickUploadArea = () => {
+    // 🔧 Kiểm tra giới hạn trước khi mở file picker
+    if (media.length >= MAX_FILES) {
+      toast.error(`Đã đạt giới hạn tối đa ${MAX_FILES} files.`);
+      return;
+    }
+
     console.log("🔍 Clicking file input..."); // Debug log
     fileInputRef.current?.click();
   };
@@ -61,7 +91,7 @@ export default function NewPostModal({ isOpen, onClose }) {
   // 🔧 Hàm để tự động điều chỉnh chiều cao textarea
   const handleContentChange = (e) => {
     setContent(e.target.value);
-    
+
     // Auto-resize textarea
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -124,26 +154,31 @@ export default function NewPostModal({ isOpen, onClose }) {
             className="hidden"
           />
 
-          {media.length === 0 ? (
-            <div
-              onClick={handleClickUploadArea}
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--border)] rounded-lg p-10 text-gray-500 hover:border-[var(--primary)] cursor-pointer transition-colors space-y-2"
-            >
-              <p className="text-sm">Chọn ảnh hoặc video, hoặc kéo thả vào đây</p>
-              <div className="text-4xl">📁</div>
-            </div>
-          ) : (
-            <div className="flex flex-col md:flex-row gap-6 p-4">
-              <div className="md:w-1/2 w-full">
-                <ImagePreview
-                  images={media}
-                  onImageClick={(i) => setZoomIndex(i)} // ⚡ xử lý zoom
-                  onDelete={handleRemoveMedia}
-                  onAdd={handleClickUploadArea}
-                />
-              </div>
+            {media.length === 0 ? (
+                <div
+                    onClick={handleClickUploadArea}
+                    onDrop={handleDrop}
+                    onDragOver={(e) => e.preventDefault()}
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--border)] rounded-lg p-10 text-gray-500 hover:border-[var(--primary)] cursor-pointer transition-colors space-y-2"
+                >
+                  <p className="text-sm">Chọn ảnh hoặc video, hoặc kéo thả vào đây</p>
+                  <p className="text-xs text-gray-400">Tối đa {MAX_FILES} files</p>
+                  <div className="text-4xl">📁</div>
+                </div>
+            ) : (
+                <div className="flex flex-col md:flex-row gap-6 p-4">
+                  <div className="md:w-1/2 w-full">
+                    {/* 🔧 Hiển thị số file hiện tại */}
+                    <div className="mb-2 text-sm text-gray-500">
+                      Files: {media.length}/{MAX_FILES}
+                    </div>
+                    <ImagePreview
+                        images={media}
+                        onImageClick={(i) => setZoomIndex(i)} // ⚡ xử lý zoom
+                        onDelete={handleRemoveMedia}
+                        onAdd={media.length < MAX_FILES ? handleClickUploadArea : undefined} // 🔧 Chỉ hiển thị nút Add nếu chưa đạt giới hạn
+                    />
+                  </div>
 
               <div className="md:w-1/2 w-full space-y-4">
                 <div>

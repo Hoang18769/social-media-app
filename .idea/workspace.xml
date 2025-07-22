@@ -4,13 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="update username changes">
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="refreshTokenManually when username changes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/EditProfile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/EditProfile.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui-components/Sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/Sidebar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/store/ZustandStore.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/ZustandStore.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/axios.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/axios.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatItem.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/Comment.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/Comment.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/CreatePostForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/CreatePostForm.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/MessageItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/MessageItem.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui-components/Card.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/Card.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui-components/ImageView.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/ImageView.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -120,7 +123,8 @@
       <workItem from="1752289724274" duration="44265000" />
       <workItem from="1752461982289" duration="56454000" />
       <workItem from="1752637556739" duration="56503000" />
-      <workItem from="1752760882211" duration="5715000" />
+      <workItem from="1752760882211" duration="15824000" />
+      <workItem from="1753088135552" duration="17231000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -290,7 +294,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752758891043</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="refreshTokenManually when username changes">
+      <option name="closed" value="true" />
+      <created>1752766881663</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1752766881663</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -327,6 +339,7 @@
     <MESSAGE value="fix wrong metadata name" />
     <MESSAGE value="adminapi, simply handle code, add mounted in home, check admin by prop," />
     <MESSAGE value="update username changes" />
-    <option name="LAST_COMMIT_MESSAGE" value="update username changes" />
+    <MESSAGE value="refreshTokenManually when username changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="refreshTokenManually when username changes" />
   </component>
 </project>
