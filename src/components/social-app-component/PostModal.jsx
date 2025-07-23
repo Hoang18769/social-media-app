@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef  } from "react";
-import { Heart, MessageCircle, SendHorizonal } from "lucide-react";
+import { Heart, MessageCircle, SendHorizonal, ChevronDown } from "lucide-react";
 import Avatar from "../ui-components/Avatar";
 import Modal from "../ui-components/Modal";
 import FilePreviewInChat from "../ui-components/FilePreviewInChat";
@@ -13,6 +13,13 @@ import api from "@/utils/axios";
 import toast from "react-hot-toast";
 import {renderTextWithLinks} from "@/hooks/renderTextWithLinks";
 import SharePostModal from "@/components/social-app-component/SharePostModal";
+
+// Comment filter options
+const COMMENT_FILTER_OPTIONS = [
+  { value: 'RELEVANT', label: 'Liên quan nhất' },
+  { value: 'FRIEND_ONLY', label: 'Chỉ bạn bè' },
+  { value: 'TIME', label: 'Theo thời gian' }
+];
 
 // Main Post Modal Component
 export default function PostModal({
@@ -26,6 +33,7 @@ export default function PostModal({
                                     onClose,
                                     onLikeToggle,
                                     onCommentSubmit,
+                                    onCommentFilterChange, // New prop for filter change
                                   }) {
   // Add error handling for missing or invalid post
   if (!post || !post.id) {
@@ -72,7 +80,9 @@ export default function PostModal({
   const [replyingTo, setReplyingTo] = useState(null);
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   const [isSharedContentExpanded, setIsSharedContentExpanded] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [commentFilter, setCommentFilter] = useState('RELEVANT'); // New state for comment filter
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false); // New state for dropdown visibility
 
   //  Initialize comments manager with optimistic updates
   const commentsManager = useComments(comments, post);
@@ -94,6 +104,16 @@ export default function PostModal({
     if (!content) return '';
     return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
   };
+
+  // Handle comment filter change
+  const handleCommentFilterChange = useCallback((filterValue) => {
+    setCommentFilter(filterValue);
+    setShowFilterDropdown(false);
+    // Call parent callback if provided
+    if (onCommentFilterChange) {
+      onCommentFilterChange(filterValue);
+    }
+  }, [onCommentFilterChange]);
 
   // ✅ Handle reply submission with optimistic updates
   const handleReplySubmit = useCallback(async (content, file, commentId) => {
@@ -172,6 +192,12 @@ export default function PostModal({
     console.log("Cancelling reply");
     setReplyingTo(null);
   }, []);
+
+  // Get current filter label
+  const currentFilterLabel = useMemo(() => {
+    const option = COMMENT_FILTER_OPTIONS.find(opt => opt.value === commentFilter);
+    return option ? option.label : 'Liên quan nhất';
+  }, [commentFilter]);
 
   // Memoized components to prevent unnecessary re-renders
   const PostHeader = useMemo(() => (
@@ -294,6 +320,7 @@ export default function PostModal({
         </div>
       </div>
   ), [post, displayPost, isSharedPost, isContentExpanded, isSharedContentExpanded, handleProfileClick, renderTextWithLinks]);
+
   const PostActions = useMemo(() => (
       <div className="border-b border-[var(--border)]">
         <div className="flex gap-4 text-[var(--muted-foreground)] items-center p-3">
@@ -317,14 +344,46 @@ export default function PostModal({
       </div>
   ), [liked, likeCount, onLikeToggle]);
 
-  // ✅ Memoized comments section with optimistic updates
+  // ✅ Memoized comments section with filter dropdown
   const CommentsSection = useMemo(() => (
       <div className="p-4 space-y-2">
-        <p className="text-sm font-semibold">Bình luận ({commentsManager.localComments.length})</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold">Bình luận ({commentsManager.localComments.length})</p>
+
+          {/* Comment Filter Dropdown */}
+          <div className="relative">
+            <button
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[var(--muted)] hover:bg-[var(--muted)]/80 rounded-lg transition-colors"
+            >
+              <span>{currentFilterLabel}</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showFilterDropdown && (
+                <div className="absolute right-0 top-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg py-1 min-w-[140px] z-10">
+                  {COMMENT_FILTER_OPTIONS.map((option) => (
+                      <button
+                          key={option.value}
+                          onClick={() => handleCommentFilterChange(option.value)}
+                          className={`w-full text-left px-3 py-2 text-xs hover:bg-[var(--muted)] transition-colors ${
+                              commentFilter === option.value ? 'bg-[var(--muted)] font-medium' : ''
+                          }`}
+                      >
+                        {option.label}
+                      </button>
+                  ))}
+                </div>
+            )}
+          </div>
+        </div>
+
         {loadingComments ? (
-            <p className="text-xs text-muted">Đang tải bình luận...</p>
+            <div className="flex items-center justify-center py-4">
+              <p className="text-xs text-[var(--muted-foreground)]">Đang tải bình luận...</p>
+            </div>
         ) : commentsManager.localComments.length === 0 ? (
-            <p className="text-xs text-muted">Chưa có bình luận nào</p>
+            <p className="text-xs text-[var(--muted-foreground)]">Chưa có bình luận nào</p>
         ) : (
             <div className="space-y-4 mb-4">
               {commentsManager.localComments.map((comment) => (
@@ -347,13 +406,17 @@ export default function PostModal({
   ), [
     loadingComments,
     commentsManager.localComments,
-    post,
+    post.id, // Use post.id instead of post to reduce re-renders
     commentsManager,
     handleReply,
     replyingTo,
     handleCancelReply,
     handleReplySubmit,
-    isOwnPost
+    isOwnPost,
+    currentFilterLabel,
+    showFilterDropdown,
+    commentFilter,
+    handleCommentFilterChange
   ]);
 
   // ✅ Memoized comment input with optimistic updates

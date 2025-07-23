@@ -15,17 +15,340 @@ export const STORE_EVENTS = {
   SEARCH_PERFORMED: 'search_performed',
   UNREAD_MESSAGE_COUNT_UPDATED: 'unread_message_count_updated',
   BLOCK_STATUS_UPDATED: 'block_status_updated',
+  // Posts events
+  POSTS_LOADED: 'posts_loaded',
+  POST_LIKED: 'post_liked',
+  POST_UNLIKED: 'post_unliked',
 };
 
 const useAppStore = create(
     devtools((set, get) => ({
       // ============ USER STATE ============
-      userName:null,
-      setUserNameStore:(username)=>{
-        set({userName:username})
+      userName: null,
+      setUserNameStore: (username) => {
+        set({ userName: username })
       },
       getUserNameStore: () => get().userName,
+      filterType: "RELEVANT", // default filter
+      setFilterType: (filterType) => set({ filterType }),
 
+      // ============ POSTS STATE ============
+      posts: {
+        // State for different filter types
+        newsfeed: {
+          posts: [],
+          skip: 0,
+          hasMore: true,
+          loading: false,
+          loadingMore: false,
+          lastFetched: null,
+        },
+        recent: {
+          posts: [],
+          skip: 0,
+          hasMore: true,
+          loading: false,
+          loadingMore: false,
+          lastFetched: null,
+        },
+        friends: {
+          posts: [],
+          skip: 0,
+          hasMore: true,
+          loading: false,
+          loadingMore: false,
+          lastFetched: null,
+        },
+      },
+
+      // Posts Actions
+      setCurrentFilter: (filterType) => {
+        set({ filterType });
+      },
+
+      // Get current filter data
+      getCurrentFilterData: () => {
+        const state = get();
+        const filterMap = {
+          'RELEVANT': 'newsfeed',
+          'TIME': 'recent',
+          'FRIEND_ONLY': 'friends'
+        };
+        return state.posts[filterMap[state.filterType]];
+      },
+
+      // Set loading state for posts
+      setPostsLoading: (filterType, loading) => {
+        const filterMap = {
+          'RELEVANT': 'newsfeed',
+          'TIME': 'recent',
+          'FRIEND_ONLY': 'friends'
+        };
+        const key = filterMap[filterType];
+        if (key) {
+          set((state) => ({
+            posts: {
+              ...state.posts,
+              [key]: {
+                ...state.posts[key],
+                loading
+              }
+            }
+          }));
+        }
+      },
+
+      // Set loading more state for posts
+      setPostsLoadingMore: (filterType, loadingMore) => {
+        const filterMap = {
+          'RELEVANT': 'newsfeed',
+          'TIME': 'recent',
+          'FRIEND_ONLY': 'friends'
+        };
+        const key = filterMap[filterType];
+        if (key) {
+          set((state) => ({
+            posts: {
+              ...state.posts,
+              [key]: {
+                ...state.posts[key],
+                loadingMore
+              }
+            }
+          }));
+        }
+      },
+
+      // Set posts (replace all)
+      setPosts: (filterType, posts, hasMore = true) => {
+        const filterMap = {
+          'RELEVANT': 'newsfeed',
+          'TIME': 'recent',
+          'FRIEND_ONLY': 'friends'
+        };
+        const key = filterMap[filterType];
+        if (key) {
+          set((state) => ({
+            posts: {
+              ...state.posts,
+              [key]: {
+                ...state.posts[key],
+                posts,
+                skip: posts.length,
+                hasMore,
+                lastFetched: Date.now(),
+                loading: false,
+                loadingMore: false
+              }
+            }
+          }));
+          console.log(`✅ ${STORE_EVENTS.POSTS_LOADED} - ${posts.length} posts loaded for ${filterType}`);
+        }
+      },
+
+      // Add more posts (for pagination)
+      addMorePosts: (filterType, newPosts, hasMore = true) => {
+        const filterMap = {
+          'RELEVANT': 'newsfeed',
+          'TIME': 'recent',
+          'FRIEND_ONLY': 'friends'
+        };
+        const key = filterMap[filterType];
+        if (key) {
+          set((state) => {
+            const currentPosts = state.posts[key].posts;
+            const existingIds = new Set(currentPosts.map(p => p.id));
+            const uniqueNewPosts = newPosts.filter(p => !existingIds.has(p.id));
+
+            return {
+              posts: {
+                ...state.posts,
+                [key]: {
+                  ...state.posts[key],
+                  posts: [...currentPosts, ...uniqueNewPosts],
+                  skip: state.posts[key].skip + uniqueNewPosts.length,
+                  hasMore,
+                  lastFetched: Date.now(),
+                  loading: false,
+                  loadingMore: false
+                }
+              }
+            };
+          });
+          console.log(`✅ ${STORE_EVENTS.POSTS_LOADED} - ${newPosts.length} more posts added for ${filterType}`);
+        }
+      },
+
+      // Update a specific post (for like/unlike)
+      updatePost: (postId, updates) => {
+        set((state) => {
+          const updatePostsInFilter = (posts) =>
+              posts.map(post =>
+                  post.id === postId ? { ...post, ...updates } : post
+              );
+
+          return {
+            posts: {
+              newsfeed: {
+                ...state.posts.newsfeed,
+                posts: updatePostsInFilter(state.posts.newsfeed.posts)
+              },
+              recent: {
+                ...state.posts.recent,
+                posts: updatePostsInFilter(state.posts.recent.posts)
+              },
+              friends: {
+                ...state.posts.friends,
+                posts: updatePostsInFilter(state.posts.friends.posts)
+              }
+            }
+          };
+        });
+
+        if (updates.liked !== undefined) {
+          console.log(`✅ ${updates.liked ? STORE_EVENTS.POST_LIKED : STORE_EVENTS.POST_UNLIKED} - Post ${postId}`);
+        }
+      },
+
+      // Check if data exists and is fresh
+      hasDataForFilter: (filterType, maxAge = 5 * 60 * 1000) => { // 5 minutes default
+        const filterMap = {
+          'RELEVANT': 'newsfeed',
+          'TIME': 'recent',
+          'FRIEND_ONLY': 'friends'
+        };
+        const key = filterMap[filterType];
+        if (!key) return false;
+
+        const state = get();
+        const filterData = state.posts[key];
+
+        if (!filterData.posts.length || !filterData.lastFetched) {
+          return false;
+        }
+
+        // Check if data is still fresh
+        return (Date.now() - filterData.lastFetched) < maxAge;
+      },
+
+      // Reset a specific filter
+      resetPostsFilter: (filterType) => {
+        const filterMap = {
+          'RELEVANT': 'newsfeed',
+          'TIME': 'recent',
+          'FRIEND_ONLY': 'friends'
+        };
+        const key = filterMap[filterType];
+        if (key) {
+          set((state) => ({
+            posts: {
+              ...state.posts,
+              [key]: {
+                posts: [],
+                skip: 0,
+                hasMore: true,
+                loading: false,
+                loadingMore: false,
+                lastFetched: null,
+              }
+            }
+          }));
+          console.log(`✅ Reset posts filter: ${filterType}`);
+        }
+      },
+
+      // Reset all posts filters
+      resetAllPostsFilters: () => {
+        set((state) => ({
+          posts: {
+            newsfeed: {
+              posts: [],
+              skip: 0,
+              hasMore: true,
+              loading: false,
+              loadingMore: false,
+              lastFetched: null,
+            },
+            recent: {
+              posts: [],
+              skip: 0,
+              hasMore: true,
+              loading: false,
+              loadingMore: false,
+              lastFetched: null,
+            },
+            friends: {
+              posts: [],
+              skip: 0,
+              hasMore: true,
+              loading: false,
+              loadingMore: false,
+              lastFetched: null,
+            }
+          }
+        }));
+        console.log('✅ Reset all posts filters');
+      },
+
+      // Fetch posts from API
+      fetchPosts: async (filterType, skip = 0, isLoadMore = false, limit = 20) => {
+        try {
+          if (isLoadMore) {
+            get().setPostsLoadingMore(filterType, true);
+          } else {
+            get().setPostsLoading(filterType, true);
+          }
+
+          console.log(`🚀 Fetching posts from API - Filter: ${filterType}, Skip: ${skip}, LoadMore: ${isLoadMore}`);
+
+          const res = await api.get(`/v1/posts/newsfeed?skip=${skip}&limit=${limit}&TYPE=${filterType}`);
+          const newPosts = res.data.body || [];
+          const hasMoreData = newPosts.length === limit;
+
+          if (isLoadMore) {
+            get().addMorePosts(filterType, newPosts, hasMoreData);
+          } else {
+            // Khi không phải loadMore, luôn replace posts và reset skip về đúng số lượng
+            get().setPosts(filterType, newPosts, hasMoreData);
+          }
+
+          console.log(`✅ ${STORE_EVENTS.NEWSFEED_LOAD} - ${newPosts.length} posts loaded for ${filterType}`);
+          return { success: true, posts: newPosts };
+        } catch (error) {
+          console.error('❌ Error fetching posts:', error);
+
+          // Reset loading states
+          if (isLoadMore) {
+            get().setPostsLoadingMore(filterType, false);
+          } else {
+            get().setPostsLoading(filterType, false);
+          }
+
+          return { success: false, error };
+        }
+      },
+
+      // Handle new post creation
+      onPostCreated: (newPost) => {
+        // Add to all relevant filters
+        set((state) => {
+          const addToFilter = (filterData) => ({
+            ...filterData,
+            posts: [newPost, ...filterData.posts],
+            skip: filterData.skip + 1
+          });
+
+          return {
+            posts: {
+              newsfeed: addToFilter(state.posts.newsfeed),
+              recent: addToFilter(state.posts.recent),
+              friends: addToFilter(state.posts.friends),
+            }
+          };
+        });
+
+        console.log(`✅ ${STORE_EVENTS.POST_CREATED} - New post ${newPost.id} added to all filters`);
+      },
 
       // ============ CHAT STATE ============
       chatList: [],
@@ -133,12 +456,6 @@ const useAppStore = create(
 
         return chat.blockStatus || "NORMAL";
       },
-
-      // Get user by chat ID
-      // getUserByChatId: (chatId) => {
-      //   const chat = get().chatList.find(c => (c.id === chatId || c.chatId === chatId));
-      //   return chat ? chat.target : null;
-      // },
 
       // Mark chat as read
       markChatAsRead: async (chatId) => {
@@ -299,7 +616,6 @@ const useAppStore = create(
           throw error;
         }
       },
-
       // Handle notification received from socket
       onNotificationReceived: (notification) => {
         const { notifications } = get();
@@ -322,12 +638,6 @@ const useAppStore = create(
 
         console.log(`📊 ${STORE_EVENTS.NOTIFICATION_RECEIVED} - ${notification.id || 'new notification'} | Socket count: ${get().unreadNotificationCountFromSocket}`);
       },
-
-      // Reset socket notification count
-      // resetSocketNotificationCount: () => {
-      //   set({ unreadNotificationCountFromSocket: 0 });
-      //   console.log('✅ Reset socket notification count to 0');
-      // },
 
       // ============ CHAT NAVIGATION & SELECTION LOGIC ============
       selectedChatId: null,
@@ -381,6 +691,7 @@ const useAppStore = create(
       clearAllData: () => {
         set({
           chatList: [],
+          filterType: "RELEVANT",
           conversationMap: new Map(),
           selectedChatId: null,
           virtualChatUser: null,
@@ -391,14 +702,35 @@ const useAppStore = create(
           error: null,
           isLoadingChats: false,
           isLoadingNotifications: false,
+          // Reset posts state
+          posts: {
+            newsfeed: {
+              posts: [],
+              skip: 0,
+              hasMore: true,
+              loading: false,
+              loadingMore: false,
+              lastFetched: null,
+            },
+            recent: {
+              posts: [],
+              skip: 0,
+              hasMore: true,
+              loading: false,
+              loadingMore: false,
+              lastFetched: null,
+            },
+            friends: {
+              posts: [],
+              skip: 0,
+              hasMore: true,
+              loading: false,
+              loadingMore: false,
+              lastFetched: null,
+            },
+          },
         }, false, 'clearAllData');
       },
-
-      // Get selected chat
-      // getSelectedChat: () => {
-      //   const { selectedChatId, chatList } = get();
-      //   return chatList.find(chat => (chat.id === selectedChatId || chat.chatId === selectedChatId)) || null;
-      // },
 
       // Ensure notifications are loaded
       ensureNotificationsLoaded: () => {
@@ -415,29 +747,6 @@ const useAppStore = create(
         console.log('🔄 Force refreshing chat list...');
         return get().fetchChatList();
       },
-
-      // Force refresh notifications
-      // refreshNotifications: async () => {
-      //   console.log('🔄 Force refreshing notifications...');
-      //   return get().fetchNotifications(true);
-      // },
-
-      // Force refresh unread count
-      // refreshUnreadCount: async () => {
-      //   console.log('🔄 Force refreshing unread count...');
-      //   return get().fetchUnreadNotificationCount();
-      // },
-
-      // Get total unread message count
-      // getTotalUnreadMessageCount: () => {
-      //   const { unreadMessageCount } = get();
-      //   return unreadMessageCount;
-      // },
-
-      // Manual recalculate unread message count
-      // recalculateUnreadMessageCount: () => {
-      //   return get().updateUnreadMessageCount();
-      // },
 
     }), {
       name: 'app-store'

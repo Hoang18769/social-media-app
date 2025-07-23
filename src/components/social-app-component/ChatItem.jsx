@@ -133,7 +133,6 @@ function ChatItem({ chat, onClick, selected }) {
   );
 }
 
-// ✅ Custom comparison function để tối ưu re-render
 const areEqual = (prevProps, nextProps) => {
   const prev = prevProps.chat;
   const next = nextProps.chat;

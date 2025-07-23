@@ -24,12 +24,16 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const router = useRouter()
+  const [week, setWeek]= useState("");
+  const [month, setMonth]= useState("");
+  const [year, setYear]= useState("");
+  const [date, setDate]= useState("");
 
   const fetchUsersStatistics = async () => {
     setLoading(true)
     setError("")
     try {
-      const res = await adminApi.get("/v1/statistics/users")
+      const res = await adminApi.get("/v2/statistics/users")
       setUsersData(res.data.body)
     } catch (err) {
       setError(`Không thể tải thống kê users: ${err.message}`)
@@ -41,20 +45,114 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsersStatistics()
   }, [])
+  useEffect(() => {
+    if (week !== "") {
+      const fetchData = async () => {
+        try {
+          const res = await adminApi.get(`/v2/statistics/users/week?week=${week}`);
+          if (res.data.code === 200) {
+            setUsersData((pre) => ({
+              ...pre,
+              thisWeekStatistics: res.data.body,
+            }));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thống kê tuần:", error);
+        }
+      };
+
+      fetchData();
+    }
+  }, [week]);
+  useEffect(() => {
+    if (month !== "") {
+      const fetchData = async () => {
+        try {
+          const res = await adminApi.get(`/v2/statistics/users/month?month=${month}`);
+          if (res.data.code === 200) {
+            setUsersData((pre) => ({
+              ...pre,
+              thisMonthStatistics: res.data.body,
+            }));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thống kê tuần:", error);
+        }
+      };
+
+      fetchData();
+    }
+  }, [month]);
+  useEffect(() => {
+    if (date !== "") {
+      const fetchData = async () => {
+        try {
+          const res = await adminApi.get(`/v2/statistics/users/online?date=${date}`);
+          if (res.data.code === 200) {
+            setUsersData((pre) => ({
+              ...pre,
+              onlineStatistics: res.data.body,
+            }));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thống kê tuần:", error);
+        }
+      };
+
+      fetchData();
+    }
+  }, [date]);
+  useEffect(() => {
+    if (year !== "") {
+      const fetchData = async () => {
+        try {
+          const res = await adminApi.get(`/v2/statistics/users/year?year=${year}`);
+          if (res.data.code === 200) {
+            setUsersData((pre) => ({
+              ...pre,
+              thisYearStatistics: res.data.body,
+            }));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thống kê tuần:", error);
+        }
+      };
+
+      fetchData();
+    }
+  }, [year]);
+
+
+  const transformByMinute = (rawLogs) => {
+    if (!Array.isArray(rawLogs)) return [];
+
+    const map = new Map();
+
+    rawLogs.forEach((log) => {
+      const date = log.timestamp;
+      map.set(date, log.onlineCount);
+    });
+
+    return Array.from(map.entries())
+        .map(([date, value]) => ({
+          time: date.slice(0, 16).replace("T", " "),
+          value: value === null ? 0 : value,
+        }));
+  };
+
+  const transformMonthlyData = (data) => {
+    if (!data) return []
+    return Object.entries(data).map(([date, value]) => ({
+      date: `${date}`,
+      value: value === null ? 0 : value,
+    }))
+  }
 
   // Transform data for charts - handle null values properly
   const transformWeeklyData = (data) => {
     if (!data) return []
     return Object.entries(data).map(([day, value]) => ({
       day: day.substring(0, 3),
-      value: value === null ? 0 : value,
-    }))
-  }
-
-  const transformMonthlyData = (data) => {
-    if (!data) return []
-    return Object.entries(data).map(([date, value]) => ({
-      date: `Day ${date}`,
       value: value === null ? 0 : value,
     }))
   }
@@ -159,34 +257,52 @@ export default function UsersPage() {
           {/* Weekly & Yearly Charts - 50% Width Each */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Weekly Chart */}
-            <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
-              <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
-                <Calendar className="w-5 h-5 mr-2 text-blue-500" />
+            <div className="p-6 rounded-xl shadow-lg" style={{backgroundColor: "var(--card)"}}>
+              <div className="flex justify-between">
+              <h3 className="text-xl font-semibold mb-4 flex items-center" style={{color: "var(--card-foreground)"}}>
+                <Calendar className="w-5 h-5 mr-2 text-blue-500"/>
                 Weekly Growth
               </h3>
+                <div>
+
+              <input type="week" id="week" name="week" onChange={(e)=>{setWeek(e.target.value)}} />
+                </div>
+              </div>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={transformWeeklyData(usersData.thisWeekStatistics)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="day" stroke="var(--muted-foreground)" />
-                  <YAxis stroke="var(--muted-foreground)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
+                  <XAxis dataKey="day" stroke="var(--muted-foreground)"/>
+                  <YAxis stroke="var(--muted-foreground)"/>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      color: "var(--card-foreground)",
-                    }}
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "1px solid var(--border)",
+                        color: "var(--card-foreground)",
+                      }}
                   />
-                  <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]}/>
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
-            {/* Yearly Overview */}
-            <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
-              <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
-                <Clock className="w-5 h-5 mr-2 text-purple-500" />
-                Yearly Overview
-              </h3>
+            <div className="p-6 rounded-xl shadow-lg" style={{backgroundColor: "var(--card)" }}>
+              <div className="flex justify-between">
+                <h3 className="text-xl font-semibold mb-4 flex items-center" style={{color: "var(--card-foreground)"}}>
+                  <Clock className="w-5 h-5 mr-2 text-purple-500"/>
+                  Yearly Overview
+                </h3>
+                <input
+                    onChange={(e)=>{setYear(e.target.value)}}
+                    type="number"
+                    id="year"
+                    name="year"
+                    min="2025"
+                    max="2025"
+                    step="1"
+                    defaultValue={2025}
+                    placeholder="Nhập năm"
+                />
+              </div>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={transformYearlyData(usersData.thisYearStatistics)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -210,14 +326,55 @@ export default function UsersPage() {
               </ResponsiveContainer>
             </div>
           </div>
+          <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+            <div className="flex justify-between">
+            <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
+              <Clock className="w-5 h-5 mr-2 text-purple-500" />
+              User Online Today Chart
+            </h3>
+              <input type="date" id="date" name="date" onChange={(e)=>{setDate(e.target.value)}} />
+
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={transformByMinute(usersData.onlineStatistics)}>
+                <YAxis stroke="var(--muted-foreground)" />
+                <XAxis
+                    dataKey="time"
+                    stroke="var(--muted-foreground)"
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(value) => {
+                      return value.slice(11, 16);
+                    }}
+                />
+
+                <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      color: "var(--card-foreground)",
+                    }}
+                />
+                <Area type="monotone" dataKey="value" stroke="#F5CBCB" fill="#FFEAEA" fillOpacity={0.5} />
+
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+
+
 
           {/* Monthly Chart - Full Width */}
           <div className="w-full">
             <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+              <div className="flex justify-between">
               <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
                 <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
                 Monthly Trend
               </h3>
+                  <input  onChange={(e)=>{setMonth(e.target.value)}} type="month" id="month" name="month"/>
+
+
+              </div>
               <ResponsiveContainer width="100%" height={400}>
                 <AreaChart data={transformMonthlyData(usersData.thisMonthStatistics)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />

@@ -43,6 +43,7 @@ const PostCard = memo(function PostCard({
     const [showShareModal, setShowShareModal] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [currentPost, setCurrentPost] = useState(post)
+    const [currentCommentFilter, setCurrentCommentFilter] = useState('RELEVANT') // New state for comment filter
 
     // Content expansion states
     const [isContentExpanded, setIsContentExpanded] = useState(false)
@@ -71,8 +72,8 @@ const PostCard = memo(function PostCard({
     }, [])
 
     useEffect(() => {
-        if (isModalOpen) {
-            fetchComments()
+        if (isModalOpen && comments.length === 0) {
+            fetchComments(currentCommentFilter)
         }
     }, [isModalOpen])
 
@@ -93,25 +94,43 @@ const PostCard = memo(function PostCard({
         return content.length > maxLength ? content.substring(0, maxLength) + '...' : content
     }
 
-    const fetchComments = useCallback(async () => {
-        if (loadingComments || comments.length > 0) return
-        fetchCommentsForPost(currentPost.id)
-    }, [loadingComments, comments.length, currentPost.id])
-
-    const fetchCommentsForPost = useCallback(async (postId) => {
-        if (loadingComments || comments.length > 0) return
+    // Updated fetchComments to support filter parameter
+    const fetchComments = useCallback(async (filterType = 'RELEVANT') => {
         setLoadingComments(true)
         try {
-            const res = await api.get(`/v1/comments/of-post/${postId}`)
-            console.log(res)
+            const res = await api.get(`/v1/comments/of-post/${currentPost.id}`, {
+                params: { type: filterType }
+            })
+            console.log('Fetched comments with filter:', filterType, res.data)
             setComments(res.data.body || [])
         } catch (err) {
             toast.error("Không thể tải bình luận")
             console.error(err)
+            // Don't reset comments on error to prevent modal disappearing
         } finally {
             setLoadingComments(false)
         }
-    }, [loadingComments, comments.length])
+    }, [currentPost.id])
+
+    // Handler for comment filter change
+    const handleCommentFilterChange = useCallback((filterType) => {
+        console.log('Comment filter changed to:', filterType)
+        setCurrentCommentFilter(filterType)
+        // Don't reset comments immediately, let fetchComments handle it
+        fetchComments(filterType)
+    }, [fetchComments])
+
+    // Handler for comment submission
+    const handleCommentSubmit = useCallback((newComment) => {
+        // Add new comment to the list
+        setComments(prevComments => [newComment, ...prevComments])
+
+        // Update post comment count optimistically
+        setCurrentPost(prevPost => ({
+            ...prevPost,
+            commentCount: (prevPost.commentCount || 0) + 1
+        }))
+    }, [])
 
     // Optimistic like handler
     const handleLikeToggle = useCallback(async () => {
@@ -198,9 +217,9 @@ const PostCard = memo(function PostCard({
     // Function to open modal - unified logic
     const openModal = useCallback(() => {
         setShowModal(true)
-        // Always fetch comments for the current post
-        fetchComments()
-    }, [fetchComments])
+        // Fetch comments with current filter
+        fetchComments(currentCommentFilter)
+    }, [fetchComments, currentCommentFilter])
 
     const handleCardClick = (e) => {
         // Không mở modal nếu đang click vào button hoặc đang trong mode edit
@@ -243,8 +262,9 @@ const PostCard = memo(function PostCard({
     const handleCloseModal = useCallback(() => {
         setActiveImageIndex(null)
         setShowModal(false)
-        // Reset comments to allow fresh fetch next time
+        // Reset comments and filter when closing modal
         setComments([])
+        setCurrentCommentFilter('RELEVANT')
     }, [])
 
     const renderSharedPostContent = useCallback(() => {
@@ -547,10 +567,11 @@ const PostCard = memo(function PostCard({
                         activeIndex={activeImageIndex}
                         comments={comments}
                         loadingComments={loadingComments}
-                        onFetchComments={fetchComments}
                         isOwnPost={isOwnPost}
                         onClose={handleCloseModal}
                         onLikeToggle={handleLikeToggle}
+                        onCommentSubmit={handleCommentSubmit}
+                        onCommentFilterChange={handleCommentFilterChange}
                     />
                 </Suspense>
             )}

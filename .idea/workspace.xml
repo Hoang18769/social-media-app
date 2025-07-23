@@ -4,16 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="refreshTokenManually when username changes">
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="memorize some component, callback and dynamic import for better perfomence">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(auth)/register/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/register/page.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatItem.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/social-app-component/Comment.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/Comment.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/CreatePostForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/CreatePostForm.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/MessageItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/MessageItem.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/PostCard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui-components/Card.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/Card.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui-components/ImageView.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui-components/ImageView.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/store/ZustandStore.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/ZustandStore.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,6 +50,7 @@
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
 }</component>
+  <component name="PhpDebugGeneral" listening_started="true" />
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="Security Analysis" />
   </component>
@@ -124,7 +125,8 @@
       <workItem from="1752461982289" duration="56454000" />
       <workItem from="1752637556739" duration="56503000" />
       <workItem from="1752760882211" duration="15824000" />
-      <workItem from="1753088135552" duration="17231000" />
+      <workItem from="1753088135552" duration="18188000" />
+      <workItem from="1753213153065" duration="20360000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -302,7 +304,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752766881663</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="memorize some component, callback and dynamic import for better perfomence">
+      <option name="closed" value="true" />
+      <created>1753202770445</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1753202770445</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -340,6 +350,7 @@
     <MESSAGE value="adminapi, simply handle code, add mounted in home, check admin by prop," />
     <MESSAGE value="update username changes" />
     <MESSAGE value="refreshTokenManually when username changes" />
-    <option name="LAST_COMMIT_MESSAGE" value="refreshTokenManually when username changes" />
+    <MESSAGE value="memorize some component, callback and dynamic import for better perfomence" />
+    <option name="LAST_COMMIT_MESSAGE" value="memorize some component, callback and dynamic import for better perfomence" />
   </component>
 </project>

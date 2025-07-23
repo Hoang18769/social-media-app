@@ -31,6 +31,7 @@ import {
   Lock,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import adminApi from "@/utils/adminInterception";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D"]
 
@@ -157,20 +158,99 @@ export default function PostsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const router = useRouter()
-
+  const [week, setWeek]= useState("");
+  const [month, setMonth]= useState("");
+  const [year, setYear]= useState("");
+  const [date, setDate]= useState("");
   const fetchPostsStatistics = async () => {
     setLoading(true)
     setError("")
     try {
-      const res = await api.get("/v1/statistics/posts")
+      const res = await api.get("/v2/statistics/posts")
       setPostsData(res.data.body)
+      console.log(res.data.body)
     } catch (err) {
       setError(`Không thể tải thống kê posts: ${err.message}`)
     } finally {
       setLoading(false)
     }
   }
+  useEffect(() => {
+    if (week !== "") {
+      const fetchData = async () => {
+        try {
+          const res = await adminApi.get(`/v2/statistics/posts/week?week=${week}`);
+          if (res.data.code === 200) {
+            setPostsData((pre) => ({
+              ...pre,
+              thisWeekStatistics: res.data.body,
+            }));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thống kê tuần:", error);
+        }
+      };
 
+      fetchData();
+    }
+  }, [week]);
+  useEffect(() => {
+    if (month !== "") {
+      const fetchData = async () => {
+        try {
+          const res = await adminApi.get(`/v2/statistics/posts/month?month=${month}`);
+          if (res.data.code === 200) {
+            setPostsData((pre) => ({
+              ...pre,
+              thisMonthStatistics: res.data.body,
+            }));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thống kê tuần:", error);
+        }
+      };
+
+      fetchData();
+    }
+  }, [month]);
+  useEffect(() => {
+    if (date !== "") {
+      const fetchData = async () => {
+        try {
+          const res = await adminApi.get(`/v2/statistics/posts/online?date=${date}`);
+          if (res.data.code === 200) {
+            setPostsData((pre) => ({
+              ...pre,
+              onlineStatistics: res.data.body,
+            }));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thống kê tuần:", error);
+        }
+      };
+
+      fetchData();
+    }
+  }, [date]);
+  useEffect(() => {
+    if (year !== "") {
+      const fetchData = async () => {
+        try {
+          const res = await adminApi.get(`/v2/statistics/posts/year?year=${year}`);
+          if (res.data.code === 200) {
+            setPostsData((pre) => ({
+              ...pre,
+              thisYearStatistics: res.data.body,
+            }));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thống kê tuần:", error);
+        }
+      };
+
+      fetchData();
+    }
+  }, [year]);
   const handleTotalPostsClick = () => {
     router.push('/admin/dashboard/viewposts')
   }
@@ -231,10 +311,14 @@ export default function PostsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Weekly Chart */}
         <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+          <div className="flex justify-between">
           <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
             <Calendar className="w-5 h-5 mr-2 text-green-500" />
             Weekly Posts Activity
           </h3>
+            <input type="week" id="week" name="week" onChange={(e)=>{setWeek(e.target.value)}} />
+
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={transformData.weekly(postsData.thisWeekStatistics)}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -254,10 +338,23 @@ export default function PostsPage() {
 
         {/* Yearly Chart */}
         <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+          <div className="flex justify-between">
           <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
             <Clock className="w-5 h-5 mr-2 text-purple-500" />
             Yearly Posts
           </h3>
+            <input
+                onChange={(e)=>{setYear(e.target.value)}}
+                type="number"
+                id="year"
+                name="year"
+                min="2025"
+                max="2025"
+                step="1"
+                defaultValue={2025}
+                placeholder="Nhập năm"
+            />
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={transformData.yearly(postsData.thisYearStatistics)}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -284,10 +381,14 @@ export default function PostsPage() {
 
       {/* Monthly Chart - Full Width */}
       <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
+<div className="flex justify-between">
         <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
           <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
           Monthly Posts
         </h3>
+        <input  onChange={(e)=>{setMonth(e.target.value)}} type="month" id="month" name="month"/>
+
+</div>
         <ResponsiveContainer width="100%" height={400}>
           <AreaChart data={transformData.monthly(postsData.thisMonthStatistics)}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
