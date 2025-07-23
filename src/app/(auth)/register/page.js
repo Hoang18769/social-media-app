@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, ArrowDown, ArrowLeftRight } from "lucide-react";
@@ -140,8 +140,31 @@ const FormFields = ({ mode, formData, setFormData, showPassword, setShowPassword
   );
 };
 
-// Main component
-export default function AuthPage() {
+// Loading component để hiển thị khi đang load search params
+const AuthPageLoading = () => (
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <main className="flex-grow flex flex-col md:flex-row h-full">
+        {/* Left Side */}
+        <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
+          <Image src="/Connect.png" alt="Network illustration" width={400} height={400}
+                 className="max-w-full h-auto object-contain" priority />
+        </div>
+
+        {/* Right Side */}
+        <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
+          <div className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]">
+            <div className="flex justify-center items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-muted-foreground">Đang tải...</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+);
+
+// Main component tách riêng để có thể wrap trong Suspense
+function AuthPageContent() {
   const [mode, setMode] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showResendButton, setShowResendButton] = useState(false);
@@ -370,5 +393,14 @@ export default function AuthPage() {
           </div>
         </main>
       </div>
+  );
+}
+
+// Export default component với Suspense wrapper
+export default function AuthPage() {
+  return (
+      <Suspense fallback={<AuthPageLoading />}>
+        <AuthPageContent />
+      </Suspense>
   );
 }
