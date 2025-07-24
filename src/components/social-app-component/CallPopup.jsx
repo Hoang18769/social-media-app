@@ -2,6 +2,8 @@
 
 import React, { useEffect } from "react";
 import { enableAudioOnUserAction, stopSound } from "@/utils/playSound";
+import Image from "next/image";
+import Avatar from "@/components/ui-components/Avatar";
 
 const CallPopup = ({ caller, onAccept, onReject }) => {
   // Nếu không có caller thì không hiển thị
@@ -32,9 +34,12 @@ const CallPopup = ({ caller, onAccept, onReject }) => {
         <div className="text-center">
           <div className="mb-6">
             {/* Avatar hoặc icon */}
-            <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <span className="text-white text-2xl">📞</span>
-            </div>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Avatar
+                  src={caller?.profilePictureUrl}
+                  alt={caller.name}
+                  className="w-12 h-12"
+              />            </div>
             
             {/* Tiêu đề và tên người gọi */}
             <h3 className="text-xl font-semibold mb-2 text-gray-800">
