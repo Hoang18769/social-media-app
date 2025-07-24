@@ -292,19 +292,21 @@ export default function PostsPage() {
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Posts"
+          title="Bài viết"
           value={postsData.totalPosts}
           icon={FileText}
           color="from-indigo-500 to-indigo-600"
           trend={`+${postsData.newPostsThisMonth} this month`}
           onClick={handleTotalPostsClick}
         />
-        <StatCard title="Total Likes" value={postsData.totalLikes} icon={Heart} color="from-pink-500 to-pink-600" />
-        <StatCard title="Comments" value={postsData.totalComments} icon={MessageCircle} color="from-blue-500 to-blue-600" />
-        <StatCard title="Shares" value={postsData.totalShares} icon={Share2} color="from-green-500 to-green-600" />
-        <StatCard title="Files" value={postsData.totalFiles} icon={Paperclip} color="from-yellow-500 to-yellow-600" />
+        <StatCard title="Tổng lượt like" value={postsData.totalLikes} icon={Heart} color="from-pink-500 to-pink-600" />
+        <StatCard title="Bình luận" value={postsData.totalComments} icon={MessageCircle} color="from-blue-500 to-blue-600" />
+        <StatCard title="Lượt chia sẻ" value={postsData.totalShares} icon={Share2} color="from-green-500 to-green-600" />
+        <StatCard title="Files đính kèm" value={postsData.totalFiles} icon={Paperclip} color="from-yellow-500 to-yellow-600" />
+        <StatCard title="Bài viết đã xóa" value={postsData.deletedPostCount} icon={FileText} color="from-yellow-300 to-red-600" />
+
       </div>
 
       {/* Weekly & Yearly Charts */}
@@ -314,7 +316,7 @@ export default function PostsPage() {
           <div className="flex justify-between">
           <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
             <Calendar className="w-5 h-5 mr-2 text-green-500" />
-            Weekly Posts Activity
+             Bài viết trong tuần
           </h3>
             <input type="week" id="week" name="week" onChange={(e)=>{setWeek(e.target.value)}} />
 
@@ -341,7 +343,7 @@ export default function PostsPage() {
           <div className="flex justify-between">
           <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
             <Clock className="w-5 h-5 mr-2 text-purple-500" />
-            Yearly Posts
+            Bài viết trong năm
           </h3>
             <input
                 onChange={(e)=>{setYear(e.target.value)}}
@@ -384,7 +386,7 @@ export default function PostsPage() {
 <div className="flex justify-between">
         <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
           <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
-          Monthly Posts
+          Bài viết trong tháng
         </h3>
         <input  onChange={(e)=>{setMonth(e.target.value)}} type="month" id="month" name="month"/>
 
@@ -418,15 +420,15 @@ export default function PostsPage() {
         {/* Engagement Pie Chart */}
         <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
           <h3 className="text-xl font-semibold mb-4" style={{ color: "var(--card-foreground)" }}>
-            Engagement Distribution
+            Phân loại bài viết
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={[
-                  { name: "Likes", value: postsData.totalLikes },
-                  { name: "Comments", value: postsData.totalComments },
-                  { name: "Shares", value: postsData.totalShares },
+                  { name: "Riêng tư", value: postsData.privatePostCount },
+                  { name: "Công khai", value: postsData.publicPostCount },
+                  { name: "Bạn bè", value: postsData.friendPostCount },
                 ]}
                 cx="50%"
                 cy="50%"
@@ -457,14 +459,14 @@ export default function PostsPage() {
         {/* Additional Metrics */}
         <div className="lg:col-span-2 p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
           <h3 className="text-xl font-semibold mb-4" style={{ color: "var(--card-foreground)" }}>
-            Additional Metrics
+            Biểu đồ phụ
           </h3>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { label: "New Posts Today", value: postsData.newPostsToday },
-              { label: "New Posts This Week", value: postsData.newPostsThisWeek },
-              { label: "New Posts This Month", value: postsData.newPostsThisMonth },
-              { label: "New Posts This Year", value: postsData.newPostsThisYear },
+              { label: "Bài viết mới trong ngày", value: postsData.newPostsToday },
+              { label: "Bài viết mới trong tuần", value: postsData.newPostsThisWeek },
+              { label: "Bài viết mới trong tháng", value: postsData.newPostsThisMonth },
+              { label: "Bài viết mới trong năm", value: postsData.newPostsThisYear },
             ].map((metric, index) => (
               <div key={index} className="p-4 rounded-lg" style={{ backgroundColor: "var(--accent)" }}>
                 <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
@@ -477,25 +479,6 @@ export default function PostsPage() {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Hottest Posts */}
-      <div className="p-6 rounded-xl shadow-lg" style={{ backgroundColor: "var(--card)" }}>
-        <h3 className="text-xl font-semibold mb-6 flex items-center" style={{ color: "var(--card-foreground)" }}>
-          🔥 Hottest Posts Today
-        </h3>
-        {postsData.hottestTodayPosts?.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {postsData.hottestTodayPosts.map((post) => (
-              <HottestPost key={post.id} post={post} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📭</div>
-            <p style={{ color: "var(--muted-foreground)" }}>Không có bài viết hot hôm nay</p>
-          </div>
-        )}
       </div>
     </div>
   )

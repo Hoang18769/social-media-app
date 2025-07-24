@@ -4,16 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="memorize some component, callback and dynamic import for better perfomence">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="3986abab-3fc6-4b8c-8b08-39242aee5dd1" name="Changes" comment="filter for newfeed, comments and admin dashboard, optimize code, remove suspense">
       <change beforePath="$PROJECT_DIR$/src/app/(auth)/register/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(auth)/register/page.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/chats/layout.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/home/page.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/(home)/profile/[username]/page.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatBox.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/ChatItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/ChatItem.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/social-app-component/Comment.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/social-app-component/Comment.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/store/ZustandStore.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/ZustandStore.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -126,7 +118,7 @@
       <workItem from="1752637556739" duration="56503000" />
       <workItem from="1752760882211" duration="15824000" />
       <workItem from="1753088135552" duration="18188000" />
-      <workItem from="1753213153065" duration="20360000" />
+      <workItem from="1753213153065" duration="37644000" />
     </task>
     <task id="LOCAL-00001" summary="postmodal fix, remove some stuff">
       <option name="closed" value="true" />
@@ -312,7 +304,15 @@
       <option name="project" value="LOCAL" />
       <updated>1753202770445</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="filter for newfeed, comments and admin dashboard, optimize code, remove suspense">
+      <option name="closed" value="true" />
+      <created>1753301654558</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1753301654558</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -351,6 +351,7 @@
     <MESSAGE value="update username changes" />
     <MESSAGE value="refreshTokenManually when username changes" />
     <MESSAGE value="memorize some component, callback and dynamic import for better perfomence" />
-    <option name="LAST_COMMIT_MESSAGE" value="memorize some component, callback and dynamic import for better perfomence" />
+    <MESSAGE value="filter for newfeed, comments and admin dashboard, optimize code, remove suspense" />
+    <option name="LAST_COMMIT_MESSAGE" value="filter for newfeed, comments and admin dashboard, optimize code, remove suspense" />
   </component>
 </project>

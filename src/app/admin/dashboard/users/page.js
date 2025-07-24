@@ -224,7 +224,7 @@ export default function UsersPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
-              title="Total Users"
+              title="Người dùng"
               value={usersData.totalUsers}
               icon={Users}
               color="from-blue-500 to-blue-600"
@@ -234,19 +234,19 @@ export default function UsersPage() {
               }}
             />
             <StatCard
-              title="Online Now"
+              title="Đang trực tuyến"
               value={usersData.onlineUsersNow}
               icon={Eye}
               color="from-green-500 to-green-600"
             />
             <StatCard
-              title="New Today"
+              title="Người dùng mới hôm nay"
               value={usersData.newUsersToday}
               icon={UserCheck}
               color="from-purple-500 to-purple-600"
             />
             <StatCard
-              title="Not Verified"
+              title="Chưa xác thực"
               value={usersData.notVerifiedUsers}
               icon={UserX}
               color="from-orange-500 to-orange-600"
@@ -261,7 +261,7 @@ export default function UsersPage() {
               <div className="flex justify-between">
               <h3 className="text-xl font-semibold mb-4 flex items-center" style={{color: "var(--card-foreground)"}}>
                 <Calendar className="w-5 h-5 mr-2 text-blue-500"/>
-                Weekly Growth
+                Người dùng trong tuần
               </h3>
                 <div>
 
@@ -289,7 +289,7 @@ export default function UsersPage() {
               <div className="flex justify-between">
                 <h3 className="text-xl font-semibold mb-4 flex items-center" style={{color: "var(--card-foreground)"}}>
                   <Clock className="w-5 h-5 mr-2 text-purple-500"/>
-                  Yearly Overview
+                  Người dùng trong năm
                 </h3>
                 <input
                     onChange={(e)=>{setYear(e.target.value)}}
@@ -330,7 +330,7 @@ export default function UsersPage() {
             <div className="flex justify-between">
             <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
               <Clock className="w-5 h-5 mr-2 text-purple-500" />
-              User Online Today Chart
+              Trực tuyến hôm nay
             </h3>
               <input type="date" id="date" name="date" onChange={(e)=>{setDate(e.target.value)}} />
 
@@ -369,7 +369,7 @@ export default function UsersPage() {
               <div className="flex justify-between">
               <h3 className="text-xl font-semibold mb-4 flex items-center" style={{ color: "var(--card-foreground)" }}>
                 <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
-                Monthly Trend
+                Người dùng trong tháng
               </h3>
                   <input  onChange={(e)=>{setMonth(e.target.value)}} type="month" id="month" name="month"/>
 
