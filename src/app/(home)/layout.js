@@ -355,6 +355,7 @@ const layoutContent = (
 
 // ✅ Main Layout với CallProvider wrapper
 export default function MainLayout({ children }) {
+  usePageMetadata(pageMetadata.home());
   return (
     <CallProvider>
     <ThemeProvider>

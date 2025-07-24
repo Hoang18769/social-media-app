@@ -86,39 +86,39 @@ export function usePageMetadata(config) {
 // ✅ Preset metadata cho các page phổ biến
 export const pageMetadata = {
     home: () => ({
-        title: 'Trang Chủ',
-        description: 'Kết nối với bạn bè, chia sẻ khoảnh khắc và trò chuyện trong ứng dụng mạng xã hội',
+        title: 'PocPoc - Trang Chủ',
+        description: 'PocPoc - Kết nối với bạn bè, chia sẻ khoảnh khắc và trò chuyện trong ứng dụng mạng xã hội',
         keywords: ['social media', 'chats', 'friends', 'messaging', 'video call'],
         image: '/pocpoc.png',
         url: '/home'
     }),
 
     chats: () => ({
-        title: 'Tin Nhắn',
-        description: 'Trò chuyện thời gian thực với bạn bè và gia đình',
+        title: 'PocPoc - Tin Nhắn',
+        description: 'PocPoc - Trò chuyện thời gian thực với bạn bè và gia đình',
         keywords: ['chat', 'messaging', 'conversation'],
         image: '/pocpoc.png',
         url: '/chats'
     }),
 
     friends: () => ({
-        title: 'Bạn Bè',
-        description: 'Tìm kiếm và kết nối với những người bạn mới',
+        title: 'PocPoc - Bạn Bè',
+        description: 'PocPoc - Tìm kiếm và kết nối với những người bạn mới',
         keywords: ['friends', 'connect', 'social'],
         image: '/pocpoc.png',
         url: '/friends'
     }),
     profile: () => ({
-        title: 'Trang cá nhân',
-        description: 'Quản lý thông tin cá nhân của bản thân, xem thông tin của những người khác',
+        title: 'PocPoc - Trang cá nhân',
+        description: 'PocPoc - Quản lý thông tin cá nhân của bản thân, xem thông tin của những người khác',
         keywords: ['profile', 'friend', 'information'],
         image: '/pocpoc.png',
         url: '/profile'
     }),
 
     settings: () => ({
-        title: 'Cài Đặt',
-        description: 'Quản lý tài khoản và cài đặt ứng dụng',
+        title: 'PocPoc - Cài Đặt',
+        description: 'PocPoc - Quản lý tài khoản và cài đặt ứng dụng',
         keywords: ['settings', 'account', 'preferences'],
         image: '/og-settings.jpg',
         url: '/settings',
@@ -126,24 +126,12 @@ export const pageMetadata = {
     }),
 
     search: () => ({
-        title: 'Tìm Kiếm',
-        description: 'Tìm kiếm người dùng, nội dung và cuộc trò chuyện',
+        title: 'PocPoc - Tìm Kiếm',
+        description: 'PocPoc - Tìm kiếm người dùng, nội dung và cuộc trò chuyện',
         keywords: ['search', 'find', 'users'],
         image: '/og-search.jpg',
         url: '/search'
     })
-}
-
-// ✅ Hàm tạo metadata cho profile động
-export function createProfileMetadata(username, displayName, avatar) {
-    return {
-        title: displayName || username,
-        description: `Trang cá nhân của ${displayName || username} trên Social App`,
-        keywords: ['profile', 'user', username],
-        image: avatar || '/og-profile.jpg',
-        url: `/profile/${username}`,
-        type: 'profile'
-    }
 }
 
 // ✅ Hàm tạo metadata cho trang lỗi
