@@ -21,6 +21,7 @@ function ResetPasswordContent() {
   const code = searchParams.get("code")
 
   const [verified, setVerified] = useState(false)
+  const [sent, setSent] = useState(false)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
@@ -48,13 +49,13 @@ function ResetPasswordContent() {
           setVerified(true)
         }
       } catch (err) {
-        if (err.response?.data?.code === 1009) {
+        console.log(err.response);
+        if (err?.response?.data?.code === 1009 || err?.response?.data?.code === 9996) {
           setError("❌ Mã xác thực không hợp lệ hoặc đã hết hạn.")
           setShowResendButton(true)
           return
         }
-        console.log(err)
-        setError("❌ Mã xác thực không hợp lệ hoặc đã hết hạn.")
+        setError("❌ Mã xác thực không hợp lệ hoặc đã hết hạn. 2")
       }
     }
 
@@ -71,17 +72,17 @@ function ResetPasswordContent() {
     setLoading(true)
     try {
       const res = await api.post(`/v1/forgot-password/resend-email?email=${email}`,
-          {}, // body (empty object vì bạn gửi data qua query string)
-          {
-            headers: {
-              "X-Continue-Page": `${process.env.NEXT_PUBLIC_API_URL}/reset-password`
-            }
+        {}, // body (empty object vì bạn gửi data qua query string)
+        {
+          headers: {
+            "X-Continue-Page": `${process.env.NEXT_PUBLIC_API_URL}/reset-password`
           }
+        }
       )
-      console.log(res)
       if (res.data.code === 200) {
         setError("");
-        setMessage("✅ gửi lại email thay đổi thành công!")
+        setSent(true);
+        setMessage("✅ Gửi lại email thay đổi thành công!")
       }
     } catch (err) {
       setMessage(`❌Gửi email thất bại: ${err.response?.data?.message || err.message}`)
@@ -120,127 +121,127 @@ function ResetPasswordContent() {
   }
 
   return (
-      <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
-        <div
-            className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]"
-            style={{ overflow: "hidden" }}
-        >
-          <div className="flex items-center mb-6">
-            <Link href="/login" className="mr-4 text-muted-foreground hover:text-foreground transition">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="text-2xl font-bold">Đặt lại mật khẩu</h1>
-          </div>
-
-          <motion.div animate={{ height }} transition={{ duration: 0.3 }} style={{ overflow: "hidden" }}>
-            <div ref={formBoundsRef}>
-              <MotionContainer modeKey="reset-password" effect="fadeUp">
-                {error ? (
-                    <div className="space-y-4">
-                      <div className="bg-red-100 text-red-800 text-sm p-3 rounded">{error}</div>
-                      {showResendButton && (
-                          <button
-                              type="button"
-                              onClick={handleResend}
-                              className="text-sm text-blue-500 dark:text-blue-400 hover:underline"
-                              disabled={loading}
-                          >
-                            Gửi lại email xác thực
-                          </button>
-                      )}
-                    </div>
-                ) : !verified ? (
-                    <div className="text-muted-foreground text-sm">Đang xác minh...</div>
-                ) : (
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      {message && (
-                          <div
-                              className={`p-3 text-sm rounded ${
-                                  message.includes("✅") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                              }`}
-                          >
-                            {message}
-                          </div>
-                      )}
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Mật khẩu mới</h4>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
-                            placeholder="Nhập mật khẩu mới"
-                            required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Xác nhận mật khẩu</h4>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
-                            placeholder="Nhập lại mật khẩu"
-                            required
-                        />
-                      </div>
-
-                      <div className="flex justify-center">
-                        <Button type="submit" disabled={loading} className="w-full max-w-xs text-center">
-                          {loading ? "Đang đặt lại..." : "Đặt lại mật khẩu"}
-                        </Button>
-                      </div>
-                    </form>
-                )}
-              </MotionContainer>
-            </div>
-          </motion.div>
+    <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
+      <div
+        className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]"
+        style={{ overflow: "hidden" }}
+      >
+        <div className="flex items-center mb-6">
+          <Link href="/register" className="mr-4 text-muted-foreground hover:text-foreground transition">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <h1 className="text-2xl font-bold">Đặt lại mật khẩu</h1>
         </div>
+
+        <motion.div animate={{ height }} transition={{ duration: 0.3 }} style={{ overflow: "hidden" }}>
+          <div ref={formBoundsRef}>
+            <MotionContainer modeKey="reset-password" effect="fadeUp">
+              {error ? (
+                <div className="space-y-4">
+                  <div className="bg-red-100 text-red-800 text-sm p-3 rounded">{error}</div>
+                  {showResendButton && (
+
+                    <Button disabled={loading} onClick={handleResend} className=" w-full text-md text-white bg-black px-3 py-2 rounded hover:underline">
+                      Gửi lại email xác thực 📩
+                    </Button>
+                  )}
+                </div>
+              ) : sent ? <div
+                className={`p-3 text-sm rounded ${message.includes("✅") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                  }`}
+              >
+                {message}
+              </div> : !verified ? (
+                <div className="text-muted-foreground text-sm">Đang xác minh...</div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {message && (
+                    <div
+                      className={`p-3 text-sm rounded ${message.includes("✅") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        }`}
+                    >
+                      {message}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Mật khẩu mới</h4>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
+                      placeholder="Nhập mật khẩu mới"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Xác nhận mật khẩu</h4>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
+                      placeholder="Nhập lại mật khẩu"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex justify-center">
+                    <Button type="submit" disabled={loading} className="w-full max-w-xs text-center">
+                      {loading ? "Đang đặt lại..." : "Đặt lại mật khẩu"}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </MotionContainer>
+          </div>
+        </motion.div>
       </div>
+    </div>
   )
 }
 
 // Loading fallback component
 function LoadingFallback() {
   return (
-      <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
-        <div className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]">
-          <div className="flex items-center mb-6">
-            <Link href="/login" className="mr-4 text-muted-foreground hover:text-foreground transition">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="text-2xl font-bold">Đặt lại mật khẩu</h1>
-          </div>
-          <div className="text-muted-foreground text-sm">Đang tải...</div>
+    <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
+      <div className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]">
+        <div className="flex items-center mb-6">
+          <Link href="/login" className="mr-4 text-muted-foreground hover:text-foreground transition">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <h1 className="text-2xl font-bold">Đặt lại mật khẩu</h1>
         </div>
+        <div className="text-muted-foreground text-sm">Đang tải...</div>
       </div>
+    </div>
   )
 }
 
 // Main component with Suspense boundary
 export default function ResetPasswordPage() {
   return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <main className="flex-grow flex flex-col md:flex-row h-full">
-          {/* Left Side */}
-          <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
-            <Image
-                src="/Connect.png"
-                alt="Network illustration"
-                width={400}
-                height={400}
-                className="max-w-full h-auto object-contain"
-                priority
-            />
-          </div>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <main className="flex-grow flex flex-col md:flex-row h-full">
+        {/* Left Side */}
+        <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
+          <Image
+            src="/Connect.png"
+            alt="Network illustration"
+            width={400}
+            height={400}
+            className="max-w-full h-auto object-contain"
+            priority
+          />
+        </div>
 
-          {/* Right Side with Suspense */}
-          <Suspense fallback={<LoadingFallback />}>
-            <ResetPasswordContent />
-          </Suspense>
-        </main>
-      </div>
+        {/* Right Side with Suspense */}
+        <Suspense fallback={<LoadingFallback />}>
+          <ResetPasswordContent />
+        </Suspense>
+      </main>
+    </div>
   )
 }

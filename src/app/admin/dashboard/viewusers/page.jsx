@@ -230,8 +230,7 @@ const UsersPage = () => {
 
       {/* User Info Grid */}
       <div className=" gap-8 my-2">
-      <div className="flex gap-2" >
-
+      <div className="flex gap-2 justify-between" >
         <div className="flex items-center gap-2">
           <Mail className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground truncate">

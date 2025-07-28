@@ -271,7 +271,7 @@ export default function PostsPage() {
     monthly: (data) => {
       if (!data) return []
       return Object.entries(data).map(([date, value]) => ({
-        date: `Day ${date}`,
+        date: `Ngày ${date}`,
         value: value === null ? 0 : value,
       }))
     },

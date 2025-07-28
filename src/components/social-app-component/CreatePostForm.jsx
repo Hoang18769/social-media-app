@@ -23,7 +23,7 @@ export default function NewPostModal({ isOpen, onClose }) {
       if ((storedPrivacy)) {
         setPrivacy(storedPrivacy)
       } else {
-        setPrivacy("FRIEND") // fallback
+        setPrivacy("PUBLIC") // fallback
       }
     }
   }, [isOpen])
@@ -133,15 +133,9 @@ export default function NewPostModal({ isOpen, onClose }) {
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="relative">
+        <div className="relative p-5">
           <div className="flex justify-between items-center mb-4 px-2">
-            <h2 className="text-lg font-semibold">New post</h2>
-            <button
-              onClick={onClose}
-              className="text-xl text-gray-400 hover:text-[var(--foreground)]"
-            >
-              ✕
-            </button>
+            <h2 className="text-lg font-semibold">Đăng bài viết</h2>
           </div>
 
           {/* Hidden file input - đặt ở đây để luôn có thể truy cập */}
@@ -162,7 +156,7 @@ export default function NewPostModal({ isOpen, onClose }) {
                     className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--border)] rounded-lg p-10 text-gray-500 hover:border-[var(--primary)] cursor-pointer transition-colors space-y-2"
                 >
                   <p className="text-sm">Chọn ảnh hoặc video, hoặc kéo thả vào đây</p>
-                  <p className="text-xs text-gray-400">Tối đa {MAX_FILES} files</p>
+                  <p className="text-xs text-gray-400">Tối đa {MAX_FILES} ảnh/video</p>
                   <div className="text-4xl">📁</div>
                 </div>
             ) : (
@@ -170,7 +164,7 @@ export default function NewPostModal({ isOpen, onClose }) {
                   <div className="md:w-1/2 w-full">
                     {/* 🔧 Hiển thị số file hiện tại */}
                     <div className="mb-2 text-sm text-gray-500">
-                      Files: {media.length}/{MAX_FILES}
+                      Tập tin đã tải lên: {media.length}/{MAX_FILES}
                     </div>
                     <ImagePreview
                         images={media}
@@ -182,20 +176,20 @@ export default function NewPostModal({ isOpen, onClose }) {
 
               <div className="md:w-1/2 w-full space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Privacy</label>
+                  <label className="block text-sm font-medium mb-1">Ai có thể xem bài viết của bạn?</label>
                   <select
                     value={privacy}
                     onChange={(e) => setPrivacy(e.target.value)}
                     className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)]"
                   >
-                    <option value="PUBLIC">🌍 Public</option>
-                    <option value="FRIEND">👥 Friends</option>
-                    <option value="PRIVATE">🔒 Only me</option>
+                    <option value="PUBLIC">🌍 Mọi người</option>
+                    <option value="FRIEND">👥 Chỉ bạn bè</option>
+                    <option value="PRIVATE">🔒 Riêng tư</option>
                   </select>
                 </div>
 
                 <div className="flex-1">
-                  <label className="block text-sm font-medium mb-1">Caption</label>
+                  <label className="block text-sm font-medium mb-1">Nội dung</label>
                   <textarea
                     ref={textareaRef}
                     value={content}
@@ -213,7 +207,7 @@ export default function NewPostModal({ isOpen, onClose }) {
                     disabled={isLoading}
                     className="px-4 py-2 rounded-md bg-[var(--primary)] text-white hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? "Posting..." : "Post"}
+                    {isLoading ? "Đang tải lên..." : "Đăng"}
                   </button>
                 </div>
               </div>
@@ -224,20 +218,20 @@ export default function NewPostModal({ isOpen, onClose }) {
           {media.length === 0 && (
             <div className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Privacy</label>
+                <label className="block text-sm font-medium mb-1">Ai có thể xem bài viết của bạn?</label>
                 <select
                   value={privacy}
                   onChange={(e) => setPrivacy(e.target.value)}
                   className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)]"
                 >
-                  <option value="PUBLIC">🌍 Public</option>
-                  <option value="FRIEND">👥 Friends</option>
-                  <option value="PRIVATE">🔒 Only me</option>
+                  <option value="PUBLIC">🌍 Mọi người</option>
+                  <option value="FRIEND">👥 Chỉ bạn bè</option>
+                  <option value="PRIVATE">🔒 Riêng tư</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">What's on your mind?</label>
+                <label className="block text-sm font-medium mb-1">Nội dung</label>
                 <textarea
                   ref={textareaRef}
                   value={content}
@@ -247,15 +241,18 @@ export default function NewPostModal({ isOpen, onClose }) {
                   className="w-full px-3 py-2 border rounded-md bg-[var(--input)] text-[var(--foreground)] resize-none overflow-hidden min-h-[96px]"
                   style={{ height: '96px' }}
                 />
+                <div className={`text-xs text-[var(--muted-foreground)] mt-1 text-right ${content.length > 10000 && "text-red-500"}`}>
+                        {content.length}/10000
+                    </div>
               </div>
 
               <div className="flex justify-end">
                 <button
                   onClick={handleSubmit}
-                  disabled={isLoading || (!content.trim() && media.length === 0)}
+                  disabled={isLoading || (!content.trim() && media.length === 0) || content.length > 10000}
                   className="px-4 py-2 rounded-md bg-[var(--primary)] text-white hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? "Posting..." : "Post"}
+                  {isLoading ? "Đang tải lên..." : "Đăng"}
                 </button>
               </div>
             </div>

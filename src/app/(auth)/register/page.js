@@ -54,11 +54,11 @@ const MessageDisplay = ({ message, verifyMessage, verifying }) => {
   };
 
   return (
-      <>
-        {verifyMessage && <div className={`p-3 text-sm rounded mb-4 ${getMessageClass(verifyMessage)}`}>{verifyMessage}</div>}
-        {message && <div className={`p-3 text-sm rounded mb-4 ${getMessageClass(message)}`}>{message}</div>}
-        {verifying && <div className="p-3 text-sm rounded mb-4 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">🔄 Đang xác thực email...</div>}
-      </>
+    <>
+      {verifyMessage && <div className={`p-3 text-sm rounded mb-4 ${getMessageClass(verifyMessage)}`}>{verifyMessage}</div>}
+      {message && <div className={`p-3 text-sm rounded mb-4 ${getMessageClass(message)}`}>{message}</div>}
+      {verifying && <div className="p-3 text-sm rounded mb-4 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">🔄 Đang xác thực email...</div>}
+    </>
   );
 };
 
@@ -68,99 +68,94 @@ const FormFields = ({ mode, formData, setFormData, showPassword, setShowPassword
   const isDisabled = loading || verifying;
 
   return (
-      <>
-        {/* Email */}
-        <div className="space-y-2">
-          {showResendButton && (
-              <button type="button" onClick={onResend} className="text-sm text-blue-500 dark:text-blue-400 hover:underline mt-1" disabled={isDisabled}>
-                Gửi lại email xác thực
-              </button>
-          )}
-          <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
-          <input
-              type="email" value={formData.email} onChange={handleInputChange("email")}
+    <>
+      {/* Email */}
+      <div className="space-y-2 mb-2">
+        <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
+        <input
+          type="email" value={formData.email} onChange={handleInputChange("email")}
+          className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
+          required disabled={isDisabled}
+        />
+      </div>
+
+      {/* Register fields */}
+      {mode === "register" && (
+        <div className="space-y-4">
+          <div className="flex space-x-4">
+            <div className="space-y-2 flex-1">
+              <h4 className="text-sm font-medium text-muted-foreground">Tên</h4>
+              <input type="text" value={formData.givenName} onChange={handleInputChange("givenName")}
+                className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
+                required disabled={loading} />
+            </div>
+            <div className="space-y-2 flex-1">
+              <h4 className="text-sm font-medium text-muted-foreground">Họ</h4>
+              <input type="text" value={formData.familyName} onChange={handleInputChange("familyName")}
+                className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
+                required disabled={loading} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-muted-foreground">Ngày sinh</h4>
+            <input type="date" value={formData.birthdate} onChange={handleInputChange("birthdate")}
               className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
-              required disabled={isDisabled}
-          />
+              required disabled={loading} />
+          </div>
         </div>
+      )}
 
-        {/* Register fields */}
-        {mode === "register" && (
-            <div className="space-y-4">
-              <div className="flex space-x-4">
-                <div className="space-y-2 flex-1">
-                  <h4 className="text-sm font-medium text-muted-foreground">Tên</h4>
-                  <input type="text" value={formData.givenName} onChange={handleInputChange("givenName")}
-                         className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
-                         required disabled={loading} />
-                </div>
-                <div className="space-y-2 flex-1">
-                  <h4 className="text-sm font-medium text-muted-foreground">Họ</h4>
-                  <input type="text" value={formData.familyName} onChange={handleInputChange("familyName")}
-                         className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
-                         required disabled={loading} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Ngày sinh</h4>
-                <input type="date" value={formData.birthdate} onChange={handleInputChange("birthdate")}
-                       className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
-                       required disabled={loading} />
-              </div>
-            </div>
-        )}
+      {/* Password */}
+      <div className="space-y-2 relative">
+        <h4 className="text-sm font-medium text-muted-foreground">Mật khẩu</h4>
+        <input
+          type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange("password")}
+          className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary pr-10 text-foreground"
+          required minLength={8} disabled={isDisabled}
+        />
+        <p className="text-gray-500 text-sm">
+          Mật khẩu phải có tối thiểu 8 kí tự, bao gồm ít nhất 1 chữ cái thường, 1 chữ cái hoa, 1 chữ số và kí tự đặc biệt @ $ ! % * ? &
+        </p>
+        <button type="button" className="absolute right-0 top-7 p-1 text-muted-foreground hover:text-foreground"
+          onClick={() => setShowPassword(prev => !prev)} tabIndex={-1} disabled={isDisabled}>
+          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+        </button>
+      </div>
 
-        {/* Password */}
-        <div className="space-y-2 relative">
-          <h4 className="text-sm font-medium text-muted-foreground">Mật khẩu</h4>
-          <input
-              type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInputChange("password")}
-              className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary pr-10 text-foreground"
-              required minLength={8} disabled={isDisabled}
-          />
-          <p className="text-gray-500 text-sm">
-            Mật khẩu phải có tối thiểu 8 kí tự, bao gồm ít nhất 1 chữ cái thường, 1 chữ cái hoa, 1 chữ số và kí tự đặc biệt
-          </p>
-          <button type="button" className="absolute right-0 top-7 p-1 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPassword(prev => !prev)} tabIndex={-1} disabled={isDisabled}>
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
+      {/* Confirm password */}
+      {mode === "register" && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground">Nhập lại mật khẩu</h4>
+          <input type="password" value={formData.confirmPassword} onChange={handleInputChange("confirmPassword")}
+            className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
+            required minLength={6} disabled={loading} />
         </div>
-
-        {/* Confirm password */}
-        {mode === "register" && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Nhập lại mật khẩu</h4>
-              <input type="password" value={formData.confirmPassword} onChange={handleInputChange("confirmPassword")}
-                     className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
-                     required minLength={6} disabled={loading} />
-            </div>
-        )}
-      </>
+      )}
+    </>
   );
 };
 
 // Loading component để hiển thị khi đang load search params
 const AuthPageLoading = () => (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <main className="flex-grow flex flex-col md:flex-row h-full">
-        {/* Left Side */}
-        <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
-          <Image src="/Connect.png" alt="Network illustration" width={400} height={400}
-                 className="max-w-full h-auto object-contain" priority />
-        </div>
+  <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <main className="flex-grow flex flex-col md:flex-row h-full">
+      {/* Left Side */}
+      <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
+        <Image src="/Connect.png" alt="Network illustration" width={400} height={400}
+          className="max-w-full h-auto object-contain" priority />
+      </div>
 
-        {/* Right Side */}
-        <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
-          <div className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]">
-            <div className="flex justify-center items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-2 text-muted-foreground">Đang tải...</span>
-            </div>
+      {/* Right Side */}
+      <div className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
+        <div className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]">
+          <div className="flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-muted-foreground">Đang tải...</span>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
+  </div>
 );
 
 // Main component tách riêng để có thể wrap trong Suspense
@@ -215,8 +210,8 @@ function AuthPageContent() {
       setStatus(prev => ({ ...prev, verifying: true }));
       try {
         const res = await api.patch("/v1/register/verify",
-            { email: emailParam, code: codeParam },
-            { headers: { "Content-Type": "application/json" }, timeout: 10000 }
+          { email: emailParam, code: codeParam },
+          { headers: { "Content-Type": "application/json" }, timeout: 10000 }
         );
 
         if (res.data.code === 200) {
@@ -333,74 +328,89 @@ function AuthPageContent() {
   };
 
   return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <main className="flex-grow flex flex-col md:flex-row h-full">
-          {/* Left Side */}
-          <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
-            <Image src="/Connect.png" alt="Network illustration" width={400} height={400}
-                   className="max-w-full h-auto object-contain" priority />
-            <div className="absolute bottom-10 left-0 right-0 flex justify-center md:hidden">
-              <button onClick={scrollToForm}
-                      className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg hover:opacity-90 transition-opacity">
-                Go to {mode} <ArrowDown className="h-4 w-4" />
-              </button>
-            </div>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <main className="flex-grow flex flex-col md:flex-row h-full">
+        {/* Left Side */}
+        <div className="w-full md:w-1/2 h-screen flex items-center justify-center bg-muted relative">
+          <Image src="/Connect.png" alt="Network illustration" width={400} height={400}
+            className="max-w-full h-auto object-contain" priority />
+          <div className="absolute bottom-10 left-0 right-0 flex justify-center md:hidden">
+            <button onClick={scrollToForm}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg hover:opacity-90 transition-opacity">
+              Go to {mode} <ArrowDown className="h-4 w-4" />
+            </button>
           </div>
+        </div>
 
-          {/* Right Side */}
-          <div ref={formRef} className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
-            <div className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]" style={{ overflow: "hidden" }}>
-              <div className="flex justify-between items-center mb-6">
+        {/* Right Side */}
+        <div ref={formRef} className="w-full md:w-1/2 min-h-screen flex items-center justify-center p-6 bg-background">
+          <div className="w-full max-w-md text-card-foreground rounded-xl p-8 shadow-xl bg-[var(--card)]" style={{ overflow: "hidden" }}>
+            <div>
+              {showResendButton ? (
+                <h1 className="text-2xl font-bold mb-4">Xác thực email</h1>
+              ) : <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">{mode === "login" ? "Đăng nhập" : "Tạo tài khoản mới"}</h1>
                 <button onClick={toggleMode} className="text-sm text-muted-foreground hover:text-foreground transition">
                   <ArrowLeftRight className="inline-block w-4 h-4 mr-1" />
                   {mode === "login" ? "Đăng ký" : "Đăng nhập"}
                 </button>
-              </div>
-
-              <motion.div animate={{ height }} transition={{ duration: 0.3, ease: "easeInOut" }} style={{ overflow: "hidden" }}>
-                <div ref={formBoundsRef}>
-                  <AnimatePresence mode="wait">
-                    <MotionContainer key={mode} modeKey={mode} effect="fadeUp">
-                      <MessageDisplay message={messages.general} verifyMessage={messages.verify} verifying={status.verifying} />
-
-                      <form onSubmit={handleSubmit} className="space-y-6">
-                        <FormFields
-                            mode={mode} formData={formData} setFormData={setFormData}
-                            showPassword={showPassword} setShowPassword={setShowPassword}
-                            loading={status.loading} verifying={status.verifying}
-                            showResendButton={showResendButton} onResend={handleResend}
-                        />
-
-                        <Button type="submit" disabled={status.loading || status.verifying} className="w-full py-2">
-                          {status.loading ? "Loading..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}
-                        </Button>
-
-                        <div className="mt-6 text-center text-sm text-muted-foreground">
-                          <div>
-                            Quên mật khẩu?{" "}
-                            <Link href="/forgot-password" className="text-blue-500 dark:text-blue-400 hover:underline">
-                              Tạo mật khẩu mới
-                            </Link>
-                          </div>
-                        </div>
-                      </form>
-                    </MotionContainer>
-                  </AnimatePresence>
-                </div>
-              </motion.div>
+              </div>}
+              <MessageDisplay message={messages.general} verifyMessage={messages.verify} verifying={status.verifying} />
             </div>
+
+            {showResendButton ? (
+              <div className="flex flex-col items-center gap-2">
+                <Button onClick={handleResend} className=" w-full text-md text-white bg-black px-3 py-2 rounded hover:underline">
+                  Gửi lại email xác thực 📩
+                </Button>
+                <p className="text-sm">Hoặc</p>
+                <Button onClick={() => {
+                  window.location.href = "/register";
+                }} className="w-full py-2">
+                  Đăng nhập
+                </Button>
+              </div>
+            ) : <motion.div animate={{ height }} transition={{ duration: 0.3, ease: "easeInOut" }} style={{ overflow: "hidden" }}>
+              <div ref={formBoundsRef}>
+                <AnimatePresence mode="wait">
+                  <MotionContainer key={mode} modeKey={mode} effect="fadeUp">
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <FormFields
+                        mode={mode} formData={formData} setFormData={setFormData}
+                        showPassword={showPassword} setShowPassword={setShowPassword}
+                        loading={status.loading} verifying={status.verifying}
+                      />
+
+                      <Button type="submit" disabled={status.loading || status.verifying} className="w-full py-2">
+                        {status.loading ? "Loading..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}
+                      </Button>
+
+                      <div className="mt-6 text-center text-sm text-muted-foreground">
+                        <div>
+                          Quên mật khẩu?{" "}
+                          <Link href="/forgot-password" className="text-blue-500 dark:text-blue-400 hover:underline">
+                            Tạo mật khẩu mới
+                          </Link>
+                        </div>
+                      </div>
+                    </form>
+                  </MotionContainer>
+                </AnimatePresence>
+              </div>
+            </motion.div>}
           </div>
-        </main>
-      </div>
+        </div >
+      </main >
+    </div >
   );
 }
 
 // Export default component với Suspense wrapper
 export default function AuthPage() {
   return (
-      <Suspense fallback={<AuthPageLoading />}>
-        <AuthPageContent />
-      </Suspense>
+    <Suspense fallback={<AuthPageLoading />}>
+      <AuthPageContent />
+    </Suspense>
   );
 }

@@ -13,19 +13,21 @@ function formatNotificationText(n) {
     case "BE_FRIEND":
       return `${name} đã trở thành bạn bè 👥`;
     case "POST":
-      return `${name} đã đăng một bài viết mới`;
+      return `${name} đã đăng một bài viết mới 📰`;
     case "SHARE":
-      return `${name} đã chia sẻ một bài viết mới`;
+      return `${name} đã chia sẻ bài viết của bạn 📰`;
     case "LIKE_POST":
       return `${name} đã thích bài viết của bạn ❤️`;
     case "COMMENT":
-      return `${name} đã bình luận về bài viết của bạn`;
+      return `${name} đã bình luận về bài viết của bạn 💬`;
     case "REPLY_COMMENT":
-      return `${name} đã trả lời bình luận`;
-    case "ACCEPTED_FRIEND_REQUEST":
-      return `${name} đã chấp nhận lời mời kết bạn 🤝`;
-    case "NEW_MESSAGE":
-      return `${name} đã nhắn tin cho bạn 💬`;
+      return `${name} đã trả lời bình luận của bạn 💬`;
+    case "LIKE_COMMENT":
+      return `${name} đã thích bình luận của bạn ❤️`;
+    case "DELETE_POST":
+      return `${name} đã xóa bài viết của bạn ❌`;
+    case "DELETE_COMMENT":
+      return `${name} đã xóa bình luận của bạn ❌`;
     default:
       return `🔔 Có thông báo mới từ ${name}`;
   }

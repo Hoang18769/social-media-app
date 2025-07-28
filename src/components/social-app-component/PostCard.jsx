@@ -303,7 +303,7 @@ const PostCard = memo(function PostCard({
 
                 {/* Original post content with truncation */}
                 {currentPost.originalPost.content && (
-                    <pre className="text-sm text-[var(--card-foreground)] mb-3 whitespace-pre-wrap break-all">
+                    <pre className="text-sm text-[var(--card-foreground)] mb-3 whitespace-pre-wrap break-words">
                         {shouldTruncateContent(currentPost.originalPost.content) && !isOriginalContentExpanded ? (
                             <>
                                 {renderTextWithLinks(getTruncatedContent(currentPost.originalPost.content))}
@@ -444,7 +444,7 @@ const PostCard = memo(function PostCard({
                         e.stopPropagation()
                         openModal()
                     }}>
-                        <pre className={`text-sm break-all whitespace-pre-wrap
+                        <pre className={`text-sm break-words whitespace-pre-wrap
                             ${size === "compact" ? "gap-2 mb-1" : size === "large" ? "gap-4 mb-3" : "gap-3 mb-2"}`}>
                             {shouldTruncateContent(currentPost.content) && !isContentExpanded ? (
                                 <>

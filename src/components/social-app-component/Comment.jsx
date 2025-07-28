@@ -239,9 +239,9 @@ const CommentItem = memo(({
                         isReply={isReply}
                     />
                 ) : (
-                    <div className={`${textSize} mb-1 whitespace-pre-wrap break-words ${isReply ? 'overflow-hidden' : ''}`}>
+                    <p className={`${textSize} mb-1 break-words w-full ${isReply ? 'overflow-hidden' : ''}`}>
                         {renderTextWithLinks(comment.content)}
-                    </div>
+                    </p>
                 )}
 
                 {comment.fileUrl && (
@@ -377,7 +377,7 @@ export const Comment = memo(({
                         isReply={false}
                     />
                 ) : (
-                    <div className="text-sm mb-1 whitespace-pre-wrap break-words">
+                    <div className="text-sm break-words w-full">
                         {renderTextWithLinks(comment.content)}
                     </div>
                 )}

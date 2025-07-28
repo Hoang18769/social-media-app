@@ -223,7 +223,7 @@ export default function AdminLoginPage() {
   }, [formData.email, formData.password, router, isClient, checkAuthentication]);
 
   const handleBackToLogin = () => {
-    router.push("/auth"); // Quay lại trang login thường
+    router.push("/register"); // Quay lại trang login thường
   };
 
   const handleInputChange = (field, value) => {

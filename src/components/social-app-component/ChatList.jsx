@@ -195,13 +195,13 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
   if (!isLoadingChats && chatList.length === 0 && fetchAttempted) {
     return (
         <div className="p-4 text-center text-muted-foreground">
-          <div className="mb-2">No conversations yet</div>
+          <div className="mb-2">Chưa có cuộc trò chuyện nào</div>
           <button
               onClick={handleRefresh}
               className="flex items-center gap-2 mx-auto px-3 py-1.5 text-primary hover:bg-primary/10 rounded-md transition-colors text-sm"
           >
             <RefreshCw className="h-4 w-4" />
-            Refresh
+            Tải lại
           </button>
         </div>
     );
@@ -247,7 +247,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
               )}
             </div>
             <span className="text-xs md:text-sm text-muted-foreground hidden md:inline">
-            {chatList.length > 3 ? `và +${chatList.length - 3}  đoạn chat khác` : `${chatList.length} chats`}
+            {chatList.length > 3 ? `và +${chatList.length - 3}  đoạn chat khác` : `${chatList.length} cuộc trò chuyện`}
           </span>
             <span className="text-xs text-muted-foreground md:hidden">
             {chatList.length}
@@ -264,7 +264,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
         {!isChatsPage && (
             <div className="flex items-center justify-between p-2 md:p-3 border-b">
               <div className="flex items-center gap-2">
-                <h3 className="font-medium text-xs md:text-sm">Messages</h3>
+                <h3 className="font-medium text-xs md:text-sm">Tin nhắn</h3>
                 {/* Online count in header */}
                 {onlineCount > 0 && (
                     <div className="flex items-center gap-1 text-xs text-green-600">
@@ -298,8 +298,8 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-                placeholder="Search conversations..."
-                className="w-full pl-9"
+                placeholder="Tìm kiếm đoạn chat"
+                className="w-full "
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -325,7 +325,7 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
                   ))
           ) : (
               <div className="p-2 md:p-4 text-center text-muted-foreground text-xs md:text-sm">
-                {isSearching ? "Searching..." : searchTerm ? "No matches found" : "No chats available"}
+                {isSearching ? " Đang tìm kiếm..." : searchTerm ? "Không có kết quả" : "Không có đoạn chat nào"}
               </div>
           )}
         </div>

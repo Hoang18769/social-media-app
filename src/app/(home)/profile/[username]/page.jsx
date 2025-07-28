@@ -330,22 +330,22 @@ export default function ProfilePage() {
 
                         {hasMore && !loading && (
                             <div ref={loadMoreTriggerRef} className="w-full h-10 flex items-center justify-center">
-                              <div className="text-gray-400 text-sm">Loading more posts...</div>
+                              <div className="text-gray-400 text-sm">Xem thêm ...</div>
                             </div>
                         )}
 
                         {!hasMore && posts.length > 0 && (
                             <div className="flex justify-center py-8">
                               <div className="bg-white dark:bg-gray-800 rounded-full px-6 py-3 shadow-sm border border-gray-200 dark:border-gray-700">
-                                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">🎉 You've reached the end!</p>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">🎉 Bạn đã xem tất cả!</p>
                               </div>
                             </div>
                         )}
                       </>
                   ) : (
                       renderEmptyState(
-                          isOwnProfile ? "No posts yet" : "No posts to show",
-                          isOwnProfile ? "Share your first post to get started!" : "This user hasn't shared any posts that you can see."
+                          isOwnProfile ? "Chưa tải lên bài viết nào" : "Không có bài viết nào",
+                          isOwnProfile ? "Hãy tải lên bài viết đầu tiên của bạn!" : "Người dùng này chưa tải lên bài viết nào"
                       )
                   )}
                 </>

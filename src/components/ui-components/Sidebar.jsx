@@ -46,21 +46,12 @@ export default function SidebarNavigation() {
   // ✅ Add unread message count from store
   const unreadMessageCount = useAppStore(state => state.unreadMessageCount);
 
-  const menuItems = [
-    { id: "home", icon: Home, href: "/home", label: "Home" },
-    { id: "search", icon: Search, href: "/search", label: "Search" },
-    { id: "message", icon: MessageCircle, href: "/chats", showBadge: true, label: "Messages" },
-    { id: "favorites", icon: Users, href: "/friends", label: "Friends" },
-    { id: "profile", icon: UserPen, href: username ? `/profile/${username}` : "#", label: "Profile" },
-  ];
-
   // ✅ Update badge count when store count changes
   useEffect(() => {
     setBadgeCount(unreadNotificationCount + unreadNotificationCountFromSocket);
   }, [unreadNotificationCount, unreadNotificationCountFromSocket]);
 
   useEffect(() => {
-
     const storedUsername = getUserName()
     if (storedUsername) {
       setUsername(storedUsername);
@@ -189,27 +180,6 @@ export default function SidebarNavigation() {
     setShowSettingsDropdown(!showSettingsDropdown);
   };
 
-  const dropdownItems = [
-    // {
-    //   id: "profile",
-    //   icon: User,
-    //   label: "Profile",
-    //   href: username ? `/profile/${username}` : "#",
-    // },
-    {
-      id: "settings",
-      icon: Settings,
-      label: "Settings",
-      href: "/settings/personalinfo",
-    },
-    {
-      id: "logout",
-      icon: LogOut,
-      label: "Logout",
-      onClick: handleLogout,
-    },
-  ];
-
   // Render dropdown using portal
   const renderDropdown = () => {
     if (!showSettingsDropdown) return null;
@@ -223,40 +193,28 @@ export default function SidebarNavigation() {
           left: `${dropdownPosition.left}px`,
         }}
       >
-        {dropdownItems.map((item) => {
-          const Icon = item.icon;
-          
-          if (item.onClick) {
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  item.onClick();
-                  setShowSettingsDropdown(false);
-                }}
-                disabled={isLoggingOut}
-                className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                aria-label={item.label}
-              >
-                <Icon size={16} className="mr-3" />
-                {isLoggingOut && item.id === "logout" ? "Logging out..." : item.label}
-              </button>
-            );
-          }
-
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              onClick={() => setShowSettingsDropdown(false)}
-              className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label={item.label}
-            >
-              <Icon size={16} className="mr-3" />
-              {item.label}
-            </Link>
-          );
-        })}
+        <button
+          onClick={() => {
+            handleLogout();
+            setShowSettingsDropdown(false);
+          }}
+          disabled={isLoggingOut}
+          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+          aria-label="Đăng xuất"
+        >
+          <LogOut size={16} className="mr-3" />
+          {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+        </button>
+        
+        <Link
+          href="/settings/personalinfo"
+          onClick={() => setShowSettingsDropdown(false)}
+          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          aria-label="Cài đặt"
+        >
+          <Settings size={16} className="mr-3" />
+          Cài đặt
+        </Link>
       </div>,
       document.body
     );
@@ -273,7 +231,7 @@ export default function SidebarNavigation() {
           fixed z-[9999] overflow-y-auto rounded-xl shadow-lg bg-[var(--card)] border border-[var(--border)]
           md:w-80 md:max-h-[calc(100vh-64px-32px)]
           w-full max-h-[calc(90vh-72px-32px)] left-0 right-0
-          md:left-auto md:right-auto md:w-80
+          md:left-auto md:right-auto
         `}
         style={{
           // Desktop positioning
@@ -302,45 +260,115 @@ export default function SidebarNavigation() {
         className={`
           z-50 fixed bottom-0 left-0 w-full flex justify-around
           md:static md:top-[64px] md:items-start md:h-full
-          w-auto md:flex md:px-2 md:py-4
+          md:flex md:px-2 md:py-4
         `}
       >
         <nav className="md:h-full bg-[var(--card)] p-4 md:rounded-xl flex flex-row md:flex-col items-center justify-around md:justify-center md:space-y-6 w-full md:w-full">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              item.href.startsWith("/profile")
-                ? pathname.startsWith("/profile")
-                : pathname === item.href;
-
-            return (
-              <div key={item.id} className="relative">
-                <Link
-                  href={item.href}
-                  className={`
-                    w-10 h-10 flex items-center justify-center rounded-full transition-colors
-                    ${
-                      isActive
-                        ? "text-black dark:bg-white"
-                        : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
-                    }
-                  `}
-                  aria-label={item.label}
-                  title={item.label}
-                >
-                  <Icon size={24} strokeWidth={isActive ? 3 : 2} />
-                </Link>
-                
-                {/* ✅ Show badge for message icon when there are unread messages */}
-                {item.showBadge && unreadMessageCount > 0 && (
-                  <Badge asNotification>{unreadMessageCount}</Badge>
-                )}
-              </div>
-            );
-          })}
           
-          {/* 🔔 Notification button */}
-          <div className="relative">
+          {/* Desktop: Thứ tự cũ | Mobile: Home Button ở giữa */}
+          
+          {/* Home Button - Desktop: đầu tiên, Mobile: ở giữa */}
+          <div className="relative order-4 md:order-1">
+            <Link
+              href="/home"
+              className={`
+                w-10 h-10 flex items-center justify-center rounded-full transition-colors
+                ${
+                  pathname === "/home"
+                    ? "text-black dark:bg-white"
+                    : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
+                }
+              `}
+              aria-label="Home"
+              title="Home"
+            >
+              <Home size={24} strokeWidth={pathname === "/home" ? 3 : 2} />
+            </Link>
+          </div>
+
+          {/* Search Button - Desktop: thứ 2, Mobile: đầu tiên */}
+          <div className="relative order-1 md:order-2">
+            <Link
+              href="/search"
+              className={`
+                w-10 h-10 flex items-center justify-center rounded-full transition-colors
+                ${
+                  pathname === "/search"
+                    ? "text-black dark:bg-white"
+                    : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
+                }
+              `}
+              aria-label="Search"
+              title="Search"
+            >
+              <Search size={24} strokeWidth={pathname === "/search" ? 3 : 2} />
+            </Link>
+          </div>
+
+          {/* Messages Button - Desktop: thứ 3, Mobile: thứ 2 */}
+          <div className="relative order-2 md:order-3">
+            <Link
+              href="/chats"
+              className={`
+                w-10 h-10 flex items-center justify-center rounded-full transition-colors
+                ${
+                  pathname === "/chats"
+                    ? "text-black dark:bg-white"
+                    : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
+                }
+              `}
+              aria-label="Messages"
+              title="Messages"
+            >
+              <MessageCircle size={24} strokeWidth={pathname === "/chats" ? 3 : 2} />
+            </Link>
+            
+            {/* ✅ Show badge for message icon when there are unread messages */}
+            {unreadMessageCount > 0 && (
+              <Badge asNotification>{unreadMessageCount}</Badge>
+            )}
+          </div>
+
+          {/* Friends Button - Desktop: thứ 3, Mobile: thứ 4 */}
+          <div className="relative order-3 md:order-4">
+            <Link
+              href="/friends"
+              className={`
+                w-10 h-10 flex items-center justify-center rounded-full transition-colors
+                ${
+                  pathname === "/friends"
+                    ? "text-black dark:bg-white"
+                    : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
+                }
+              `}
+              aria-label="Friends"
+              title="Friends"
+            >
+              <Users size={24} strokeWidth={pathname === "/friends" ? 3 : 2} />
+            </Link>
+          </div>
+
+          {/* Profile Button - Desktop: thứ 5, Mobile: thứ 5 */}
+          <div className="relative order-5 md:order-5">
+            <Link
+              href={username ? `/profile/${username}` : "#"}
+              className={`
+                w-10 h-10 flex items-center justify-center rounded-full transition-colors
+                ${
+                  pathname.startsWith("/profile")
+                    ? "text-black dark:bg-white"
+                    : "text-black shadow hover:bg-white hover:text-black dark:hover:bg-white"
+                }
+              `}
+              aria-label="Profile"
+              title="Profile"
+            >
+              <UserPen size={24} strokeWidth={pathname.startsWith("/profile") ? 3 : 2} />
+            </Link>
+          </div>
+          
+          {/* 🔔 Notification button - Desktop: thứ 6, Mobile: thứ 6 */}
+          <div className="relative order-6 md:order-6">
             <button
               ref={notificationButtonRef}
               type="button"
@@ -372,8 +400,8 @@ export default function SidebarNavigation() {
             </button>
           </div>
           
-          {/* More button with dropdown */}
-          <div className="relative">
+          {/* More button with dropdown - Desktop: thứ 7, Mobile: thứ 7 */}
+          <div className="relative order-7 md:order-7">
             <button
               aria-label="Menu"
               title="Menu"

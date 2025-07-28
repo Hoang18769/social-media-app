@@ -41,7 +41,7 @@ export default function PrivacySettings() {
 
           <div className="bg-[var(--card)] p-6 rounded-lg shadow-md space-y-6">
             {/* Quyền hiển thị danh sách bạn bè */}
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <label className="text-sm font-semibold">
                 Hiển thị danh sách bạn bè
               </label>
@@ -52,7 +52,7 @@ export default function PrivacySettings() {
                   onChange={handleChange}
                   className="w-5 h-5"
               />
-            </div>
+            </div> */}
 
             {/* Quyền riêng tư mặc định của bài viết */}
             <div>
@@ -65,14 +65,14 @@ export default function PrivacySettings() {
                   onChange={handleChange}
                   className="w-full bg-[var(--input)] text-[var(--foreground)] px-3 py-2 rounded-md"
               >
-                <option value="PUBLIC">Công khai</option>
+                <option value="PUBLIC">Mọi người</option>
                 <option value="FRIEND">Chỉ bạn bè</option>
-                <option value="PRIVATE">Chỉ mình tôi</option>
+                <option value="PRIVATE">Riêng tư</option>
               </select>
             </div>
 
             {/* Cho phép gửi lời mời kết bạn */}
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <label className="text-sm font-semibold">
                 Cho phép gửi lời mời kết bạn
               </label>
@@ -83,7 +83,7 @@ export default function PrivacySettings() {
                   onChange={handleChange}
                   className="w-5 h-5"
               />
-            </div>
+            </div> */}
 
             {/* Trạng thái xác minh email */}
             <div className="flex items-center justify-between">
@@ -98,7 +98,7 @@ export default function PrivacySettings() {
             </div>
 
             {/* Trạng thái khóa tài khoản */}
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">Tài khoản tạm thời bị khóa</span>
               <span
                   className={`text-sm font-medium ${
@@ -107,7 +107,7 @@ export default function PrivacySettings() {
               >
               {privacy.isLocked ? "Có" : "Không"}
             </span>
-            </div>
+            </div> */}
 
             {/* Danh sách chặn */}
             <div className="flex items-center justify-between">

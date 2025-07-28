@@ -76,7 +76,7 @@ export default function SharePostModal({
 
                 <div className="mb-4">
                     <label className="block text-sm mb-2 text-[var(--card-foreground)]">
-                        Quyền riêng tư
+                        Ai có thể thấy bài viết của bạn
                     </label>
                     <select
                         className="w-full p-2 border border-[var(--border)] rounded-lg bg-[var(--card)] text-[var(--card-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
@@ -84,9 +84,9 @@ export default function SharePostModal({
                         onChange={(e) => setSharePrivacy(e.target.value)}
                         disabled={isSharing}
                     >
-                        <option value="PUBLIC">🌍 Công khai</option>
-                        <option value="FRIEND">👥 Bạn bè</option>
-                        <option value="PRIVATE">🔒 Chỉ mình tôi</option>
+                        <option value="PUBLIC">🌍 Mọi người</option>
+                        <option value="FRIEND">👥 Chỉ bạn bè</option>
+                        <option value="PRIVATE">🔒 Riêng tư</option>
                     </select>
                 </div>
 
@@ -102,10 +102,10 @@ export default function SharePostModal({
                         onChange={(e) => setShareContent(e.target.value)}
                         onKeyDown={handleKeyDown}
                         disabled={isSharing}
-                        maxLength={500}
+                        maxLength={10000}
                     />
-                    <div className="text-xs text-[var(--muted-foreground)] mt-1 text-right">
-                        {shareContent.length}/500
+                <div className={`text-xs text-[var(--muted-foreground)] mt-1 text-right ${shareContent.length > 10000 && "text-red-500"}`}>
+                        {shareContent.length}/10000
                     </div>
                 </div>
 
@@ -120,7 +120,7 @@ export default function SharePostModal({
                     <button
                         onClick={handleSharePost}
                         className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
-                        disabled={isSharing}
+                        disabled={isSharing || shareContent.length > 10000}
                     >
                         {isSharing ? "Đang chia sẻ..." : "Chia sẻ"}
                     </button>

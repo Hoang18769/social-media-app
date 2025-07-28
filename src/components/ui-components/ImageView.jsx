@@ -4,14 +4,14 @@ import { useState, useRef, useEffect, memo } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 
 const isVideo = (url) =>
-    typeof url === "string" && url.match(/\.(mp4|webm|ogg)$/i);
+  typeof url === "string" && url.match(/\.(mp4|webm|ogg)$/i);
 
 const ImageView = memo(function ImageView({
-                                            images = [],
-                                            onImageClick,
-                                            isActive = true,
-                                            isPriority = false
-                                          }) {
+  images = [],
+  onImageClick,
+  isActive = true,
+  isPriority = false
+}) {
   const [mutedVideos, setMutedVideos] = useState({});
   const videoRefs = useRef({});
 
@@ -28,7 +28,7 @@ const ImageView = memo(function ImageView({
     Object.values(videoRefs.current).forEach((video) => {
       if (!video) return;
       if (isActive) {
-        video.play().catch(() => {});
+        video.play().catch(() => { });
       } else {
         video.pause();
       }
@@ -46,7 +46,7 @@ const ImageView = memo(function ImageView({
         ([entry]) => {
           if (isActive) {
             if (entry.isIntersecting) {
-              video.play().catch(() => {});
+              video.play().catch(() => { });
             } else {
               video.pause();
             }
@@ -97,8 +97,8 @@ const ImageView = memo(function ImageView({
             />
 
             <button
-             aria-label="changes mute/unmute"
-    title="changes mute/unmute"
+              aria-label="changes mute/unmute"
+              title="changes mute/unmute"
               onClick={() => toggleMute(index)}
               className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
             >
@@ -145,7 +145,10 @@ const ImageView = memo(function ImageView({
         {images.slice(0, 3).map((src, index) => renderMedia(src, index))}
         <div className={`${imageWrapperClass} brightness-50`}>
           {renderMedia(images[3], 3)}
-          <span className="absolute inset-0 flex items-center justify-center text-white font-semibold text-lg bg-black/40">
+          <span
+            className="absolute inset-0 flex items-center justify-center text-white font-semibold text-lg bg-black/40"
+            onClick={() => onImageClick(5)}
+          >
             +{images.length - 4}
           </span>
         </div>
