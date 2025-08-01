@@ -44,7 +44,6 @@ const PostCard = memo(function PostCard({
     const [deleting, setDeleting] = useState(false)
     const [currentPost, setCurrentPost] = useState(post)
     const [currentCommentFilter, setCurrentCommentFilter] = useState('RELEVANT') // New state for comment filter
-
     // Content expansion states
     const [isContentExpanded, setIsContentExpanded] = useState(false)
     const [isOriginalContentExpanded, setIsOriginalContentExpanded] = useState(false)
@@ -59,10 +58,10 @@ const PostCard = memo(function PostCard({
 
     // Check if current post is owned by current user
     const currentUserId = getUserId()
-    const isOwnPost = currentPost.author?.id === currentUserId
+    const isOwnPost = currentPost.author?.id === currentUserId || isAdmin
 
     // Show more options if it's user's own post OR if user is admin
-    const showMoreOptions = isOwnPost || isAdmin
+    const showMoreOptions = isOwnPost
 
     useEffect(() => {
         const checkScreenSize = () => setIsMobile(window.innerWidth < 640)
@@ -98,9 +97,17 @@ const PostCard = memo(function PostCard({
     const fetchComments = useCallback(async (filterType = 'RELEVANT') => {
         setLoadingComments(true)
         try {
-            const res = await api.get(`/v1/comments/of-post/${currentPost.id}`, {
-                params: { type: filterType }
-            })
+            let res;
+
+            if (isAdmin) {
+                res = await adminApi.get(`/v1/comments/of-post/${currentPost.id}`, {
+                    params: { type: filterType }
+                })
+            } else {
+                res = await api.get(`/v1/comments/of-post/${currentPost.id}`, {
+                    params: { type: filterType }
+                })
+            }
             console.log('Fetched comments with filter:', filterType, res.data)
             setComments(res.data.body || [])
         } catch (err) {
@@ -493,8 +500,8 @@ const PostCard = memo(function PostCard({
                         />
                     </div>
                 )}
-
-                <div className="flex mt-3 gap-4 text-[var(--muted-foreground)]">
+                {!isAdmin &&
+                    (<div className="flex mt-3 gap-4 text-[var(--muted-foreground)]">
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
@@ -528,7 +535,8 @@ const PostCard = memo(function PostCard({
                     >
                         <SendHorizonal className="h-5 w-5" />
                     </button>
-                </div>
+                </div>)
+                }
 
                 <p className="text-xs mt-1">
                     {optimisticLikeCount} lượt thích
@@ -568,6 +576,7 @@ const PostCard = memo(function PostCard({
                         comments={comments}
                         loadingComments={loadingComments}
                         isOwnPost={isOwnPost}
+                        isAdmin={isAdmin}
                         onClose={handleCloseModal}
                         onLikeToggle={handleLikeToggle}
                         onCommentSubmit={handleCommentSubmit}

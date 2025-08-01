@@ -8,8 +8,6 @@ const nextConfig = {
       'pngdownload.io',
       'picsum.photos',
       'localhost',
-      'images.unsplash.com', // Common image source
-      'via.placeholder.com',  // Placeholder images
       'pocpoc.online',
       'api.pocpoc.online',
     ],
@@ -32,12 +30,6 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Experimental features - more stable options
-  experimental: {
-    esmExternals: true,
-    // Ensure middleware is enabled
-    serverComponentsExternalPackages: [],
-  },
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
@@ -46,14 +38,8 @@ const nextConfig = {
     // Client-side fallbacks
     if (!isServer) {
       config.resolve.fallback = {
-        ...config.resolve.fallback,
         fs: false,
-        path: false,
         crypto: false,
-        stream: false,
-        util: false,
-        buffer: false,
-        events: false,
       };
     }
 
@@ -87,7 +73,6 @@ const nextConfig = {
       }
     ];
   },
-  swcMinify: true, // Use SWC for minification (faster than Terser)
   typescript: {
     ignoreBuildErrors: false, // Set to true only if absolutely necessary
   },

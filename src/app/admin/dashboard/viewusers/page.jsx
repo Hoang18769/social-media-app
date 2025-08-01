@@ -92,7 +92,7 @@ const UsersPage = () => {
 
   // Fetch users function with axios
   const fetchUsers = useCallback(async (skipValue = 0, isLoadMore = false) => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("admin_accessToken");
     if (!token) {
       console.warn("Không có token đăng nhập");
       return;

@@ -166,7 +166,7 @@ export default function PostsPage() {
     setLoading(true)
     setError("")
     try {
-      const res = await api.get("/v2/statistics/posts")
+      const res = await adminApi.get("/v2/statistics/posts")
       setPostsData(res.data.body)
       console.log(res.data.body)
     } catch (err) {

@@ -3,8 +3,9 @@ const CACHE_NAME = 'pocpoc-v1';
 const urlsToCache = [
   '/offline.html',
   '/pocpoc.png',
-  '/manifest.json'
-  // Removed '/home' from here - let middleware handle routing
+  '/manifest.json',
+  '/home',
+  '/search',
 ];
 
 // Install - Cache static files only
