@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import api from "@/utils/axios";
 import toast from "react-hot-toast";
+import adminApi from "@/utils/adminInterception";
 
 // Hook for managing comments
 export const useComments = (initialComments, post) => {
@@ -163,8 +164,14 @@ export const useComments = (initialComments, post) => {
     if (!window.confirm("Bạn có chắc muốn xóa bình luận này không?")) return;
 
     try {
-      await api.delete(`/v1/comments/${commentId}`);
-      
+      const token = localStorage.getItem("admin_accessToken")
+      if(token){
+         await adminApi.delete(`/v1/comments/${commentId}`);
+      }
+      else
+      {
+         await api.delete(`/v1/comments/${commentId}`);
+      }
       // Remove from main comments
       setLocalComments((prev) =>
         prev.filter((comment) => comment.id !== commentId)
