@@ -5,7 +5,7 @@ import ChatList from "@/components/social-app-component/ChatList";
 import ChatBox from "@/components/social-app-component/ChatBox";
 import useAppStore from "@/store/ZustandStore";
 import useIsMobile from "@/hooks/useIsMobile";
-import {pageMetadata, updatePageMetadata, usePageMetadata} from "@/utils/clientMetadata";
+import {pageMetadata, usePageMetadata} from "@/utils/clientMetadata";
 
 export default function ChatLayout() {
   const [selectedChatId, setSelectedChatId] = useState(null);

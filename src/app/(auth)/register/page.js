@@ -63,7 +63,7 @@ const MessageDisplay = ({ message, verifyMessage, verifying }) => {
 };
 
 // Form Fields Component
-const FormFields = ({ mode, formData, setFormData, showPassword, setShowPassword, loading, verifying, showResendButton, onResend }) => {
+const FormFields = ({ mode, formData, setFormData, showPassword, setShowPassword, loading, verifying, showConfirmPassword, setShowConfirmPassword, showResendButton, onResend }) => {
   const handleInputChange = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value }));
   const isDisabled = loading || verifying;
 
@@ -124,12 +124,20 @@ const FormFields = ({ mode, formData, setFormData, showPassword, setShowPassword
 
       {/* Confirm password */}
       {mode === "register" && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">Nhập lại mật khẩu</h4>
-          <input type="password" value={formData.confirmPassword} onChange={handleInputChange("confirmPassword")}
-            className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary text-foreground"
-            required minLength={6} disabled={loading} />
-        </div>
+          <div className="space-y-2 relative">
+            <h4 className="text-sm font-medium text-muted-foreground">Nhập lại mật khẩu</h4>
+            <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={handleInputChange("confirmPassword")}
+                className="w-full bg-transparent border-b border-input px-0 py-1 focus:outline-none focus:border-primary pr-10 text-foreground"
+                required minLength={6} disabled={loading}
+            />
+            <button type="button" className="absolute right-0 top-7 p-1 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowConfirmPassword(prev => !prev)} tabIndex={-1} disabled={loading}>
+              {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
       )}
     </>
   );
@@ -162,6 +170,8 @@ const AuthPageLoading = () => (
 function AuthPageContent() {
   const [mode, setMode] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [showResendButton, setShowResendButton] = useState(false);
   const [formData, setFormData] = useState({
     email: "", password: "", confirmPassword: "", givenName: "", familyName: "", birthdate: "",
@@ -377,9 +387,15 @@ function AuthPageContent() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                       <FormFields
-                        mode={mode} formData={formData} setFormData={setFormData}
-                        showPassword={showPassword} setShowPassword={setShowPassword}
-                        loading={status.loading} verifying={status.verifying}
+                          mode={mode}
+                          formData={formData}
+                          setFormData={setFormData}
+                          showPassword={showPassword}
+                          setShowPassword={setShowPassword}
+                          showConfirmPassword={showConfirmPassword}
+                          setShowConfirmPassword={setShowConfirmPassword}
+                          loading={status.loading}
+                          verifying={status.verifying}
                       />
 
                       <Button type="submit" disabled={status.loading || status.verifying} className="w-full py-2">
