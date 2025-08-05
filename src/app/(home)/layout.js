@@ -135,7 +135,9 @@ function MainLayoutContent({ children }) {
 
   // ✅ Kiểm tra có cần hiển thị header không
   const showHeader = shouldShowHeader(pathname);
-
+  useEffect(()=>{
+    fetchUnreadNotificationCount();
+  },[]);
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     const storedToken = localStorage.getItem("accessToken");
@@ -151,7 +153,6 @@ function MainLayoutContent({ children }) {
 
   // ✅ Sử dụng các socket hooks
   useMessageNotification(userId);
-  fetchUnreadNotificationCount();
   useNotificationSocket(userId, token);
   useOnlineNotification(userId);
   useErrorSocket(userId); // ✅ Subscribe tới error channel
