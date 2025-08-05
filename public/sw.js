@@ -1,4 +1,3 @@
-// public/sw.js - Fixed version that allows middleware to work
 const CACHE_NAME = 'pocpoc-v1';
 const urlsToCache = [
   '/offline.html',

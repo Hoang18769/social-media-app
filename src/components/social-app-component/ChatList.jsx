@@ -70,8 +70,10 @@ export default function ChatList({ onSelectChat, selectedChatId }) {
   // Scroll to bottom on new messages
   useEffect(() => {
     if (listRef.current && chatList.length > 0) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
+      listRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });    }
   }, [chatList]);
 
   // Improved chat selection handler
