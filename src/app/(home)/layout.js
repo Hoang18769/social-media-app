@@ -16,6 +16,7 @@ import useMessageNotification from "@/hooks/useMessageNotification";
 import useErrorSocket from "@/hooks/useErrorSocket"; // ✅ Import useErrorSocket
 import useOnlineNotification from "@/hooks/useOnlineNotification";
 import { getAuthInfo } from "@/utils/axios";
+
 // ✅ Import Call System
 import { CallProvider } from "@/context/CallContext";
 import { useCall } from "@/context/CallContext";
@@ -24,6 +25,8 @@ import CallVideo from "@/components/social-app-component/CallVideo";
 import ThemeProvider from "@/providers/ThemeProvider";
 import { useRouter } from "next/navigation";
 import {pageMetadata, usePageMetadata} from "@/utils/clientMetadata";
+import useAppStore from "@/store/ZustandStore";
+
 // ✅ Component để hiển thị call UI global
 function GlobalCallInterface() {
   const { 
@@ -125,6 +128,7 @@ function MainLayoutContent({ children }) {
   const [activeChatId, setActiveChatId] = useState(null);
   const [activeTargetUser, setActiveTargetUser] = useState(null);
   const [blockStatus, setBlockStatus] = useState(null);
+  const {fetchUnreadNotificationCount} = useAppStore();
 
   // ✅ Sử dụng Call Hook
   const { initializeCall, currentCall, isCallEnding } = useCall();
@@ -147,6 +151,7 @@ function MainLayoutContent({ children }) {
 
   // ✅ Sử dụng các socket hooks
   useMessageNotification(userId);
+  fetchUnreadNotificationCount();
   useNotificationSocket(userId, token);
   useOnlineNotification(userId);
   useErrorSocket(userId); // ✅ Subscribe tới error channel
